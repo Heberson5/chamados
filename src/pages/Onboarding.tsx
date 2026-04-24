@@ -24,10 +24,20 @@ const Onboarding = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && user !== undefined) {
       if (!user) navigate("/auth", { replace: true });
-      else if (profile?.organization_id || profile?.is_master) navigate("/app", { replace: true });
+      else if (profile && (profile.organization_id || profile.is_master)) {
+        navigate("/app", { replace: true });
+      }
     }
+  if (loading || (user && !profile)) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <div className="size-6 rounded-full border-2 border-muted border-t-foreground animate-spin" />
+      </div>
+    );
+  }
+
   }, [user, profile, loading, navigate]);
 
   const create = async (e: React.FormEvent) => {

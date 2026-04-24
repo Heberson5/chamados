@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Headphones } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
 
 const schema = z.object({
   email: z.string().email("E-mail inválido").max(255),
@@ -24,6 +25,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { data: settings } = useSystemSettings();
 
   useEffect(() => {
     if (!authLoading && user) navigate("/app", { replace: true });
@@ -64,20 +66,24 @@ const Auth = () => {
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex flex-col justify-between p-10 bg-surface-1 border-r border-border">
         <Link to="/" className="flex items-center gap-2">
-          <div className="size-7 rounded-md bg-primary text-primary-foreground grid place-items-center">
-            <Headphones className="size-4" />
-          </div>
-          <span className="font-semibold tracking-tight">Helpdesk</span>
+          {settings?.logo_url ? (
+            <img src={settings.logo_url} alt="Logo" className="size-7 object-contain" />
+          ) : (
+            <div className="size-7 rounded-md bg-primary text-primary-foreground grid place-items-center">
+              <Headphones className="size-4" />
+            </div>
+          )}
+          <span className="font-semibold tracking-tight">{settings?.system_name ?? "Helpdesk"}</span>
         </Link>
         <div>
           <h2 className="text-3xl font-semibold tracking-tight max-w-sm leading-tight">
             Centralize seu atendimento. Encante seus clientes.
           </h2>
           <p className="text-muted-foreground mt-3 max-w-sm">
-            Help desk moderno, multiempresa e com IA inclusa.
+            {settings?.system_name ?? "Helpdesk"} moderno, multiempresa e com IA inclusa.
           </p>
         </div>
-        <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} Helpdesk</div>
+        <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} {settings?.system_name ?? "Helpdesk"}</div>
       </div>
 
       <div className="flex items-center justify-center p-6">

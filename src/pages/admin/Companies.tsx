@@ -23,6 +23,8 @@ const AdminCompanies = () => {
    const [companies, setCompanies] = useState<Org[]>([]);
    const [loading, setLoading] = useState(true);
    const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<Org | null>(null);
    const [newOrg, setNewOrg] = useState({ name: "", slug: "" });
    const { toast } = useToast();
  
@@ -58,6 +60,28 @@ const AdminCompanies = () => {
      }
    };
  
+  const handleEdit = (company: Org) => {
+    setEditingOrg(company);
+    setEditOpen(true);
+  };
+
+  const updateCompany = async () => {
+    if (!editingOrg || !editingOrg.name || !editingOrg.slug) return;
+    const { error } = await supabase
+      .from("organizations")
+      .update({ name: editingOrg.name, slug: editingOrg.slug })
+      .eq("id", editingOrg.id);
+
+    if (error) {
+      toast({ variant: "destructive", title: "Erro", description: error.message });
+    } else {
+      toast({ title: "Sucesso", description: "Empresa atualizada com sucesso." });
+      setEditOpen(false);
+      setEditingOrg(null);
+      load();
+    }
+  };
+
    const deleteCompany = async (id: string) => {
      if (!confirm("Tem certeza que deseja excluir esta empresa? Todos os dados vinculados serão mantidos (se houver restrições) ou removidos.")) return;
      const { error } = await supabase.from("organizations").delete().eq("id", id);
@@ -114,6 +138,39 @@ const AdminCompanies = () => {
            </Dialog>
          }
        />
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Empresa</DialogTitle>
+            <DialogDescription>Altere as informações da empresa selecionada.</DialogDescription>
+          </DialogHeader>
+          {editingOrg && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome da Empresa</Label>
+                <Input 
+                  id="edit-name" 
+                  value={editingOrg.name} 
+                  onChange={(e) => setEditingOrg({ ...editingOrg, name: e.target.value })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-slug">Slug (URL)</Label>
+                <Input 
+                  id="edit-slug" 
+                  value={editingOrg.slug} 
+                  onChange={(e) => setEditingOrg({ ...editingOrg, slug: e.target.value.toLowerCase().replace(/ /g, "-") })} 
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button onClick={updateCompany}>Salvar Alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <div className="p-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {companies.map((company) => (
@@ -126,7 +183,12 @@ const AdminCompanies = () => {
                <div className="text-xs text-muted-foreground mb-1">Slug: {company.slug}</div>
                <div className="text-xs text-muted-foreground mb-4 font-medium">Usuários: {company.user_count}</div>
                <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="w-full gap-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full gap-1"
+                  onClick={() => handleEdit(company)}
+                >
                   <Pencil className="size-3" /> Editar
                 </Button>
                  <Button 

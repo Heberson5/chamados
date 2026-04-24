@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
   const [positions, setPositions] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any | null>(null);
    const { toast } = useToast();
     const [newUser, setNewUser] = useState({
       full_name: "",
@@ -67,6 +69,40 @@ import { supabase } from "@/integrations/supabase/client";
      }
    };
  
+  const handleEdit = (user: any) => {
+    setEditingUser({
+      ...user,
+      organization_id: user.organization_id || "",
+      department_id: user.department_id || "",
+      position_id: user.position_id || ""
+    });
+    setEditOpen(true);
+  };
+
+  const updateUser = async () => {
+    if (!editingUser || !editingUser.full_name) return;
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: editingUser.full_name,
+        organization_id: editingUser.organization_id || null,
+        department_id: editingUser.department_id || null,
+        position_id: editingUser.position_id || null,
+        is_master: editingUser.is_master
+      })
+      .eq("id", editingUser.id);
+
+    if (error) {
+      toast({ variant: "destructive", title: "Erro", description: error.message });
+    } else {
+      toast({ title: "Sucesso", description: "Usuário atualizado com sucesso." });
+      setEditOpen(false);
+      setEditingUser(null);
+      load();
+    }
+  };
+
    const deleteUser = async (id: string) => {
      if (!confirm("Excluir este usuário?")) return;
      const { error } = await supabase.from("profiles").delete().eq("id", id);
@@ -178,6 +214,87 @@ import { supabase } from "@/integrations/supabase/client";
            </Dialog>
          }
        />
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>Altere as informações do usuário selecionado.</DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_full_name">Nome Completo</Label>
+                <Input 
+                  id="edit_full_name" 
+                  value={editingUser.full_name} 
+                  onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Empresa</Label>
+                <Select 
+                  value={editingUser.organization_id} 
+                  onValueChange={(v) => setEditingUser({ ...editingUser, organization_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {orgs.map(o => (
+                      <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Departamento</Label>
+                  <Select 
+                    value={editingUser.department_id} 
+                    onValueChange={(v) => setEditingUser({ ...editingUser, department_id: v })}
+                    disabled={!editingUser.organization_id}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {depts.filter(d => d.organization_id === editingUser.organization_id).map(d => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Select 
+                    value={editingUser.position_id} 
+                    onValueChange={(v) => setEditingUser({ ...editingUser, position_id: v })}
+                    disabled={!editingUser.organization_id}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {positions.filter(p => p.organization_id === editingUser.organization_id).map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="edit_is_master" 
+                  checked={editingUser.is_master} 
+                  onCheckedChange={(v) => setEditingUser({ ...editingUser, is_master: !!v })}
+                />
+                <Label htmlFor="edit_is_master">Usuário Master (Acesso total)</Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button onClick={updateUser}>Salvar Alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <div className="p-6">
         <div className="rounded-md border bg-background">
@@ -213,7 +330,11 @@ import { supabase } from "@/integrations/supabase/client";
                   <TableCell>{u.is_master ? "Sim" : "Não"}</TableCell>
                    <TableCell className="text-right">
                      <div className="flex justify-end gap-1">
-                       <Button variant="ghost" size="icon">
+                       <Button 
+                         variant="ghost" 
+                         size="icon"
+                         onClick={() => handleEdit(u)}
+                       >
                          <Pencil className="size-4" />
                        </Button>
                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteUser(u.id)}>

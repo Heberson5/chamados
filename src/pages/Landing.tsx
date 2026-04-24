@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Headphones, KanbanSquare, Timer, Bot } from "lucide-react";
+import { ArrowRight, Check, Headphones, KanbanSquare, Timer, Bot, Inbox } from "lucide-react";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
+import { useEffect } from "react";
 
 const features = [
   { icon: Inbox, title: "Inbox unificada", desc: "E-mail, portal e chat em um só lugar." },
@@ -15,18 +17,28 @@ const plans = [
   { name: "Enterprise", price: "Sob consulta", per: "", features: ["Tudo do Pro", "IA incluída", "Omnichannel", "Multi-filiais"] },
 ];
 
-import { Inbox } from "lucide-react";
-
 const Landing = () => {
+  const { data: settings } = useSystemSettings();
+
+  useEffect(() => {
+    if (settings?.system_name) {
+      document.title = settings.system_name;
+    }
+  }, [settings]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="size-7 rounded-md bg-primary text-primary-foreground grid place-items-center">
-              <Headphones className="size-4" />
-            </div>
-            <span className="font-semibold tracking-tight">Helpdesk</span>
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt="Logo" className="size-7 object-contain" />
+            ) : (
+              <div className="size-7 rounded-md bg-primary text-primary-foreground grid place-items-center">
+                <Headphones className="size-4" />
+              </div>
+            )}
+            <span className="font-semibold tracking-tight">{settings?.system_name ?? "Helpdesk"}</span>
           </div>
           <nav className="flex items-center gap-2">
             <Link to="/auth"><Button variant="ghost" size="sm">Entrar</Button></Link>
@@ -127,7 +139,7 @@ const Landing = () => {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Helpdesk. Todos os direitos reservados.
+        © {new Date().getFullYear()} {settings?.system_name ?? "Helpdesk"}. Todos os direitos reservados.
       </footer>
     </div>
   );

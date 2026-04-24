@@ -1,7 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Headphones, KanbanSquare, Timer, Bot, Inbox } from "lucide-react";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
+import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 
 const features = [
@@ -19,6 +20,18 @@ const plans = [
 
 const Landing = () => {
   const { data: settings } = useSystemSettings();
+  const { user, profile, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (profile?.organization_id || profile?.is_master) {
+        navigate("/app", { replace: true });
+      } else {
+        navigate("/onboarding", { replace: true });
+      }
+    }
+  }, [user, profile, authLoading, navigate]);
 
    useEffect(() => {
      if (settings?.system_name) {

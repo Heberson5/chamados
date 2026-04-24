@@ -79,16 +79,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, s) => {
+      if (!mounted) return;
+      
       setSession(s);
       setUser(s?.user ?? null);
+      
       if (s?.user) {
         if (event === "SIGNED_IN") {
-          supabase.rpc("log_user_action", { p_action: "LOGIN" }).then(() => {});
+          supabase.rpc("log_user_action", { p_action: "LOGIN" }).catch(console.error);
         }
         setLoading(true);
         await loadProfile(s.user.id);
-        setLoading(false);
+        if (mounted) setLoading(false);
       } else {
         setProfile(null);
         setOrgState(null);
@@ -97,14 +102,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        loadProfile(s.user.id).finally(() => setLoading(false));
+        loadProfile(s.user.id).finally(() => {
+          if (mounted) setLoading(false);
+        });
       } else {
         setLoading(false);
       }
     });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
 
     return () => sub.subscription.unsubscribe();
   }, []);

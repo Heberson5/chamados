@@ -76,6 +76,10 @@ export const AppLayout = () => {
       const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
       if (link) link.href = settings.favicon_url;
     }
+    if (settings?.primary_color) {
+      document.documentElement.style.setProperty('--primary', settings.primary_color);
+      // Also update hsl version if needed by shadcn, but for now hex might work if used directly
+    }
   }, [settings]);
 
   return (

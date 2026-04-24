@@ -70,9 +70,46 @@ const Auth = () => {
       const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
       if (link) link.href = settings.favicon_url;
     }
-    if (settings?.primary_color) {
-      document.documentElement.style.setProperty('--primary', settings.primary_color);
-    }
+     if (settings?.primary_color) {
+       const hexToHsl = (hex: string) => {
+         const normalizedHex = hex.replace("#", "");
+         let r = 0, g = 0, b = 0;
+         if (normalizedHex.length === 3) {
+           r = parseInt(normalizedHex[0] + normalizedHex[0], 16);
+           g = parseInt(normalizedHex[1] + normalizedHex[1], 16);
+           b = parseInt(normalizedHex[2] + normalizedHex[2], 16);
+         } else if (normalizedHex.length === 6) {
+           r = parseInt(normalizedHex.substring(0, 2), 16);
+           g = parseInt(normalizedHex.substring(2, 4), 16);
+           b = parseInt(normalizedHex.substring(4, 6), 16);
+         }
+         r /= 255; g /= 255; b /= 255;
+         const max = Math.max(r, g, b), min = Math.min(r, g, b);
+         let h = 0, s = 0, l = (max + min) / 2;
+         if (max !== min) {
+           const d = max - min;
+           s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+           switch (max) {
+             case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+             case g: h = (b - r) / d + 2; break;
+             case b: h = (r - g) / d + 4; break;
+           }
+           h /= 6;
+         }
+         const hVal = Math.round(h * 360);
+         const sVal = Math.round(s * 100);
+         const lVal = Math.round(l * 100);
+         const foreground = lVal > 60 ? "220 13% 13%" : "0 0% 100%";
+         document.documentElement.style.setProperty('--primary-foreground', foreground);
+         return `${hVal} ${sVal}% ${lVal}%`;
+       };
+       try {
+         const hsl = hexToHsl(settings.primary_color);
+         document.documentElement.style.setProperty('--primary', hsl);
+       } catch (e) {
+         console.error("Invalid primary color", e);
+       }
+     }
   }, [settings]);
 
   return (
@@ -105,9 +142,9 @@ const Auth = () => {
             <h1 className="text-2xl font-semibold tracking-tight">
               {mode === "login" ? "Entrar na sua conta" : "Criar sua conta"}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {mode === "login" ? "Bem-vindo de volta." : "Leva menos de 1 minuto."}
-            </p>
+             <p className="text-sm text-muted-foreground mt-1">
+               {mode === "login" ? "Bem-vindo de volta." : "Teste grátis por 7 dias. Sem compromisso."}
+             </p>
           </div>
 
           {mode === "signup" && (

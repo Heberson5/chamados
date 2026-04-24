@@ -20,10 +20,10 @@ const plans = [
 const Landing = () => {
   const { data: settings } = useSystemSettings();
 
-  useEffect(() => {
-    if (settings?.system_name) {
-      document.title = settings.system_name;
-    }
+   useEffect(() => {
+     if (settings?.system_name) {
+       document.title = settings.system_name;
+     }
      if (settings?.favicon_url) {
        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
        if (!link) {
@@ -33,10 +33,53 @@ const Landing = () => {
        }
        link.href = settings.favicon_url;
      }
-    if (settings?.primary_color) {
-      document.documentElement.style.setProperty('--primary', settings.primary_color);
-    }
-  }, [settings]);
+     if (settings?.primary_color) {
+       // Convert hex to HSL for Tailwind compatibility
+       const hexToHsl = (hex: string) => {
+         let r = 0, g = 0, b = 0;
+         const normalizedHex = hex.replace("#", "");
+         if (normalizedHex.length === 3) {
+           r = parseInt(normalizedHex[0] + normalizedHex[0], 16);
+           g = parseInt(normalizedHex[1] + normalizedHex[1], 16);
+           b = parseInt(normalizedHex[2] + normalizedHex[2], 16);
+         } else if (normalizedHex.length === 6) {
+           r = parseInt(normalizedHex.substring(0, 2), 16);
+           g = parseInt(normalizedHex.substring(2, 4), 16);
+           b = parseInt(normalizedHex.substring(4, 6), 16);
+         }
+         r /= 255; g /= 255; b /= 255;
+         const max = Math.max(r, g, b), min = Math.min(r, g, b);
+         let h = 0, s = 0, l = (max + min) / 2;
+         if (max !== min) {
+           const d = max - min;
+           s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+           switch (max) {
+             case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+             case g: h = (b - r) / d + 2; break;
+             case b: h = (r - g) / d + 4; break;
+           }
+           h /= 6;
+         }
+         
+         const hVal = Math.round(h * 360);
+         const sVal = Math.round(s * 100);
+         const lVal = Math.round(l * 100);
+         
+         // Also update foreground for contrast
+         const foreground = lVal > 60 ? "220 13% 13%" : "0 0% 100%";
+         document.documentElement.style.setProperty('--primary-foreground', foreground);
+         
+         return `${hVal} ${sVal}% ${lVal}%`;
+       };
+       
+       try {
+         const hsl = hexToHsl(settings.primary_color);
+         document.documentElement.style.setProperty('--primary', hsl);
+       } catch (e) {
+         console.error("Invalid primary color format", e);
+       }
+     }
+   }, [settings]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,10 +95,10 @@ const Landing = () => {
             )}
             <span className="font-semibold tracking-tight">{settings?.system_name ?? "Helpdesk"}</span>
           </div>
-          <nav className="flex items-center gap-2">
-            <Link to="/auth"><Button variant="ghost" size="sm">Entrar</Button></Link>
-            <Link to="/auth?mode=signup"><Button size="sm">Começar grátis</Button></Link>
-          </nav>
+           <nav className="flex items-center gap-2">
+             <Link to="/auth"><Button variant="ghost" size="sm">Entrar</Button></Link>
+             <Link to="/auth?mode=signup"><Button size="sm">Teste grátis</Button></Link>
+           </nav>
         </div>
       </header>
 
@@ -69,12 +112,12 @@ const Landing = () => {
         <p className="mt-5 text-lg text-muted-foreground max-w-xl mx-auto">
           {(settings?.landing_page_config as any)?.hero_subtitle || "Help desk moderno, multiempresa e com IA inclusa. Centralize chamados, automatize o fluxo e cumpra SLAs sem complicação."}
         </p>
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <Link to="/auth?mode=signup">
-            <Button size="lg" className="gap-2">Começar grátis <ArrowRight className="size-4" /></Button>
-          </Link>
-          <Link to="/auth"><Button variant="outline" size="lg">Ver demo</Button></Link>
-        </div>
+         <div className="mt-8 flex items-center justify-center gap-3">
+           <Link to="/auth?mode=signup">
+             <Button size="lg" className="gap-2 font-semibold">Teste grátis por 7 dias <ArrowRight className="size-4" /></Button>
+           </Link>
+           <Link to="/auth"><Button variant="outline" size="lg">Ver demo</Button></Link>
+         </div>
 
         <div className="mt-16 mx-auto max-w-5xl rounded-xl border border-border bg-surface-1 shadow-elevated overflow-hidden">
           <div className="h-8 border-b border-border bg-background flex items-center gap-1.5 px-3">
@@ -121,8 +164,8 @@ const Landing = () => {
 
       <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-semibold tracking-tight">Preços simples, 20% abaixo do mercado</h2>
-          <p className="text-muted-foreground mt-2">Cancele quando quiser. Sem surpresas.</p>
+           <h2 className="text-3xl font-semibold tracking-tight">Preços simples e transparentes</h2>
+           <p className="text-muted-foreground mt-2">Teste grátis por 7 dias em qualquer plano. Cancele quando quiser.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
           {plans.map((p) => (
@@ -142,9 +185,9 @@ const Landing = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/auth?mode=signup" className="block mt-6">
-                <Button variant={p.featured ? "default" : "outline"} className="w-full">Começar</Button>
-              </Link>
+               <Link to="/auth?mode=signup" className="block mt-6">
+                 <Button variant={p.featured ? "default" : "outline"} className="w-full">Teste grátis</Button>
+               </Link>
             </div>
           ))}
         </div>

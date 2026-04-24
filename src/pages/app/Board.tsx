@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
- import { Plus, Settings2, Trash2, GripVertical } from "lucide-react";
+  import { Plus, Settings2, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
 import { cn } from "@/lib/utils";
 import { STATUS_LABEL, STATUS_ORDER, PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
@@ -87,6 +87,36 @@ const Board = () => {
                   <div className="flex-1 overflow-y-auto p-6 space-y-4">
                     {localCols.map((col: any, index: number) => (
                      <div key={col.id} className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg group">
+                        <div className="flex flex-col gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7" 
+                            disabled={index === 0}
+                            onClick={() => {
+                              const newCols = [...localCols];
+                              const item = newCols.splice(index, 1)[0];
+                              newCols.splice(index - 1, 0, item);
+                              setLocalCols(newCols);
+                            }}
+                          >
+                            <ChevronUp className="size-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7" 
+                            disabled={index === localCols.length - 1}
+                            onClick={() => {
+                              const newCols = [...localCols];
+                              const item = newCols.splice(index, 1)[0];
+                              newCols.splice(index + 1, 0, item);
+                              setLocalCols(newCols);
+                            }}
+                          >
+                            <ChevronDown className="size-4" />
+                          </Button>
+                        </div>
                        <div className="flex-1 space-y-3">
                          <div className="flex gap-3">
                            <div className="flex-1 space-y-1.5">

@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Plus, Settings2 } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
+import { cn } from "@/lib/utils";
 import { STATUS_LABEL, STATUS_ORDER, PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
 import { useKanbanSettings } from "@/hooks/useKanbanSettings";
 import {
@@ -132,8 +133,7 @@ const Board = () => {
                 onDrop={(e) => onDrop(s, e)}
               >
                 <div className="flex items-center justify-between px-2 py-1.5">
-                  <div className="flex items-center justify-between px-2 py-1.5">
-                    <div className="flex items-center gap-1.5 text-xs font-medium">
+                  <div className="flex items-center gap-1.5 text-xs font-medium">
                     <span className={cn("size-1.5 rounded-full", columnColors[s])} />
                     {STATUS_LABEL[s]}
                   </div>

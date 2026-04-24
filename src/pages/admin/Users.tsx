@@ -14,15 +14,19 @@ import { supabase } from "@/integrations/supabase/client";
  const AdminUsers = () => {
    const [users, setUsers] = useState<any[]>([]);
    const [orgs, setOrgs] = useState<any[]>([]);
+  const [depts, setDepts] = useState<any[]>([]);
+  const [positions, setPositions] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const [open, setOpen] = useState(false);
    const { toast } = useToast();
-   const [newUser, setNewUser] = useState({
-     full_name: "",
-     email: "",
-     organization_id: "",
-     is_master: false
-   });
+    const [newUser, setNewUser] = useState({
+      full_name: "",
+      email: "",
+      organization_id: "",
+      is_master: false,
+      department_id: "",
+      position_id: ""
+    });
 
    const load = async () => {
      const { data } = await supabase
@@ -33,6 +37,12 @@ import { supabase } from "@/integrations/supabase/client";
      
      const { data: o } = await supabase.from("organizations").select("id, name");
      setOrgs(o || []);
+
+    const { data: d } = await supabase.from("departments").select("id, name, organization_id");
+    setDepts(d || []);
+
+    const { data: p } = await supabase.from("positions").select("id, name, organization_id");
+    setPositions(p || []);
      
      setLoading(false);
    };
@@ -119,6 +129,38 @@ import { supabase } from "@/integrations/supabase/client";
                      </SelectContent>
                    </Select>
                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Departamento</Label>
+                  <Select 
+                    value={newUser.department_id} 
+                    onValueChange={(v) => setNewUser({ ...newUser, department_id: v })}
+                    disabled={!newUser.organization_id}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {depts.filter(d => d.organization_id === newUser.organization_id).map(d => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Select 
+                    value={newUser.position_id} 
+                    onValueChange={(v) => setNewUser({ ...newUser, position_id: v })}
+                    disabled={!newUser.organization_id}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {positions.filter(p => p.organization_id === newUser.organization_id).map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
                  <div className="flex items-center space-x-2">
                    <Checkbox 
                      id="is_master" 

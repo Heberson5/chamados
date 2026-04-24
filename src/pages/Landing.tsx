@@ -24,6 +24,13 @@ const Landing = () => {
     if (settings?.system_name) {
       document.title = settings.system_name;
     }
+    if (settings?.favicon_url) {
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (link) link.href = settings.favicon_url;
+    }
+    if (settings?.primary_color) {
+      document.documentElement.style.setProperty('--primary', settings.primary_color);
+    }
   }, [settings]);
 
   return (
@@ -52,10 +59,10 @@ const Landing = () => {
           <span className="size-1.5 rounded-full bg-success" /> Multiempresa nativo · 20% mais barato
         </div>
         <h1 className="text-5xl md:text-6xl font-semibold tracking-tight max-w-3xl mx-auto leading-[1.05]">
-          Atendimento que sua equipe<br />vai amar usar.
+          {(settings?.landing_page_config as any)?.hero_title || "Atendimento que sua equipe vai amar usar."}
         </h1>
         <p className="mt-5 text-lg text-muted-foreground max-w-xl mx-auto">
-          Help desk moderno, multiempresa e com IA inclusa. Centralize chamados, automatize o fluxo e cumpra SLAs sem complicação.
+          {(settings?.landing_page_config as any)?.hero_subtitle || "Help desk moderno, multiempresa e com IA inclusa. Centralize chamados, automatize o fluxo e cumpra SLAs sem complicação."}
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link to="/auth?mode=signup">

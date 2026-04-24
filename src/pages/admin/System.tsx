@@ -15,19 +15,23 @@ const AdminSystem = () => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     system_name: "",
-     logo_url: "",
-     favicon_url: "",
-     primary_color: "#3b82f6",
-   });
+    logo_url: "",
+    favicon_url: "",
+    primary_color: "#3b82f6",
+    menu_config: [] as any[],
+    landing_page_config: {} as any,
+  });
 
   useEffect(() => {
     if (settings) {
       setForm({
         system_name: settings.system_name || "",
-         logo_url: settings.logo_url || "",
-         favicon_url: settings.favicon_url || "",
-         primary_color: settings.primary_color || "#3b82f6",
-       });
+        logo_url: settings.logo_url || "",
+        favicon_url: settings.favicon_url || "",
+        primary_color: settings.primary_color || "#3b82f6",
+        menu_config: (settings.menu_config as any[]) || [],
+        landing_page_config: (settings.landing_page_config as any) || {},
+      });
     }
   }, [settings]);
 
@@ -128,15 +132,71 @@ const AdminSystem = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Arquitetura de Menus</CardTitle>
-            <CardDescription>Em breve: Altere a ordem e nomes dos itens de menu.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Esta funcionalidade está em desenvolvimento.</p>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Arquitetura de Menus</CardTitle>
+          <CardDescription>Altere os nomes de exibição dos itens de menu principais.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {["Dashboard", "Chamados", "Kanban", "Empresas", "Usuários", "Estrutura", "Sistema", "Configurações"].map((key) => {
+              const item = (form.menu_config || []).find((m: any) => m.key === key) || { key, label: key };
+              return (
+                <div key={key} className="grid grid-cols-2 gap-4 items-center border-b pb-2 last:border-0">
+                  <Label className="text-xs font-mono text-muted-foreground">{key}</Label>
+                  <Input 
+                    placeholder={`Nome para ${key}`}
+                    value={item.label}
+                    onChange={(e) => {
+                      const newMenu = [...(form.menu_config || [])];
+                      const idx = newMenu.findIndex(m => m.key === key);
+                      if (idx >= 0) {
+                        newMenu[idx] = { ...newMenu[idx], label: e.target.value };
+                      } else {
+                        newMenu.push({ key, label: e.target.value });
+                      }
+                      setForm({ ...form, menu_config: newMenu });
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Página de Divulgação (Landing Page)</CardTitle>
+          <CardDescription>Configure os textos e imagens da página inicial.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="hero_title">Título Principal (Hero)</Label>
+            <Input 
+              id="hero_title" 
+              placeholder="Título de impacto"
+              value={form.landing_page_config?.hero_title || ""} 
+              onChange={(e) => setForm({ 
+                ...form, 
+                landing_page_config: { ...form.landing_page_config, hero_title: e.target.value } 
+              })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="hero_subtitle">Subtítulo</Label>
+            <Input 
+              id="hero_subtitle" 
+              placeholder="Descrição curta do serviço"
+              value={form.landing_page_config?.hero_subtitle || ""} 
+              onChange={(e) => setForm({ 
+                ...form, 
+                landing_page_config: { ...form.landing_page_config, hero_subtitle: e.target.value } 
+              })}
+            />
+          </div>
+        </CardContent>
+      </Card>
       </div>
     </div>
   );

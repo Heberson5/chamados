@@ -62,6 +62,19 @@ const Auth = () => {
     }
   };
 
+  useEffect(() => {
+    if (settings?.system_name) {
+      document.title = settings.system_name;
+    }
+    if (settings?.favicon_url) {
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (link) link.href = settings.favicon_url;
+    }
+    if (settings?.primary_color) {
+      document.documentElement.style.setProperty('--primary', settings.primary_color);
+    }
+  }, [settings]);
+
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex flex-col justify-between p-10 bg-surface-1 border-r border-border">
@@ -77,10 +90,10 @@ const Auth = () => {
         </Link>
         <div>
           <h2 className="text-3xl font-semibold tracking-tight max-w-sm leading-tight">
-            Centralize seu atendimento. Encante seus clientes.
+            {(settings?.landing_page_config as any)?.hero_title || "Centralize seu atendimento. Encante seus clientes."}
           </h2>
           <p className="text-muted-foreground mt-3 max-w-sm">
-            {settings?.system_name ?? "Helpdesk"} moderno, multiempresa e com IA inclusa.
+            {(settings?.landing_page_config as any)?.hero_subtitle || `${settings?.system_name ?? "Helpdesk"} moderno, multiempresa e com IA inclusa.`}
           </p>
         </div>
         <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} {settings?.system_name ?? "Helpdesk"}</div>

@@ -70,12 +70,10 @@ const Auth = () => {
       }
       
       // Note: O redirecionamento será feito pelo useEffect acima quando o estado do useAuth atualizar
-       // Unlock button after a while if redirection didn't happen
-       const timeout = setTimeout(() => {
+       // Reset submitting state if we are still here after 3 seconds
+       setTimeout(() => {
          setIsSubmitting(false);
-       }, 5000);
-       
-       return () => clearTimeout(timeout);
+       }, 3000);
        
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");

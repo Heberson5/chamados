@@ -24,12 +24,16 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const { data: settings } = useSystemSettings();
 
   useEffect(() => {
-    if (!authLoading && user) navigate("/app", { replace: true });
-  }, [user, authLoading, navigate]);
+    // Só redireciona automaticamente se já estiver logado E tiver empresa vinculada
+    // Isso permite que usuários sem empresa vejam a tela de login se quiserem entrar com outra conta
+    if (!authLoading && user && (profile?.organization_id || profile?.is_master)) {
+      navigate("/app", { replace: true });
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,9 +55,11 @@ const Auth = () => {
         });
         if (error) throw error;
         toast.success("Conta criada! Vamos configurar sua empresa.");
+        navigate("/app", { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        navigate("/app", { replace: true });
       }
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");

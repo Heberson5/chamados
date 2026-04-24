@@ -18,6 +18,7 @@ type Ticket = {
   status: string; priority: string; category: string | null;
   created_at: string; updated_at: string; resolved_at: string | null;
   requester_id: string | null;
+  first_response_at: string | null;
 };
 type Comment = { id: string; body: string; is_internal: boolean; created_at: string; author_id: string | null };
 type ProfileLite = { id: string; full_name: string | null; email: string };
@@ -58,7 +59,7 @@ const TicketDetail = () => {
     if (patch.status === "resolved" && !ticket.resolved_at) {
       (patch as any).resolved_at = new Date().toISOString();
     }
-    const { error } = await supabase.from("tickets").update(patch).eq("id", ticket.id);
+    const { error } = await supabase.from("tickets").update(patch as any).eq("id", ticket.id);
     if (error) return toast.error(error.message);
     setTicket({ ...ticket, ...patch } as Ticket);
   };

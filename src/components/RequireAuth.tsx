@@ -14,7 +14,19 @@ export const RequireAuth = ({ children }: { children: ReactNode }) => {
     );
   }
   if (!user) return <Navigate to="/auth" state={{ from: location }} replace />;
-   if (!profile?.is_master && !profile?.organization_id && location.pathname !== "/onboarding")
+  
+  // Se o usuário está logado mas o perfil ainda não carregou, esperamos.
+  // Isso evita redirecionamentos errados para onboarding durante o login.
+  if (user && !profile) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <div className="size-6 rounded-full border-2 border-muted border-t-foreground animate-spin" />
+      </div>
+    );
+  }
+
+  if (!profile?.is_master && !profile?.organization_id && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
+  }
   return <>{children}</>;
 };

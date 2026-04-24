@@ -62,10 +62,12 @@ const Permissions = () => {
     mutationFn: async (vars: { module: string, field: string, value: boolean }) => {
       const existing = permissions?.find(p => p.module_name === vars.module);
       
+      const payload: any = { [vars.field]: vars.value };
+      
       if (existing) {
         const { error } = await supabase
           .from("department_permissions")
-          .update({ [vars.field]: vars.value })
+          .update(payload)
           .eq("id", existing.id);
         if (error) throw error;
       } else {
@@ -74,8 +76,8 @@ const Permissions = () => {
           .insert({
             department_id: selectedDept,
             module_name: vars.module,
-            [vars.field]: vars.value,
-          });
+            ...payload
+          } as any);
         if (error) throw error;
       }
     },

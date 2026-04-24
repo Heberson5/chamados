@@ -29,8 +29,8 @@ const AdminSystem = () => {
         logo_url: settings.logo_url || "",
         favicon_url: settings.favicon_url || "",
         primary_color: settings.primary_color || "#3b82f6",
-        menu_config: settings.menu_config || [],
-        landing_page_config: settings.landing_page_config || {},
+        menu_config: (settings.menu_config as any[]) || [],
+        landing_page_config: (settings.landing_page_config as any) || {},
       });
     }
   }, [settings]);

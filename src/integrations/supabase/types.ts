@@ -449,6 +449,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      log_user_action: { Args: { p_action: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "agent" | "customer"

@@ -233,10 +233,11 @@ import { supabase } from "@/integrations/supabase/client";
               </div>
               <div className="space-y-2">
                 <Label>Empresa</Label>
-                <Select 
-                  value={editingUser.organization_id} 
-                  onValueChange={(v) => setEditingUser({ ...editingUser, organization_id: v })}
-                >
+                  <Select 
+                    value={editingUser.organization_id} 
+                    onValueChange={(v) => setEditingUser({ ...editingUser, organization_id: v })}
+                    disabled={editingUser.is_master}
+                  >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a empresa" />
                   </SelectTrigger>

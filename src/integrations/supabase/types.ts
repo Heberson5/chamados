@@ -14,6 +14,70 @@ export type Database = {
   }
   public: {
     Tables: {
+      departments: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          organization_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          organization_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          organization_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kanban_settings: {
+        Row: {
+          config: Json
+          created_at: string | null
+          id: string
+          organization_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kanban_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -35,35 +99,80 @@ export type Database = {
         }
         Relationships: []
       }
+      positions: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          organization_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          organization_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          organization_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "positions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
+          department_id: string | null
           email: string
           full_name: string | null
           id: string
+          is_master: boolean | null
           organization_id: string | null
+          position_id: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          department_id?: string | null
           email: string
           full_name?: string | null
           id: string
+          is_master?: boolean | null
           organization_id?: string | null
+          position_id?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          department_id?: string | null
           email?: string
           full_name?: string | null
           id?: string
+          is_master?: boolean | null
           organization_id?: string | null
+          position_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_organization_id_fkey"
             columns: ["organization_id"]
@@ -71,7 +180,44 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      system_settings: {
+        Row: {
+          favicon_url: string | null
+          id: string
+          landing_page_config: Json | null
+          logo_url: string | null
+          menu_config: Json | null
+          system_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          favicon_url?: string | null
+          id?: string
+          landing_page_config?: Json | null
+          logo_url?: string | null
+          menu_config?: Json | null
+          system_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          favicon_url?: string | null
+          id?: string
+          landing_page_config?: Json | null
+          logo_url?: string | null
+          menu_config?: Json | null
+          system_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       ticket_comments: {
         Row: {

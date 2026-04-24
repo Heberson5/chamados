@@ -22,7 +22,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { user, profile, loading: authLoading } = useAuth();
   const { data: settings } = useSystemSettings();
@@ -37,12 +37,15 @@ const Auth = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
     const parsed = schema.safeParse({ email, password, name: mode === "signup" ? name : undefined });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-    setLoading(true);
+
+    setIsSubmitting(true);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
@@ -57,14 +60,16 @@ const Auth = () => {
         toast.success("Conta criada! Vamos configurar sua empresa.");
         navigate("/app", { replace: true });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error, data } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/app", { replace: true });
+        if (data?.user) {
+          navigate("/app", { replace: true });
+        }
       }
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -168,8 +173,8 @@ const Auth = () => {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
+          <Button type="submit" className="w-full" disabled={isSubmitting || authLoading}>
+            {(isSubmitting || authLoading) ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
           </Button>
 
           <div className="text-sm text-muted-foreground text-center">

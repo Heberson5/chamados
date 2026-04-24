@@ -16,6 +16,10 @@ import Tickets from "./pages/app/Tickets";
 import TicketDetail from "./pages/app/TicketDetail";
 import Board from "./pages/app/Board";
 import SettingsPage from "./pages/app/Settings";
+import AdminCompanies from "./pages/admin/Companies";
+import AdminUsers from "./pages/admin/Users";
+import AdminStructure from "./pages/admin/Structure";
+import AdminSystem from "./pages/admin/System";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +41,10 @@ const App = () => (
                 <Route path="tickets/:id" element={<TicketDetail />} />
                 <Route path="board" element={<Board />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="admin/companies" element={<AdminCompanies />} />
+                <Route path="admin/users" element={<AdminUsers />} />
+                <Route path="admin/structure" element={<AdminStructure />} />
+                <Route path="admin/system" element={<AdminSystem />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

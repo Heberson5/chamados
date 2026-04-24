@@ -164,8 +164,8 @@ const Landing = () => {
 
       <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-semibold tracking-tight">Preços simples, 20% abaixo do mercado</h2>
-          <p className="text-muted-foreground mt-2">Cancele quando quiser. Sem surpresas.</p>
+           <h2 className="text-3xl font-semibold tracking-tight">Preços simples e transparentes</h2>
+           <p className="text-muted-foreground mt-2">Teste grátis por 7 dias em qualquer plano. Cancele quando quiser.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
           {plans.map((p) => (
@@ -185,9 +185,9 @@ const Landing = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/auth?mode=signup" className="block mt-6">
-                <Button variant={p.featured ? "default" : "outline"} className="w-full">Começar</Button>
-              </Link>
+               <Link to="/auth?mode=signup" className="block mt-6">
+                 <Button variant={p.featured ? "default" : "outline"} className="w-full">Teste grátis</Button>
+               </Link>
             </div>
           ))}
         </div>

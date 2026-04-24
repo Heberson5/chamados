@@ -55,13 +55,11 @@ const Auth = () => {
         const { error, data } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         
-        // Se logou com sucesso, redirecionamos. O useAuth vai cuidar de carregar o perfil.
         if (data?.user) {
-          // Pequeno delay para garantir que o estado do Supabase Auth seja propagado
-          setTimeout(() => {
-            navigate("/app", { replace: true });
-          }, 500);
-          return; // Não executa o finally se navegou
+          // Se o login foi bem sucedido, o useEffect acima cuidará do redirecionamento
+          // assim que o perfil for carregado. Mas se já estiver carregado ou se o
+          // useEffect demorar, forçamos aqui também.
+          navigate("/app", { replace: true });
         }
       }
     } catch (err: any) {

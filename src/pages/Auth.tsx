@@ -28,9 +28,16 @@ const Auth = () => {
   const { data: settings } = useSystemSettings();
 
   useEffect(() => {
-    // Se já estiver logado e tiver perfil completo, redireciona
-    if (!authLoading && user && (profile?.organization_id || profile?.is_master)) {
-      navigate("/app", { replace: true });
+    // Se o carregamento terminou e temos um usuário logado
+    if (!authLoading && user) {
+      // Se tem empresa ou é master, vai para o app
+      if (profile?.organization_id || profile?.is_master) {
+        navigate("/app", { replace: true });
+      } 
+      // Se não tem empresa, vai para o onboarding
+      else if (profile) {
+        navigate("/onboarding", { replace: true });
+      }
     }
   }, [user, profile, authLoading, navigate]);
 

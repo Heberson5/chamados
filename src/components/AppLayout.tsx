@@ -58,7 +58,10 @@ import {
      }
      h /= 6;
    }
-   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+   return {
+     hsl: `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`,
+     l
+   };
  }
  
 export const AppLayout = () => {
@@ -134,7 +137,10 @@ export const AppLayout = () => {
      }
      if (settings?.primary_color) {
        if (settings.primary_color.startsWith('#')) {
-         document.documentElement.style.setProperty('--primary', hexToHsl(settings.primary_color));
+         const { hsl, l } = hexToHsl(settings.primary_color);
+         document.documentElement.style.setProperty('--primary', hsl);
+         // Set foreground based on luminance
+         document.documentElement.style.setProperty('--primary-foreground', l > 0.5 ? '0 0% 0%' : '0 0% 100%');
        } else {
          document.documentElement.style.setProperty('--primary', settings.primary_color);
        }

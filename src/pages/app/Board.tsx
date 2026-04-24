@@ -49,7 +49,7 @@ const Board = () => {
     await supabase.from("tickets").update(patch).eq("id", id);
   };
 
-  const columnColors = kanbanConfig?.columnColors || {
+  const columnColors: Record<string, string> = (kanbanConfig as any)?.columnColors || {
     open: "bg-status-open",
     in_progress: "bg-status-progress",
     resolved: "bg-status-resolved",
@@ -90,9 +90,9 @@ const Board = () => {
                       <div className="col-span-3">
                         <Select 
                           value={columnColors[s]} 
-                          onValueChange={(val) => updateSettings({ 
-                            ...kanbanConfig, 
-                            columnColors: { ...columnColors, [s]: val } 
+                          onValueChange={(val) => updateSettings({
+                            ...(kanbanConfig as any || {}),
+                            columnColors: { ...columnColors, [s]: val }
                           })}
                         >
                           <SelectTrigger>

@@ -36,36 +36,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (uid: string) => {
-    const { data: p } = await supabase
-      .from("profiles")
-      .select("id,email,full_name,avatar_url,organization_id,is_master,department_id,position_id")
-      .eq("id", uid)
-      .maybeSingle();
-    
-    setProfile(p ?? null);
-
-    let activeOrgId = p?.organization_id;
-
-    // For master users, prioritize localStorage selection
-    if (p?.is_master) {
-      const savedOrgId = localStorage.getItem("selected_org_id");
-      if (savedOrgId) activeOrgId = savedOrgId;
-    }
-
-    if (activeOrgId) {
-      const { data: o } = await supabase
-        .from("organizations")
-        .select("id,name,slug")
-        .eq("id", activeOrgId)
+    try {
+      const { data: p, error: pErr } = await supabase
+        .from("profiles")
+        .select("id,email,full_name,avatar_url,organization_id,is_master,department_id,position_id")
+        .eq("id", uid)
         .maybeSingle();
       
-      if (o) {
-        setOrgState(o);
+      if (pErr) throw pErr;
+      setProfile(p ?? null);
+
+      let activeOrgId = p?.organization_id;
+
+      // For master users, prioritize localStorage selection
+      if (p?.is_master) {
+        const savedOrgId = localStorage.getItem("selected_org_id");
+        if (savedOrgId) activeOrgId = savedOrgId;
+      }
+
+      if (activeOrgId) {
+        const { data: o, error: oErr } = await supabase
+          .from("organizations")
+          .select("id,name,slug")
+          .eq("id", activeOrgId)
+          .maybeSingle();
+        
+        if (oErr) throw oErr;
+        if (o) {
+          setOrgState(o);
+        } else {
+          setOrgState(null);
+          if (p?.is_master) localStorage.removeItem("selected_org_id");
+        }
       } else {
         setOrgState(null);
-        if (p?.is_master) localStorage.removeItem("selected_org_id");
       }
-    } else {
+    } catch (err) {
+      console.error("Error loading profile:", err);
+      setProfile(null);
       setOrgState(null);
     }
   };

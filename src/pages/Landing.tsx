@@ -24,6 +24,13 @@ const Landing = () => {
     if (settings?.system_name) {
       document.title = settings.system_name;
     }
+    if (settings?.favicon_url) {
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (link) link.href = settings.favicon_url;
+    }
+    if (settings?.primary_color) {
+      document.documentElement.style.setProperty('--primary', settings.primary_color);
+    }
   }, [settings]);
 
   return (

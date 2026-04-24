@@ -30,6 +30,8 @@ const Onboarding = () => {
         navigate("/app", { replace: true });
       }
     }
+  }, [user, profile, loading, navigate]);
+
   if (loading || (user && !profile)) {
     return (
       <div className="min-h-screen grid place-items-center">
@@ -37,8 +39,6 @@ const Onboarding = () => {
       </div>
     );
   }
-
-  }, [user, profile, loading, navigate]);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();

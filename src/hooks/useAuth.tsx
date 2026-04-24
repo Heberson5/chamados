@@ -56,10 +56,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Set listener FIRST
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
      if (s?.user) {
+        if (event === "SIGNED_IN") {
+          supabase.rpc("log_user_action", { p_action: "LOGIN" }).then(() => {});
+        }
        // Defer Supabase calls to avoid deadlocks
        setTimeout(() => loadProfile(s.user.id), 0);
      } else {
@@ -86,6 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    await supabase.rpc("log_user_action", { p_action: "LOGOUT" });
     await supabase.auth.signOut();
   };
 

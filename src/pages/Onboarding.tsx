@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { LogOut } from "lucide-react";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Nome muito curto").max(80),
@@ -17,7 +18,7 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40) || "empresa";
 
 const Onboarding = () => {
-  const { user, profile, refresh, loading } = useAuth();
+  const { user, profile, refresh, loading, signOut } = useAuth();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
@@ -62,19 +63,36 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen grid place-items-center p-6 bg-surface-1">
-      <form onSubmit={create} className="w-full max-w-md bg-background border border-border rounded-xl p-8 shadow-soft">
-        <h1 className="text-2xl font-semibold tracking-tight">Configure sua empresa</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Você será o administrador desta organização.
-        </p>
-        <div className="space-y-1.5 mt-6">
-          <Label htmlFor="name">Nome da empresa</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme Ltda." />
+      <div className="w-full max-w-md">
+        <form onSubmit={create} className="bg-background border border-border rounded-xl p-8 shadow-soft">
+          <h1 className="text-2xl font-semibold tracking-tight">Configure sua empresa</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Você será o administrador desta organização.
+          </p>
+          <div className="space-y-1.5 mt-6">
+            <Label htmlFor="name">Nome da empresa</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme Ltda." />
+          </div>
+          <Button type="submit" className="w-full mt-6" disabled={busy}>
+            {busy ? "Criando..." : "Criar empresa"}
+          </Button>
+        </form>
+        
+        <div className="mt-6 text-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-muted-foreground hover:text-foreground"
+            onClick={async () => {
+              await signOut();
+              navigate("/auth");
+            }}
+          >
+            <LogOut className="size-4 mr-2" />
+            Sair e entrar com outra conta
+          </Button>
         </div>
-        <Button type="submit" className="w-full mt-6" disabled={busy}>
-          {busy ? "Criando..." : "Criar empresa"}
-        </Button>
-      </form>
+      </div>
     </div>
   );
 };

@@ -27,19 +27,19 @@ const Auth = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { data: settings } = useSystemSettings();
 
-  useEffect(() => {
-    // Se o carregamento terminou e temos um usuário logado
-    if (!authLoading && user) {
-      // Se tem empresa ou é master, vai para o app
-      if (profile?.organization_id || profile?.is_master) {
-        navigate("/app", { replace: true });
-      } 
-      // Se não tem empresa, vai para o onboarding
-      else if (profile) {
-        navigate("/onboarding", { replace: true });
-      }
-    }
-  }, [user, profile, authLoading, navigate]);
+   useEffect(() => {
+     if (!authLoading && user) {
+       console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
+       
+       if (profile?.organization_id || profile?.is_master) {
+         navigate("/app", { replace: true });
+       } else {
+         // If we have a user but no profile info that leads to /app, go to /onboarding
+         // This handles new users or cases where profile is still being created/synced
+         navigate("/onboarding", { replace: true });
+       }
+     }
+   }, [user, profile, authLoading, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,9 +70,13 @@ const Auth = () => {
       }
       
       // Note: O redirecionamento será feito pelo useEffect acima quando o estado do useAuth atualizar
-      // Se em 3 segundos não redirecionar, a gente destrava o botão
-      setTimeout(() => setIsSubmitting(false), 3000);
-
+       // Unlock button after a while if redirection didn't happen
+       const timeout = setTimeout(() => {
+         setIsSubmitting(false);
+       }, 5000);
+       
+       return () => clearTimeout(timeout);
+       
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");
       setIsSubmitting(false);

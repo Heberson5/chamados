@@ -40,23 +40,45 @@ export const AppLayout = () => {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const getMenuLabel = (key: string, defaultLabel: string) => {
-    const config = (settings?.menu_config as any[])?.find(m => m.key === key);
-    return config?.label || defaultLabel;
-  };
+  const [nav, setNav] = useState<any[]>([]);
 
-  const nav = [
-    { to: "/app", icon: LayoutDashboard, label: getMenuLabel("Dashboard", "Dashboard"), end: true },
-    { to: "/app/tickets", icon: Inbox, label: getMenuLabel("Chamados", "Chamados") },
-    { to: "/app/board", icon: KanbanSquare, label: getMenuLabel("Kanban", "Kanban") },
-    ...(profile?.is_master ? [
-      { to: "/app/admin/companies", icon: Building2, label: getMenuLabel("Empresas", "Empresas") },
-      { to: "/app/admin/users", icon: Users, label: getMenuLabel("Usuários", "Usuários") },
-      { to: "/app/admin/structure", icon: Briefcase, label: getMenuLabel("Estrutura", "Estrutura") },
-      { to: "/app/admin/system", icon: LayoutGrid, label: getMenuLabel("Sistema", "Sistema") },
-    ] : []),
-    { to: "/app/settings", icon: Settings, label: getMenuLabel("Configurações", "Configurações") },
-  ];
+  useEffect(() => {
+    const defaultItems = [
+      { key: "Dashboard", to: "/app", icon: LayoutDashboard, label: "Dashboard", end: true },
+      { key: "Chamados", to: "/app/tickets", icon: Inbox, label: "Chamados" },
+      { key: "Kanban", to: "/app/board", icon: KanbanSquare, label: "Kanban" },
+      { key: "Empresas", to: "/app/admin/companies", icon: Building2, label: "Empresas", adminOnly: true },
+      { key: "Usuários", to: "/app/admin/users", icon: Users, label: "Usuários", adminOnly: true },
+      { key: "Estrutura", to: "/app/admin/structure", icon: Briefcase, label: "Estrutura", adminOnly: true },
+      { key: "Sistema", to: "/app/admin/system", icon: LayoutGrid, label: "Sistema", adminOnly: true },
+      { key: "Configurações", to: "/app/settings", icon: Settings, label: "Configurações" },
+    ];
+
+    const menuConfig = (settings?.menu_config as any[]) || [];
+    
+    let orderedNav = [];
+    if (menuConfig.length > 0) {
+      // Use the order and labels from menuConfig
+      orderedNav = menuConfig.map(configItem => {
+        const defaultItem = defaultItems.find(d => d.key === configItem.key);
+        if (!defaultItem) return null;
+        return { ...defaultItem, label: configItem.label || defaultItem.label };
+      }).filter(Boolean);
+
+      // Add any missing default items at the end
+      defaultItems.forEach(d => {
+        if (!orderedNav.find(o => o.key === d.key)) {
+          orderedNav.push(d);
+        }
+      });
+    } else {
+      orderedNav = defaultItems;
+    }
+
+    // Filter admin items if not master
+    const filteredNav = orderedNav.filter(item => !item.adminOnly || profile?.is_master);
+    setNav(filteredNav);
+  }, [settings?.menu_config, profile?.is_master]);
 
    useEffect(() => {
      const fetchOrgs = async () => {

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Image as ImageIcon } from "lucide-react";
+ import { Save, Image as ImageIcon, ChevronUp, ChevronDown } from "lucide-react";
 
 const AdminSystem = () => {
   const { data: settings, refetch } = useSystemSettings();
@@ -24,12 +24,23 @@ const AdminSystem = () => {
 
   useEffect(() => {
     if (settings) {
+      const defaultKeys = ["Dashboard", "Chamados", "Kanban", "Empresas", "Usuários", "Estrutura", "Sistema", "Configurações"];
+      const existingConfig = (settings.menu_config as any[]) || [];
+      
+      // Merge with default keys to ensure all are present and in correct order if not already configured
+      const mergedConfig = [...existingConfig];
+      defaultKeys.forEach(key => {
+        if (!mergedConfig.find(m => m.key === key)) {
+          mergedConfig.push({ key, label: key });
+        }
+      });
+
       setForm({
         system_name: settings.system_name || "",
         logo_url: settings.logo_url || "",
         favicon_url: settings.favicon_url || "",
         primary_color: settings.primary_color || "#3b82f6",
-        menu_config: (settings.menu_config as any[]) || [],
+        menu_config: mergedConfig,
         landing_page_config: (settings.landing_page_config as any) || {},
       });
     }
@@ -139,25 +150,52 @@ const AdminSystem = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {["Dashboard", "Chamados", "Kanban", "Empresas", "Usuários", "Estrutura", "Sistema", "Configurações"].map((key) => {
-              const item = (form.menu_config || []).find((m: any) => m.key === key) || { key, label: key };
+            {(form.menu_config || []).map((item: any, index: number) => {
+              const key = item.key;
               return (
-                <div key={key} className="grid grid-cols-2 gap-4 items-center border-b pb-2 last:border-0">
-                  <Label className="text-xs font-mono text-muted-foreground">{key}</Label>
-                  <Input 
-                    placeholder={`Nome para ${key}`}
-                    value={item.label}
-                    onChange={(e) => {
-                      const newMenu = [...(form.menu_config || [])];
-                      const idx = newMenu.findIndex(m => m.key === key);
-                      if (idx >= 0) {
-                        newMenu[idx] = { ...newMenu[idx], label: e.target.value };
-                      } else {
-                        newMenu.push({ key, label: e.target.value });
-                      }
-                      setForm({ ...form, menu_config: newMenu });
-                    }}
-                  />
+                <div key={key} className="flex gap-4 items-center border-b pb-2 last:border-0">
+                  <div className="flex flex-col">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      disabled={index === 0}
+                      onClick={() => {
+                        const newMenu = [...form.menu_config];
+                        const itm = newMenu.splice(index, 1)[0];
+                        newMenu.splice(index - 1, 0, itm);
+                        setForm({ ...form, menu_config: newMenu });
+                      }}
+                    >
+                      <ChevronUp className="size-3" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      disabled={index === form.menu_config.length - 1}
+                      onClick={() => {
+                        const newMenu = [...form.menu_config];
+                        const itm = newMenu.splice(index, 1)[0];
+                        newMenu.splice(index + 1, 0, itm);
+                        setForm({ ...form, menu_config: newMenu });
+                      }}
+                    >
+                      <ChevronDown className="size-3" />
+                    </Button>
+                  </div>
+                  <div className="flex-1 grid grid-cols-2 gap-4 items-center">
+                    <Label className="text-xs font-mono text-muted-foreground">{key}</Label>
+                    <Input 
+                      placeholder={`Nome para ${key}`}
+                      value={item.label}
+                      onChange={(e) => {
+                        const newMenu = [...(form.menu_config || [])];
+                        newMenu[index] = { ...newMenu[index], label: e.target.value };
+                        setForm({ ...form, menu_config: newMenu });
+                      }}
+                    />
+                  </div>
                 </div>
               );
             })}

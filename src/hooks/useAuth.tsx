@@ -125,8 +125,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-
-    return () => sub.subscription.unsubscribe();
   }, []);
 
   const refresh = async () => {

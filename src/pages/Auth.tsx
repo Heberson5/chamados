@@ -28,10 +28,16 @@ const Auth = () => {
   const { data: settings } = useSystemSettings();
 
   useEffect(() => {
-    // Só redireciona automaticamente se já estiver logado E tiver empresa vinculada
-    // Isso permite que usuários sem empresa vejam a tela de login se quiserem entrar com outra conta
-    if (!authLoading && user && (profile?.organization_id || profile?.is_master)) {
-      navigate("/app", { replace: true });
+    // Se o carregamento terminou e temos um usuário logado
+    if (!authLoading && user) {
+      // Se tem empresa ou é master, vai para o app
+      if (profile?.organization_id || profile?.is_master) {
+        navigate("/app", { replace: true });
+      } 
+      // Se não tem empresa, vai para o onboarding
+      else if (profile) {
+        navigate("/onboarding", { replace: true });
+      }
     }
   }, [user, profile, authLoading, navigate]);
 
@@ -57,18 +63,18 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success("Conta criada! Vamos configurar sua empresa.");
-        navigate("/app", { replace: true });
+        toast.success("Conta criada!");
       } else {
-        const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        if (data?.user) {
-          navigate("/app", { replace: true });
-        }
       }
+      
+      // Note: O redirecionamento será feito pelo useEffect acima quando o estado do useAuth atualizar
+      // Se em 3 segundos não redirecionar, a gente destrava o botão
+      setTimeout(() => setIsSubmitting(false), 3000);
+
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");
-    } finally {
       setIsSubmitting(false);
     }
   };

@@ -77,10 +77,10 @@ const Auth = () => {
         </Link>
         <div>
           <h2 className="text-3xl font-semibold tracking-tight max-w-sm leading-tight">
-            Centralize seu atendimento. Encante seus clientes.
+            {(settings?.landing_page_config as any)?.hero_title || "Centralize seu atendimento. Encante seus clientes."}
           </h2>
           <p className="text-muted-foreground mt-3 max-w-sm">
-            {settings?.system_name ?? "Helpdesk"} moderno, multiempresa e com IA inclusa.
+            {(settings?.landing_page_config as any)?.hero_subtitle || `${settings?.system_name ?? "Helpdesk"} moderno, multiempresa e com IA inclusa.`}
           </p>
         </div>
         <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} {settings?.system_name ?? "Helpdesk"}</div>

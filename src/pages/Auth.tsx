@@ -27,6 +27,13 @@ const Auth = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { data: settings } = useSystemSettings();
 
+  useEffect(() => {
+    // Se já estiver logado e tiver perfil completo, redireciona
+    if (!authLoading && user && (profile?.organization_id || profile?.is_master)) {
+      navigate("/app", { replace: true });
+    }
+  }, [user, profile, authLoading, navigate]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -49,30 +56,18 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success("Conta criada! Vamos configurar sua empresa.");
-        navigate("/app", { replace: true });
+        toast.success("Conta criada!");
       } else {
-        const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        
-        if (data?.user) {
-          // Se o login foi bem sucedido, o useEffect acima cuidará do redirecionamento
-          // assim que o perfil for carregado. Mas se já estiver carregado ou se o
-          // useEffect demorar, forçamos aqui também.
-          navigate("/app", { replace: true });
-        }
       }
-    } catch (err: any) {
-  useEffect(() => {
-    // Só redireciona automaticamente se já estiver logado E tiver empresa vinculada
-    // Isso permite que usuários sem empresa vejam a tela de login se quiserem entrar com outra conta
-    if (!authLoading && user && (profile?.organization_id || profile?.is_master)) {
-      navigate("/app", { replace: true });
-    }
-  }, [user, profile, authLoading, navigate]);
+      
+      // Note: O redirecionamento será feito pelo useEffect acima quando o estado do useAuth atualizar
+      // Se em 3 segundos não redirecionar, a gente destrava o botão
+      setTimeout(() => setIsSubmitting(false), 3000);
 
+    } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");
-    } finally {
       setIsSubmitting(false);
     }
   };

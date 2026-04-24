@@ -8,6 +8,9 @@ type Profile = {
   full_name: string | null;
   avatar_url: string | null;
   organization_id: string | null;
+  is_master: boolean;
+  department_id: string | null;
+  position_id: string | null;
 };
 
 type Org = { id: string; name: string; slug: string };
@@ -34,7 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loadProfile = async (uid: string) => {
     const { data: p } = await supabase
       .from("profiles")
-      .select("id,email,full_name,avatar_url,organization_id")
+      .select("id,email,full_name,avatar_url,organization_id,is_master,department_id,position_id")
       .eq("id", uid)
       .maybeSingle();
     setProfile(p ?? null);

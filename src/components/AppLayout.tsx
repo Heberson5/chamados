@@ -72,10 +72,15 @@ export const AppLayout = () => {
      if (settings?.system_name) {
        document.title = settings.system_name;
      }
-    if (settings?.favicon_url) {
-      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-      if (link) link.href = settings.favicon_url;
-    }
+     if (settings?.favicon_url) {
+       let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+       if (!link) {
+         link = document.createElement('link');
+         link.rel = 'icon';
+         document.head.appendChild(link);
+       }
+       link.href = settings.favicon_url;
+     }
     if (settings?.primary_color) {
       document.documentElement.style.setProperty('--primary', settings.primary_color);
       // Also update hsl version if needed by shadcn, but for now hex might work if used directly

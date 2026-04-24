@@ -57,6 +57,35 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        info: "hsl(var(--info))",
+        surface: {
+          1: "hsl(var(--surface-1))",
+          2: "hsl(var(--surface-2))",
+        },
+        status: {
+          open: "hsl(var(--status-open))",
+          progress: "hsl(var(--status-progress))",
+          waiting: "hsl(var(--status-waiting))",
+          resolved: "hsl(var(--status-resolved))",
+          closed: "hsl(var(--status-closed))",
+        },
+        priority: {
+          low: "hsl(var(--priority-low))",
+          medium: "hsl(var(--priority-medium))",
+          high: "hsl(var(--priority-high))",
+          urgent: "hsl(var(--priority-urgent))",
+        },
+      },
+      boxShadow: {
+        xs: "var(--shadow-xs)",
+        soft: "var(--shadow-sm)",
+        elevated: "var(--shadow-md)",
+        floating: "var(--shadow-lg)",
+      },
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",

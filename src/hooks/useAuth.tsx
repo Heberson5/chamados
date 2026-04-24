@@ -71,17 +71,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
         if (event === "SIGNED_IN") {
           supabase.rpc("log_user_action", { p_action: "LOGIN" }).then(() => {});
         }
-        setTimeout(() => loadProfile(s.user.id), 0);
+        setLoading(true);
+        await loadProfile(s.user.id);
+        setLoading(false);
       } else {
         setProfile(null);
         setOrgState(null);
+        setLoading(false);
       }
     });
 

@@ -27,7 +27,12 @@ type T = {
 
 const Board = () => {
   const { org } = useAuth();
-   const { columns, updateSettings } = useKanbanSettings();
+    const { columns, updateSettings } = useKanbanSettings();
+    const [localCols, setLocalCols] = useState<any[]>([]);
+ 
+    useEffect(() => {
+      if (columns.length > 0) setLocalCols(columns);
+    }, [columns]);
   const [tickets, setTickets] = useState<T[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -71,16 +76,16 @@ const Board = () => {
           <div className="flex gap-2">
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setLocalCols(columns)}>
                   <Settings2 className="size-4" /> Personalizar
                 </Button>
               </DialogTrigger>
-               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader>
                   <DialogTitle>Personalizar Kanban</DialogTitle>
                 </DialogHeader>
-                 <div className="space-y-4 py-4">
-                   {columns.map((col: any, index: number) => (
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {localCols.map((col: any, index: number) => (
                      <div key={col.id} className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg group">
                        <div className="flex-1 space-y-3">
                          <div className="flex gap-3">
@@ -89,9 +94,9 @@ const Board = () => {
                              <Input 
                                value={col.label} 
                                onChange={(e) => {
-                                 const newCols = [...columns];
+                                 const newCols = [...localCols];
                                  newCols[index] = { ...col, label: e.target.value };
-                                 updateSettings({ columns: newCols });
+                                 setLocalCols(newCols);
                                }}
                              />
                            </div>
@@ -100,9 +105,9 @@ const Board = () => {
                              <Select 
                                value={col.color} 
                                onValueChange={(val) => {
-                                 const newCols = [...columns];
+                                 const newCols = [...localCols];
                                  newCols[index] = { ...col, color: val };
-                                 updateSettings({ columns: newCols });
+                                 setLocalCols(newCols);
                                }}
                              >
                                <SelectTrigger><SelectValue /></SelectTrigger>
@@ -125,8 +130,8 @@ const Board = () => {
                          size="icon" 
                          className="mt-6 text-destructive hover:text-destructive hover:bg-destructive/10"
                          onClick={() => {
-                           const newCols = columns.filter((_: any, i: number) => i !== index);
-                           updateSettings({ columns: newCols });
+                           const newCols = localCols.filter((_: any, i: number) => i !== index);
+                           setLocalCols(newCols);
                          }}
                        >
                          <Trash2 className="size-4" />
@@ -138,13 +143,21 @@ const Board = () => {
                      className="w-full border-dashed" 
                      onClick={() => {
                        const newId = `custom_${Math.random().toString(36).substr(2, 9)}`;
-                       const newCols = [...columns, { id: newId, label: "Nova Coluna", color: "bg-muted" }];
-                       updateSettings({ columns: newCols });
+                       const newCols = [...localCols, { id: newId, label: "Nova Coluna", color: "bg-muted" }];
+                       setLocalCols(newCols);
                      }}
                    >
                      <Plus className="size-4 mr-2" /> Adicionar Coluna
                    </Button>
-                 </div>
+                  </div>
+                  <div className="p-4 border-t bg-muted/20 flex justify-end gap-2">
+                    <DialogTrigger asChild>
+                      <Button variant="ghost">Cancelar</Button>
+                    </DialogTrigger>
+                    <Button onClick={() => updateSettings({ columns: localCols })}>
+                      Salvar alterações
+                    </Button>
+                  </div>
               </DialogContent>
             </Dialog>
             <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">

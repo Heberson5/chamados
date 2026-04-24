@@ -68,6 +68,7 @@ const Auth = () => {
       }
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");
+    } finally {
       setIsSubmitting(false);
     }
   };

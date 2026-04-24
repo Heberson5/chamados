@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Headphones } from "lucide-react";
+import { Headphones, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 
@@ -174,7 +174,12 @@ const Auth = () => {
           </div>
 
           <Button type="submit" className="w-full" disabled={isSubmitting || authLoading}>
-            {(isSubmitting || authLoading) ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
+            {(isSubmitting || authLoading) ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Aguarde...
+              </>
+            ) : mode === "login" ? "Entrar" : "Criar conta"}
           </Button>
 
           <div className="text-sm text-muted-foreground text-center">

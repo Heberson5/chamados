@@ -87,17 +87,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       
-      if (s?.user) {
-        if (event === "SIGNED_IN") {
-          supabase.rpc("log_user_action", { p_action: "LOGIN" });
+      try {
+        if (s?.user) {
+          if (event === "SIGNED_IN") {
+            supabase.rpc("log_user_action", { p_action: "LOGIN" }).catch(console.error);
+          }
+          setLoading(true);
+          await loadProfile(s.user.id);
+        } else {
+          setProfile(null);
+          setOrgState(null);
         }
-        setLoading(true);
-        await loadProfile(s.user.id);
+      } catch (err) {
+        console.error("Auth state change error:", err);
+      } finally {
         if (mounted) setLoading(false);
-      } else {
-        setProfile(null);
-        setOrgState(null);
-        setLoading(false);
       }
     });
 

@@ -15,17 +15,19 @@ const AdminSystem = () => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     system_name: "",
-    logo_url: "",
-    favicon_url: "",
-  });
+     logo_url: "",
+     favicon_url: "",
+     primary_color: "#3b82f6",
+   });
 
   useEffect(() => {
     if (settings) {
       setForm({
         system_name: settings.system_name || "",
-        logo_url: settings.logo_url || "",
-        favicon_url: settings.favicon_url || "",
-      });
+         logo_url: settings.logo_url || "",
+         favicon_url: settings.favicon_url || "",
+         primary_color: settings.primary_color || "#3b82f6",
+       });
     }
   }, [settings]);
 
@@ -103,9 +105,26 @@ const AdminSystem = () => {
                       <img src={form.favicon_url} className="size-6 object-contain" alt="Preview" />
                     </div>
                   )}
-                </div>
-              </div>
-            </div>
+                 </div>
+               </div>
+             </div>
+             <div className="space-y-2">
+               <Label htmlFor="primary_color">Cor Primária do Sistema</Label>
+               <div className="flex gap-3 items-center">
+                 <Input 
+                   id="primary_color" 
+                   type="color"
+                   className="w-12 h-10 p-1"
+                   value={form.primary_color} 
+                   onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                 />
+                 <Input 
+                   value={form.primary_color} 
+                   onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                   className="max-w-[120px]"
+                 />
+               </div>
+             </div>
           </CardContent>
         </Card>
 

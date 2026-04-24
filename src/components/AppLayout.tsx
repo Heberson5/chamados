@@ -7,10 +7,12 @@ import {
   Settings, 
   LogOut, 
   Headphones, 
-  ChevronLeft, 
-  ChevronRight,
-  Building2,
-  Users,
+   ChevronLeft, 
+   ChevronRight,
+   Building2,
+    Check,
+    ChevronsUpDown,
+    Users,
   Briefcase,
   LayoutGrid,
   Sun,
@@ -20,7 +22,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useSystemSettings } from "@/hooks/useSystemSettings";
+ import { useSystemSettings } from "@/hooks/useSystemSettings";
+ import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/components/ThemeProvider";
 import {
   DropdownMenu,
@@ -30,7 +33,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const AppLayout = () => {
-  const { profile, org, signOut } = useAuth();
+   const { profile, org, setOrg, signOut } = useAuth();
+   const [allOrgs, setAllOrgs] = useState<any[]>([]);
   const { data: settings } = useSystemSettings();
   const { setTheme } = useTheme();
   const navigate = useNavigate();
@@ -49,10 +53,20 @@ export const AppLayout = () => {
     { to: "/app/settings", icon: Settings, label: "Configurações" },
   ];
 
-  useEffect(() => {
-    if (settings?.system_name) {
-      document.title = settings.system_name;
-    }
+   useEffect(() => {
+     const fetchOrgs = async () => {
+       if (profile?.is_master) {
+         const { data } = await supabase.from("organizations").select("*").order("name");
+         setAllOrgs(data || []);
+       }
+     };
+     fetchOrgs();
+   }, [profile?.is_master]);
+ 
+   useEffect(() => {
+     if (settings?.system_name) {
+       document.title = settings.system_name;
+     }
     if (settings?.favicon_url) {
       const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
       if (link) link.href = settings.favicon_url;
@@ -89,12 +103,32 @@ export const AppLayout = () => {
             {isCollapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
           </Button>
         </div>
-        {!isCollapsed && (
-          <div className="px-3 py-3 border-b border-border">
-            <div className="text-xs text-muted-foreground px-2 mb-1">Empresa</div>
-            <div className="text-sm font-medium px-2 truncate">{org?.name ?? "—"}</div>
-          </div>
-        )}
+         {!isCollapsed && (
+           <div className="px-3 py-3 border-b border-border">
+             <div className="text-xs text-muted-foreground px-2 mb-1">Empresa</div>
+             {profile?.is_master ? (
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild>
+                   <Button variant="ghost" size="sm" className="w-full justify-between px-2 h-auto py-1 font-medium hover:bg-secondary">
+                     <span className="truncate">{org?.name ?? "Selecionar..."}</span>
+                     <ChevronsUpDown className="size-3 shrink-0 opacity-50" />
+                   </Button>
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="start" className="w-52">
+                   {allOrgs.map((o) => (
+                     <DropdownMenuItem key={o.id} onClick={() => setOrg(o)}>
+                       <Building2 className="mr-2 size-4" />
+                       <span className="flex-1 truncate">{o.name}</span>
+                       {org?.id === o.id && <Check className="size-3" />}
+                     </DropdownMenuItem>
+                   ))}
+                 </DropdownMenuContent>
+               </DropdownMenu>
+             ) : (
+               <div className="text-sm font-medium px-2 truncate">{org?.name ?? "—"}</div>
+             )}
+           </div>
+         )}
         <nav className="flex-1 px-2 space-y-0.5">
           {nav.map(({ to, icon: Icon, label, end }) => (
             <NavLink

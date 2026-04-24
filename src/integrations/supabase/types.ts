@@ -196,6 +196,7 @@ export type Database = {
           landing_page_config: Json | null
           logo_url: string | null
           menu_config: Json | null
+          primary_color: string | null
           system_name: string | null
           updated_at: string | null
         }
@@ -205,6 +206,7 @@ export type Database = {
           landing_page_config?: Json | null
           logo_url?: string | null
           menu_config?: Json | null
+          primary_color?: string | null
           system_name?: string | null
           updated_at?: string | null
         }
@@ -214,6 +216,7 @@ export type Database = {
           landing_page_config?: Json | null
           logo_url?: string | null
           menu_config?: Json | null
+          primary_color?: string | null
           system_name?: string | null
           updated_at?: string | null
         }

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
- import { UserPlus, User, Building2, Pencil, Save } from "lucide-react";
+ import { UserPlus, User, Building2, Pencil, Save, Trash2 } from "lucide-react";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
  import { Input } from "@/components/ui/input";
@@ -53,6 +53,17 @@ import { supabase } from "@/integrations/supabase/client";
      } else {
        toast({ title: "Sucesso", description: "Usuário cadastrado com sucesso." });
        setOpen(false);
+       load();
+     }
+   };
+ 
+   const deleteUser = async (id: string) => {
+     if (!confirm("Excluir este usuário?")) return;
+     const { error } = await supabase.from("profiles").delete().eq("id", id);
+     if (error) {
+       toast({ variant: "destructive", title: "Erro", description: error.message });
+     } else {
+       toast({ title: "Sucesso", description: "Usuário removido." });
        load();
      }
    };
@@ -158,11 +169,16 @@ import { supabase } from "@/integrations/supabase/client";
                     <div className="text-[11px] text-muted-foreground">{u.positions?.name || "—"}</div>
                   </TableCell>
                   <TableCell>{u.is_master ? "Sim" : "Não"}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <Pencil className="size-4" />
-                    </Button>
-                  </TableCell>
+                   <TableCell className="text-right">
+                     <div className="flex justify-end gap-1">
+                       <Button variant="ghost" size="icon">
+                         <Pencil className="size-4" />
+                       </Button>
+                       <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteUser(u.id)}>
+                         <Trash2 className="size-4" />
+                       </Button>
+                     </div>
+                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>

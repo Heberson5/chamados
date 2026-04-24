@@ -27,14 +27,6 @@ const Auth = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { data: settings } = useSystemSettings();
 
-  useEffect(() => {
-    // Só redireciona automaticamente se já estiver logado E tiver empresa vinculada
-    // Isso permite que usuários sem empresa vejam a tela de login se quiserem entrar com outra conta
-    if (!authLoading && user && (profile?.organization_id || profile?.is_master)) {
-      navigate("/app", { replace: true });
-    }
-  }, [user, profile, authLoading, navigate]);
-
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -62,11 +54,25 @@ const Auth = () => {
       } else {
         const { error, data } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        
+        // Se logou com sucesso, redirecionamos. O useAuth vai cuidar de carregar o perfil.
         if (data?.user) {
-          navigate("/app", { replace: true });
+          // Pequeno delay para garantir que o estado do Supabase Auth seja propagado
+          setTimeout(() => {
+            navigate("/app", { replace: true });
+          }, 500);
+          return; // Não executa o finally se navegou
         }
       }
     } catch (err: any) {
+  useEffect(() => {
+    // Só redireciona automaticamente se já estiver logado E tiver empresa vinculada
+    // Isso permite que usuários sem empresa vejam a tela de login se quiserem entrar com outra conta
+    if (!authLoading && user && (profile?.organization_id || profile?.is_master)) {
+      navigate("/app", { replace: true });
+    }
+  }, [user, profile, authLoading, navigate]);
+
       toast.error(err.message ?? "Erro ao autenticar");
     } finally {
       setIsSubmitting(false);

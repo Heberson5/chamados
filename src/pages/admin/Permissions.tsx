@@ -1,4 +1,5 @@
-import { useState } from "react";
+ import { useState, useEffect } from "react";
+ import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -31,9 +32,17 @@ const MODULES = [
   { id: "settings", name: "Configurações" },
 ];
 
-const Permissions = () => {
-  const queryClient = useQueryClient();
-  const [selectedDept, setSelectedDept] = useState<string>("");
+ const Permissions = () => {
+   const queryClient = useQueryClient();
+   const [searchParams] = useSearchParams();
+   const [selectedDept, setSelectedDept] = useState<string>("");
+ 
+   useEffect(() => {
+     const deptId = searchParams.get("deptId");
+     if (deptId) {
+       setSelectedDept(deptId);
+     }
+   }, [searchParams]);
 
   const { data: departments } = useQuery({
     queryKey: ["departments"],

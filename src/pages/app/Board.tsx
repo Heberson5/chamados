@@ -27,7 +27,7 @@ type T = {
 
 const Board = () => {
   const { org } = useAuth();
-  const { data: kanbanConfig, updateSettings } = useKanbanSettings();
+   const { columns, updateSettings } = useKanbanSettings();
   const [tickets, setTickets] = useState<T[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -52,13 +52,6 @@ const Board = () => {
     await supabase.from("tickets").update(patch).eq("id", id);
   };
 
-   const columns = (kanbanConfig as any)?.columns || [
-     { id: "open", label: "Aberto", color: "bg-status-open" },
-     { id: "in_progress", label: "Em andamento", color: "bg-status-progress" },
-     { id: "waiting", label: "Aguardando", color: "bg-status-waiting" },
-     { id: "resolved", label: "Resolvido", color: "bg-status-resolved" },
-     { id: "closed", label: "Fechado", color: "bg-muted" },
-   ];
 
   const colorOptions = [
     { label: "Azul", value: "bg-status-open" },
@@ -98,7 +91,7 @@ const Board = () => {
                                onChange={(e) => {
                                  const newCols = [...columns];
                                  newCols[index] = { ...col, label: e.target.value };
-                                 updateSettings({ ...kanbanConfig as any, columns: newCols });
+                                 updateSettings({ columns: newCols });
                                }}
                              />
                            </div>
@@ -109,7 +102,7 @@ const Board = () => {
                                onValueChange={(val) => {
                                  const newCols = [...columns];
                                  newCols[index] = { ...col, color: val };
-                                 updateSettings({ ...kanbanConfig as any, columns: newCols });
+                                 updateSettings({ columns: newCols });
                                }}
                              >
                                <SelectTrigger><SelectValue /></SelectTrigger>
@@ -133,7 +126,7 @@ const Board = () => {
                          className="mt-6 text-destructive hover:text-destructive hover:bg-destructive/10"
                          onClick={() => {
                            const newCols = columns.filter((_: any, i: number) => i !== index);
-                           updateSettings({ ...kanbanConfig as any, columns: newCols });
+                           updateSettings({ columns: newCols });
                          }}
                        >
                          <Trash2 className="size-4" />
@@ -146,7 +139,7 @@ const Board = () => {
                      onClick={() => {
                        const newId = `custom_${Math.random().toString(36).substr(2, 9)}`;
                        const newCols = [...columns, { id: newId, label: "Nova Coluna", color: "bg-muted" }];
-                       updateSettings({ ...kanbanConfig as any, columns: newCols });
+                       updateSettings({ columns: newCols });
                      }}
                    >
                      <Plus className="size-4 mr-2" /> Adicionar Coluna

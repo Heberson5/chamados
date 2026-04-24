@@ -17,12 +17,14 @@ import { supabase } from "@/integrations/supabase/client";
    const [loading, setLoading] = useState(true);
    const [open, setOpen] = useState(false);
    const { toast } = useToast();
-   const [newUser, setNewUser] = useState({
-     full_name: "",
-     email: "",
-     organization_id: "",
-     is_master: false
-   });
+    const [newUser, setNewUser] = useState({
+      full_name: "",
+      email: "",
+      organization_id: "",
+      is_master: false,
+      department_id: "",
+      position_id: ""
+    });
 
    const load = async () => {
      const { data } = await supabase

@@ -1,0 +1,1 @@
+ALTER TABLE public.system_settings ADD COLUMN primary_color TEXT DEFAULT '#3b82f6';

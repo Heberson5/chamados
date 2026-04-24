@@ -40,17 +40,22 @@ export const AppLayout = () => {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  const getMenuLabel = (key: string, defaultLabel: string) => {
+    const config = (settings?.menu_config as any[])?.find(m => m.key === key);
+    return config?.label || defaultLabel;
+  };
+
   const nav = [
-    { to: "/app", icon: LayoutDashboard, label: "Dashboard", end: true },
-    { to: "/app/tickets", icon: Inbox, label: "Chamados" },
-    { to: "/app/board", icon: KanbanSquare, label: "Kanban" },
+    { to: "/app", icon: LayoutDashboard, label: getMenuLabel("Dashboard", "Dashboard"), end: true },
+    { to: "/app/tickets", icon: Inbox, label: getMenuLabel("Chamados", "Chamados") },
+    { to: "/app/board", icon: KanbanSquare, label: getMenuLabel("Kanban", "Kanban") },
     ...(profile?.is_master ? [
-      { to: "/app/admin/companies", icon: Building2, label: "Empresas" },
-      { to: "/app/admin/users", icon: Users, label: "Usuários" },
-      { to: "/app/admin/structure", icon: Briefcase, label: "Estrutura" },
-      { to: "/app/admin/system", icon: LayoutGrid, label: "Sistema" },
+      { to: "/app/admin/companies", icon: Building2, label: getMenuLabel("Empresas", "Empresas") },
+      { to: "/app/admin/users", icon: Users, label: getMenuLabel("Usuários", "Usuários") },
+      { to: "/app/admin/structure", icon: Briefcase, label: getMenuLabel("Estrutura", "Estrutura") },
+      { to: "/app/admin/system", icon: LayoutGrid, label: getMenuLabel("Sistema", "Sistema") },
     ] : []),
-    { to: "/app/settings", icon: Settings, label: "Configurações" },
+    { to: "/app/settings", icon: Settings, label: getMenuLabel("Configurações", "Configurações") },
   ];
 
    useEffect(() => {

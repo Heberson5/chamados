@@ -30,13 +30,15 @@ const Board = () => {
   const [tickets, setTickets] = useState<T[]>([]);
   const [open, setOpen] = useState(false);
 
-  const load = async () => {
-    const { data } = await supabase
-      .from("tickets")
-      .select("id,number,subject,status,priority,created_at")
-      .order("created_at", { ascending: false });
-    setTickets((data as T[]) ?? []);
-  };
+   const load = async () => {
+     if (!org) return;
+     const { data } = await supabase
+       .from("tickets")
+       .select("id,number,subject,status,priority,created_at")
+       .eq("organization_id", org.id)
+       .order("created_at", { ascending: false });
+     setTickets((data as T[]) ?? []);
+   };
   useEffect(() => { if (org) load(); }, [org]);
 
   const onDrop = async (status: string, e: React.DragEvent) => {

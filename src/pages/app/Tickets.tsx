@@ -22,13 +22,15 @@ const Tickets = () => {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
 
-  const load = async () => {
-    const { data } = await supabase
-      .from("tickets")
-      .select("id,number,subject,status,priority,created_at,category")
-      .order("created_at", { ascending: false });
-    setTickets((data as T[]) ?? []);
-  };
+   const load = async () => {
+     if (!org) return;
+     const { data } = await supabase
+       .from("tickets")
+       .select("id,number,subject,status,priority,created_at,category")
+       .eq("organization_id", org.id)
+       .order("created_at", { ascending: false });
+     setTickets((data as T[]) ?? []);
+   };
   useEffect(() => { if (org) load(); }, [org]);
 
   const filtered = tickets

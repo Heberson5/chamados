@@ -1,0 +1,1 @@
+ALTER FUNCTION public.clean_master_profile() SET search_path = public;

@@ -188,7 +188,7 @@ export const AppLayout = () => {
                <DropdownMenu>
                  <DropdownMenuTrigger asChild>
                    <Button variant="ghost" size="sm" className="w-full justify-between px-2 h-auto py-1 font-medium hover:bg-secondary">
-                     <span className="truncate">{org?.name ?? "Selecionar..."}</span>
+                     <span className="truncate">{org?.name ?? "Todas as Empresas"}</span>
                      <ChevronsUpDown className="size-3 shrink-0 opacity-50" />
                    </Button>
                  </DropdownMenuTrigger>
@@ -199,6 +199,16 @@ export const AppLayout = () => {
                        <span className="flex-1 truncate">{o.name}</span>
                        {org?.id === o.id && <Check className="size-3" />}
                      </DropdownMenuItem>
+                   {allOrgs.length > 0 && (
+                     <>
+                       <div className="h-px bg-border my-1" />
+                       <DropdownMenuItem onClick={() => setOrg(null)}>
+                         <LayoutGrid className="mr-2 size-4" />
+                         <span className="flex-1 truncate">Todas as Empresas</span>
+                         {!org && <Check className="size-3" />}
+                       </DropdownMenuItem>
+                     </>
+                   )}
                    ))}
                  </DropdownMenuContent>
                </DropdownMenu>

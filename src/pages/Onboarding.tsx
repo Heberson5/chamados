@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut } from "lucide-react";
+import { LogOut, Loader2 } from "lucide-react";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Nome muito curto").max(80),
@@ -84,7 +84,12 @@ const Onboarding = () => {
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme Ltda." />
           </div>
           <Button type="submit" className="w-full mt-6" disabled={busy}>
-            {busy ? "Criando..." : "Criar empresa"}
+            {busy ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Criando...
+              </>
+            ) : "Criar empresa"}
           </Button>
         </form>
         

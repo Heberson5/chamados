@@ -58,6 +58,17 @@ const AdminCompanies = () => {
      }
    };
  
+   const deleteCompany = async (id: string) => {
+     if (!confirm("Tem certeza que deseja excluir esta empresa? Todos os dados vinculados serão mantidos (se houver restrições) ou removidos.")) return;
+     const { error } = await supabase.from("organizations").delete().eq("id", id);
+     if (error) {
+       toast({ variant: "destructive", title: "Erro", description: error.message });
+     } else {
+       toast({ title: "Sucesso", description: "Empresa removida." });
+       load();
+     }
+   };
+ 
    return (
      <div className="space-y-6">
        <PageHeader 
@@ -118,9 +129,14 @@ const AdminCompanies = () => {
                 <Button variant="outline" size="sm" className="w-full gap-1">
                   <Pencil className="size-3" /> Editar
                 </Button>
-                <Button variant="outline" size="sm" className="w-full gap-1 text-destructive hover:text-destructive">
-                  <Trash2 className="size-3" /> Excluir
-                </Button>
+                 <Button 
+                   variant="outline" 
+                   size="sm" 
+                   className="w-full gap-1 text-destructive hover:text-destructive"
+                   onClick={() => deleteCompany(company.id)}
+                 >
+                   <Trash2 className="size-3" /> Excluir
+                 </Button>
               </div>
             </CardContent>
           </Card>

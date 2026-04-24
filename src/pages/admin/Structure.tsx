@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Briefcase, Network, Pencil, Trash2 } from "lucide-react";
+ import { Plus, Briefcase, Network, Pencil, Trash2, ShieldCheck } from "lucide-react";
+ import { useNavigate } from "react-router-dom";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -20,7 +21,8 @@ import { Plus, Briefcase, Network, Pencil, Trash2 } from "lucide-react";
    const [openCargo, setOpenCargo] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{ id: string, name: string, organization_id: string, type: "departments" | "positions" } | null>(null);
-   const { toast } = useToast();
+    const { toast } = useToast();
+    const navigate = useNavigate();
    
    const [newItem, setNewItem] = useState({ name: "", organization_id: "" });
 
@@ -183,7 +185,16 @@ import { Plus, Briefcase, Network, Pencil, Trash2 } from "lucide-react";
                     <CardTitle className="text-sm font-medium">{d.name}</CardTitle>
                     <CardDescription className="text-xs">{d.organizations?.name}</CardDescription>
                      </div>
-                     <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-primary" 
+                          onClick={() => navigate(`/app/admin/permissions?deptId=${d.id}`)}
+                          title="Gerenciar Permissões"
+                        >
+                          <ShieldCheck className="size-3.5" />
+                        </Button>
                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(d, "departments")}>
                          <Pencil className="size-3.5" />
                        </Button>

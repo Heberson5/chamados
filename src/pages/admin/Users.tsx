@@ -2,14 +2,15 @@ import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
- import { UserPlus, User, Building2, Pencil, Save, Trash2 } from "lucide-react";
+ import { UserPlus, User, Building2, Pencil, Save, Trash2, Shield } from "lucide-react";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Checkbox } from "@/components/ui/checkbox";
- import { useToast } from "@/hooks/use-toast";
+  import { useToast } from "@/hooks/use-toast";
+  import { useAuth } from "@/hooks/useAuth";
  
  const AdminUsers = () => {
    const [users, setUsers] = useState<any[]>([]);
@@ -20,7 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
    const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
-   const { toast } = useToast();
+    const { toast } = useToast();
+    const { profile: currentUserProfile } = useAuth();
     const [newUser, setNewUser] = useState({
       full_name: "",
       email: "",
@@ -153,8 +155,9 @@ import { supabase } from "@/integrations/supabase/client";
                    <Label>Empresa</Label>
                    <Select 
                      value={newUser.organization_id} 
-                     onValueChange={(v) => setNewUser({ ...newUser, organization_id: v })}
-                   >
+                      onValueChange={(v) => setNewUser({ ...newUser, organization_id: v })}
+                      disabled={newUser.is_master}
+                    >
                      <SelectTrigger>
                        <SelectValue placeholder="Selecione a empresa" />
                      </SelectTrigger>
@@ -171,7 +174,7 @@ import { supabase } from "@/integrations/supabase/client";
                   <Select 
                     value={newUser.department_id} 
                     onValueChange={(v) => setNewUser({ ...newUser, department_id: v })}
-                    disabled={!newUser.organization_id}
+                    disabled={!newUser.organization_id || newUser.is_master}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
@@ -186,7 +189,7 @@ import { supabase } from "@/integrations/supabase/client";
                   <Select 
                     value={newUser.position_id} 
                     onValueChange={(v) => setNewUser({ ...newUser, position_id: v })}
-                    disabled={!newUser.organization_id}
+                    disabled={!newUser.organization_id || newUser.is_master}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
@@ -201,7 +204,17 @@ import { supabase } from "@/integrations/supabase/client";
                    <Checkbox 
                      id="is_master" 
                      checked={newUser.is_master} 
-                     onCheckedChange={(v) => setNewUser({ ...newUser, is_master: !!v })}
+                     onCheckedChange={(v) => {
+                       const val = !!v;
+                       setNewUser({ 
+                         ...newUser, 
+                         is_master: val,
+                         organization_id: val ? "" : newUser.organization_id,
+                         department_id: val ? "" : newUser.department_id,
+                         position_id: val ? "" : newUser.position_id
+                       });
+                     }}
+                     disabled={!currentUserProfile?.is_master}
                    />
                    <Label htmlFor="is_master">Usuário Master (Acesso total)</Label>
                  </div>
@@ -233,10 +246,11 @@ import { supabase } from "@/integrations/supabase/client";
               </div>
               <div className="space-y-2">
                 <Label>Empresa</Label>
-                <Select 
-                  value={editingUser.organization_id} 
-                  onValueChange={(v) => setEditingUser({ ...editingUser, organization_id: v })}
-                >
+                  <Select 
+                    value={editingUser.organization_id} 
+                    onValueChange={(v) => setEditingUser({ ...editingUser, organization_id: v })}
+                    disabled={editingUser.is_master}
+                  >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a empresa" />
                   </SelectTrigger>
@@ -253,7 +267,7 @@ import { supabase } from "@/integrations/supabase/client";
                   <Select 
                     value={editingUser.department_id} 
                     onValueChange={(v) => setEditingUser({ ...editingUser, department_id: v })}
-                    disabled={!editingUser.organization_id}
+                    disabled={!editingUser.organization_id || editingUser.is_master}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
@@ -268,7 +282,7 @@ import { supabase } from "@/integrations/supabase/client";
                   <Select 
                     value={editingUser.position_id} 
                     onValueChange={(v) => setEditingUser({ ...editingUser, position_id: v })}
-                    disabled={!editingUser.organization_id}
+                    disabled={!editingUser.organization_id || editingUser.is_master}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
@@ -283,7 +297,17 @@ import { supabase } from "@/integrations/supabase/client";
                 <Checkbox 
                   id="edit_is_master" 
                   checked={editingUser.is_master} 
-                  onCheckedChange={(v) => setEditingUser({ ...editingUser, is_master: !!v })}
+                  onCheckedChange={(v) => {
+                    const val = !!v;
+                    setEditingUser({ 
+                      ...editingUser, 
+                      is_master: val,
+                      organization_id: val ? "" : editingUser.organization_id,
+                      department_id: val ? "" : editingUser.department_id,
+                      position_id: val ? "" : editingUser.position_id
+                    });
+                  }}
+                  disabled={!currentUserProfile?.is_master}
                 />
                 <Label htmlFor="edit_is_master">Usuário Master (Acesso total)</Label>
               </div>
@@ -309,7 +333,10 @@ import { supabase } from "@/integrations/supabase/client";
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((u) => (
+              {users.filter(u => {
+                if (!currentUserProfile?.is_master && u.is_master) return false;
+                return true;
+              }).map((u) => (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
@@ -327,7 +354,13 @@ import { supabase } from "@/integrations/supabase/client";
                     <div className="text-xs">{u.departments?.name || "—"}</div>
                     <div className="text-[11px] text-muted-foreground">{u.positions?.name || "—"}</div>
                   </TableCell>
-                  <TableCell>{u.is_master ? "Sim" : "Não"}</TableCell>
+                  <TableCell>
+                    {u.is_master ? (
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <Shield className="size-3" /> Sim
+                      </span>
+                    ) : "Não"}
+                  </TableCell>
                    <TableCell className="text-right">
                      <div className="flex justify-end gap-1">
                        <Button 

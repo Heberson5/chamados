@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
- import { ArrowLeft, Send } from "lucide-react";
+  import { ArrowLeft, Send, ExternalLink, Paperclip } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
  import { useKanbanSettings } from "@/hooks/useKanbanSettings";
@@ -18,9 +18,10 @@ import { z } from "zod";
 type Ticket = {
   id: string; number: number; subject: string; description: string | null;
   status: string; priority: string; category: string | null;
-  created_at: string; updated_at: string; resolved_at: string | null;
-  requester_id: string | null;
-  first_response_at: string | null;
+   created_at: string; updated_at: string; resolved_at: string | null;
+   attachment_urls: string[] | null;
+   requester_id: string | null;
+   first_response_at: string | null;
 };
 type Comment = { id: string; body: string; is_internal: boolean; created_at: string; author_id: string | null };
 type ProfileLite = { id: string; full_name: string | null; email: string };
@@ -117,11 +118,32 @@ const commentSchema = z.string().trim().min(1).max(5000);
             </div>
           </div>
 
-          {ticket.description && (
-            <div className="rounded-xl border border-border bg-background p-4 text-sm whitespace-pre-wrap">
-              {ticket.description}
-            </div>
-          )}
+          <div className="space-y-4">
+            {ticket.description && (
+              <div className="rounded-xl border border-border bg-background p-4 text-sm whitespace-pre-wrap">
+                {ticket.description}
+              </div>
+            )}
+
+            {ticket.attachment_urls && ticket.attachment_urls.length > 0 && (
+              <div className="flex flex-wrap gap-3">
+                {ticket.attachment_urls.map((url, i) => (
+                  <a 
+                    key={url} 
+                    href={url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="group relative size-24 rounded-lg border border-border overflow-hidden bg-muted flex items-center justify-center transition-all hover:border-primary"
+                  >
+                    <img src={url} className="size-full object-cover transition-transform group-hover:scale-110" alt={`Anexo ${i + 1}`} />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <ExternalLink className="size-5 text-white" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="space-y-3">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Conversa</div>

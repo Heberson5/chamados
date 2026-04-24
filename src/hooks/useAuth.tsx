@@ -15,15 +15,16 @@ type Profile = {
 
 type Org = { id: string; name: string; slug: string };
 
-type AuthCtx = {
-  user: User | null;
-  session: Session | null;
-  profile: Profile | null;
-  org: Org | null;
-  loading: boolean;
-  refresh: () => Promise<void>;
-  signOut: () => Promise<void>;
-};
+ type AuthCtx = {
+   user: User | null;
+   session: Session | null;
+   profile: Profile | null;
+   org: Org | null;
+   loading: boolean;
+   refresh: () => Promise<void>;
+   signOut: () => Promise<void>;
+   setOrg: (org: Org | null) => void;
+ };
 
 const Ctx = createContext<AuthCtx | undefined>(undefined);
 
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [org, setOrg] = useState<Org | null>(null);
+   const [org, setOrgState] = useState<Org | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (uid: string) => {
@@ -40,17 +41,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select("id,email,full_name,avatar_url,organization_id,is_master,department_id,position_id")
       .eq("id", uid)
       .maybeSingle();
-    setProfile(p ?? null);
-    if (p?.organization_id) {
-      const { data: o } = await supabase
-        .from("organizations")
-        .select("id,name,slug")
-        .eq("id", p.organization_id)
-        .maybeSingle();
-      setOrg(o ?? null);
-    } else {
-      setOrg(null);
-    }
+     setProfile(p ?? null);
+     if (p?.organization_id) {
+       const { data: o } = await supabase
+         .from("organizations")
+         .select("id,name,slug")
+         .eq("id", p.organization_id)
+         .maybeSingle();
+       setOrgState(o ?? null);
+     } else {
+       setOrgState(null);
+     }
   };
 
   useEffect(() => {
@@ -58,13 +59,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) {
-        // Defer Supabase calls to avoid deadlocks
-        setTimeout(() => loadProfile(s.user.id), 0);
-      } else {
-        setProfile(null);
-        setOrg(null);
-      }
+     if (s?.user) {
+       // Defer Supabase calls to avoid deadlocks
+       setTimeout(() => loadProfile(s.user.id), 0);
+     } else {
+       setProfile(null);
+       setOrgState(null);
+     }
     });
 
     supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -88,11 +89,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  return (
-    <Ctx.Provider value={{ user, session, profile, org, loading, refresh, signOut }}>
-      {children}
-    </Ctx.Provider>
-  );
+   return (
+     <Ctx.Provider value={{ user, session, profile, org, loading, refresh, signOut, setOrg: setOrgState }}>
+       {children}
+     </Ctx.Provider>
+   );
 };
 
 export const useAuth = () => {

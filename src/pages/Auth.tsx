@@ -62,6 +62,19 @@ const Auth = () => {
     }
   };
 
+  useEffect(() => {
+    if (settings?.system_name) {
+      document.title = settings.system_name;
+    }
+    if (settings?.favicon_url) {
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (link) link.href = settings.favicon_url;
+    }
+    if (settings?.primary_color) {
+      document.documentElement.style.setProperty('--primary', settings.primary_color);
+    }
+  }, [settings]);
+
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex flex-col justify-between p-10 bg-surface-1 border-r border-border">

@@ -17,7 +17,7 @@ import { Plus, Building2, Pencil, Trash2 } from "lucide-react";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
  
- type Org = { id: string; name: string; slug: string; created_at: string };
+ type Org = { id: string; name: string; slug: string; created_at: string; user_count?: number };
 
 const AdminCompanies = () => {
    const [companies, setCompanies] = useState<Org[]>([]);
@@ -27,10 +27,21 @@ const AdminCompanies = () => {
    const { toast } = useToast();
  
    const load = async () => {
-    const { data } = await supabase.from("organizations").select("*").order("name");
-    setCompanies(data || []);
-    setLoading(false);
-  };
+     const { data: orgs } = await supabase.from("organizations").select("*").order("name");
+     if (orgs) {
+       const { data: profiles } = await supabase
+         .from("profiles")
+         .select("organization_id, is_master")
+         .eq("is_master", false);
+       
+       const enriched = orgs.map(o => ({
+         ...o,
+         user_count: profiles?.filter(p => p.organization_id === o.id).length || 0
+       }));
+       setCompanies(enriched);
+     }
+     setLoading(false);
+   };
 
    useEffect(() => { load(); }, []);
  
@@ -100,9 +111,10 @@ const AdminCompanies = () => {
               <CardTitle className="text-sm font-medium">{company.name}</CardTitle>
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-xs text-muted-foreground mb-4">Slug: {company.slug}</div>
-              <div className="flex gap-2">
+             <CardContent>
+               <div className="text-xs text-muted-foreground mb-1">Slug: {company.slug}</div>
+               <div className="text-xs text-muted-foreground mb-4 font-medium">Usuários: {company.user_count}</div>
+               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="w-full gap-1">
                   <Pencil className="size-3" /> Editar
                 </Button>

@@ -8,9 +8,11 @@ import {
   LogOut, 
   Headphones, 
   ChevronLeft, 
-  ChevronRight,
-  Building2,
-  Users,
+   ChevronRight,
+   Building2,
+   Users,
+   Check,
+   ChevronsUpDown,
   Briefcase,
   LayoutGrid,
   Sun,
@@ -30,7 +32,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const AppLayout = () => {
-  const { profile, org, signOut } = useAuth();
+   const { profile, org, setOrg, signOut } = useAuth();
+   const [allOrgs, setAllOrgs] = useState<any[]>([]);
   const { data: settings } = useSystemSettings();
   const { setTheme } = useTheme();
   const navigate = useNavigate();
@@ -49,10 +52,20 @@ export const AppLayout = () => {
     { to: "/app/settings", icon: Settings, label: "Configurações" },
   ];
 
-  useEffect(() => {
-    if (settings?.system_name) {
-      document.title = settings.system_name;
-    }
+   useEffect(() => {
+     const fetchOrgs = async () => {
+       if (profile?.is_master) {
+         const { data } = await supabase.from("organizations").select("*").order("name");
+         setAllOrgs(data || []);
+       }
+     };
+     fetchOrgs();
+   }, [profile?.is_master]);
+ 
+   useEffect(() => {
+     if (settings?.system_name) {
+       document.title = settings.system_name;
+     }
     if (settings?.favicon_url) {
       const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
       if (link) link.href = settings.favicon_url;

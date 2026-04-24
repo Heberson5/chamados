@@ -17,15 +17,27 @@ export const useKanbanSettings = () => {
         .eq("organization_id", org.id)
         .maybeSingle();
       
-      return data?.config || {
-        columnColors: {
-          open: "bg-status-open",
-          in_progress: "bg-status-progress",
-          resolved: "bg-status-resolved",
-          closed: "bg-status-closed",
-          pending: "bg-status-pending"
-        }
-      };
+       const config = data?.config as any;
+       const defaultColumns = [
+         { id: "open", label: "Aberto", color: "bg-status-open" },
+         { id: "in_progress", label: "Em andamento", color: "bg-status-progress" },
+         { id: "waiting", label: "Aguardando", color: "bg-status-waiting" },
+         { id: "resolved", label: "Resolvido", color: "bg-status-resolved" },
+         { id: "closed", label: "Fechado", color: "bg-muted" },
+       ];
+ 
+       if (!config) return { columns: defaultColumns };
+       
+       // Migration for old config format if any
+       if (!config.columns && config.columnColors) {
+         const columns = defaultColumns.map(col => ({
+           ...col,
+           color: config.columnColors[col.id] || col.color
+         }));
+         return { columns };
+       }
+ 
+       return config || { columns: defaultColumns };
     },
     enabled: !!profile?.id && !!org?.id,
   });
@@ -48,5 +60,25 @@ export const useKanbanSettings = () => {
     },
   });
 
-  return { ...query, updateSettings: mutation.mutate };
+   const getStatusLabel = (status: string) => {
+     const columns = query.data?.columns as any[];
+     if (!columns) return status;
+     const col = columns.find(c => c.id === status);
+     return col ? col.label : status;
+   };
+ 
+   const getStatusColor = (status: string) => {
+     const columns = query.data?.columns as any[];
+     if (!columns) return "bg-muted";
+     const col = columns.find(c => c.id === status);
+     return col ? col.color : "bg-muted";
+   };
+ 
+   return { 
+     ...query, 
+     updateSettings: mutation.mutate,
+     getStatusLabel,
+     getStatusColor,
+     columns: (query.data?.columns as any[]) || []
+   };
 };

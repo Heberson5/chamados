@@ -48,13 +48,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       let activeOrgId = p?.organization_id;
 
-      // For master users, prioritize localStorage selection
-      if (p?.is_master) {
-        const savedOrgId = localStorage.getItem("selected_org_id");
-        if (savedOrgId) activeOrgId = savedOrgId;
-      }
+       try {
+         if (p?.is_master) {
+           const savedOrgId = localStorage.getItem("selected_org_id");
+           if (savedOrgId) activeOrgId = savedOrgId;
+         }
+       } catch (e) {
+         console.warn("Could not access localStorage", e);
+       }
 
-      if (activeOrgId) {
+       if (activeOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeOrgId)) {
         const { data: o, error: oErr } = await supabase
           .from("organizations")
           .select("id,name,slug")

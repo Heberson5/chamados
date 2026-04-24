@@ -122,9 +122,14 @@ export const AppLayout = () => {
             <div className="size-7 rounded-full bg-secondary grid place-items-center text-xs font-medium">
               {profile?.full_name?.[0]?.toUpperCase() ?? profile?.email?.[0]?.toUpperCase() ?? "U"}
             </div>
-            {!isCollapsed && <div className="min-w-0">
+            {!isCollapsed && <div className="min-w-0 flex-1">
               <div className="text-xs font-medium truncate">{profile?.full_name ?? profile?.email}</div>
-              <div className="text-[11px] text-muted-foreground truncate">{profile?.email}</div>
+              <div className="flex items-center gap-1">
+                <div className="text-[11px] text-muted-foreground truncate">{profile?.email}</div>
+                {profile?.is_master && (
+                  <span className="bg-primary/10 text-primary text-[9px] px-1 rounded font-bold uppercase">Master</span>
+                )}
+              </div>
             </div>}
           </div>
           <DropdownMenu>

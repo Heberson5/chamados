@@ -15,9 +15,10 @@ export const useSystemSettings = () => {
       return data || {
         system_name: "Global System",
         logo_url: null,
-        favicon_url: null,
-        menu_config: [],
-        landing_page_config: {}
+         favicon_url: null,
+         primary_color: "#3b82f6",
+         menu_config: [],
+         landing_page_config: {}
       };
     },
   });

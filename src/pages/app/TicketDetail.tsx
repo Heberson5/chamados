@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Send } from "lucide-react";
-import { STATUS_DOT, STATUS_LABEL, STATUS_ORDER, PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
+ import { PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
+ import { useKanbanSettings } from "@/hooks/useKanbanSettings";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -25,7 +26,8 @@ type ProfileLite = { id: string; full_name: string | null; email: string };
 
 const commentSchema = z.string().trim().min(1).max(5000);
 
-const TicketDetail = () => {
+ const TicketDetail = () => {
+   const { getStatusLabel, getStatusColor, columns } = useKanbanSettings();
   const { id } = useParams();
   const { user } = useAuth();
   const [ticket, setTicket] = useState<Ticket | null>(null);
@@ -160,19 +162,19 @@ const TicketDetail = () => {
           <div className="rounded-xl border border-border bg-background p-4 space-y-4">
             <div>
               <div className="text-xs text-muted-foreground mb-1.5">Status</div>
-              <Select value={ticket.status} onValueChange={(v) => updateField({ status: v as any })}>
-                <SelectTrigger>
-                  <span className="flex items-center gap-2">
-                    <span className={`size-1.5 rounded-full ${STATUS_DOT[ticket.status]}`} />
-                    {STATUS_LABEL[ticket.status]}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_ORDER.map((s) => (
-                    <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+               <Select value={ticket.status} onValueChange={(v) => updateField({ status: v })}>
+                 <SelectTrigger>
+                   <span className="flex items-center gap-2">
+                     <span className={cn("size-1.5 rounded-full", getStatusColor(ticket.status))} />
+                     {getStatusLabel(ticket.status)}
+                   </span>
+                 </SelectTrigger>
+                 <SelectContent>
+                   {columns.map((col: any) => (
+                     <SelectItem key={col.id} value={col.id}>{col.label}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
             </div>
             <div>
               <div className="text-xs text-muted-foreground mb-1.5">Prioridade</div>

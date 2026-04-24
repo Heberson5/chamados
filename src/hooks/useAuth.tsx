@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (s?.user) {
         if (event === "SIGNED_IN") {
-          supabase.rpc("log_user_action", { p_action: "LOGIN" }).catch(console.error);
+          supabase.rpc("log_user_action", { p_action: "LOGIN" });
         }
         setLoading(true);
         await loadProfile(s.user.id);

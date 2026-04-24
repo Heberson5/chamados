@@ -174,7 +174,7 @@ import { supabase } from "@/integrations/supabase/client";
                   <Select 
                     value={newUser.department_id} 
                     onValueChange={(v) => setNewUser({ ...newUser, department_id: v })}
-                    disabled={!newUser.organization_id}
+                    disabled={!newUser.organization_id || newUser.is_master}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
@@ -189,7 +189,7 @@ import { supabase } from "@/integrations/supabase/client";
                   <Select 
                     value={newUser.position_id} 
                     onValueChange={(v) => setNewUser({ ...newUser, position_id: v })}
-                    disabled={!newUser.organization_id}
+                    disabled={!newUser.organization_id || newUser.is_master}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
@@ -204,7 +204,17 @@ import { supabase } from "@/integrations/supabase/client";
                    <Checkbox 
                      id="is_master" 
                      checked={newUser.is_master} 
-                     onCheckedChange={(v) => setNewUser({ ...newUser, is_master: !!v })}
+                     onCheckedChange={(v) => {
+                       const val = !!v;
+                       setNewUser({ 
+                         ...newUser, 
+                         is_master: val,
+                         organization_id: val ? "" : newUser.organization_id,
+                         department_id: val ? "" : newUser.department_id,
+                         position_id: val ? "" : newUser.position_id
+                       });
+                     }}
+                     disabled={!currentUserProfile?.is_master}
                    />
                    <Label htmlFor="is_master">Usuário Master (Acesso total)</Label>
                  </div>

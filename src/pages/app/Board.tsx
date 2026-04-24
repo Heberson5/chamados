@@ -4,9 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Settings2 } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
-import { STATUS_DOT, STATUS_LABEL, STATUS_ORDER, PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
+import { STATUS_LABEL, STATUS_ORDER, PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
+import { useKanbanSettings } from "@/hooks/useKanbanSettings";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type T = {
   id: string; number: number; subject: string; status: string;
@@ -15,6 +25,7 @@ type T = {
 
 const Board = () => {
   const { org } = useAuth();
+  const { data: kanbanConfig, updateSettings } = useKanbanSettings();
   const [tickets, setTickets] = useState<T[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -37,15 +48,76 @@ const Board = () => {
     await supabase.from("tickets").update(patch).eq("id", id);
   };
 
+  const columnColors = kanbanConfig?.columnColors || {
+    open: "bg-status-open",
+    in_progress: "bg-status-progress",
+    resolved: "bg-status-resolved",
+    closed: "bg-status-closed",
+    pending: "bg-status-pending"
+  };
+
+  const colorOptions = [
+    { label: "Azul", value: "bg-status-open" },
+    { label: "Amarelo", value: "bg-status-progress" },
+    { label: "Verde", value: "bg-status-resolved" },
+    { label: "Vermelho", value: "bg-destructive" },
+    { label: "Cinza", value: "bg-muted" },
+    { label: "Roxo", value: "bg-primary" },
+  ];
+
   return (
     <>
       <PageHeader
         title="Kanban"
         description="Arraste cards para atualizar o status"
         actions={
-          <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
-            <Plus className="size-4" /> Novo chamado
-          </Button>
+          <div className="flex gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Settings2 className="size-4" /> Personalizar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Personalizar Kanban</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  {STATUS_ORDER.map((s) => (
+                    <div key={s} className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">{STATUS_LABEL[s]}</Label>
+                      <div className="col-span-3">
+                        <Select 
+                          value={columnColors[s]} 
+                          onValueChange={(val) => updateSettings({ 
+                            ...kanbanConfig, 
+                            columnColors: { ...columnColors, [s]: val } 
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {colorOptions.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                <div className="flex items-center gap-2">
+                                  <div className={cn("size-2 rounded-full", opt.value)} />
+                                  {opt.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
+              <Plus className="size-4" /> Novo chamado
+            </Button>
+          </div>
         }
       />
       <div className="p-6 overflow-x-auto">
@@ -60,8 +132,9 @@ const Board = () => {
                 onDrop={(e) => onDrop(s, e)}
               >
                 <div className="flex items-center justify-between px-2 py-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-medium">
-                    <span className={`size-1.5 rounded-full ${STATUS_DOT[s]}`} />
+                  <div className="flex items-center justify-between px-2 py-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-medium">
+                    <span className={cn("size-1.5 rounded-full", columnColors[s])} />
                     {STATUS_LABEL[s]}
                   </div>
                   <span className="text-xs text-muted-foreground">{items.length}</span>

@@ -20,6 +20,8 @@ import AdminCompanies from "./pages/admin/Companies";
 import AdminUsers from "./pages/admin/Users";
 import AdminStructure from "./pages/admin/Structure";
 import AdminSystem from "./pages/admin/System";
+import AdminPermissions from "./pages/admin/Permissions";
+import AdminAuditLogs from "./pages/admin/AuditLogs";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,8 @@ const App = () => (
                 <Route path="admin/users" element={<AdminUsers />} />
                 <Route path="admin/structure" element={<AdminStructure />} />
                 <Route path="admin/system" element={<AdminSystem />} />
+                <Route path="admin/permissions" element={<AdminPermissions />} />
+                <Route path="admin/audit-logs" element={<AdminAuditLogs />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

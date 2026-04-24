@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-  import { Plus, Settings2, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Settings2, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
 import { cn } from "@/lib/utils";
 import { STATUS_LABEL, STATUS_ORDER, PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
@@ -16,9 +16,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
- import { Label } from "@/components/ui/label";
- import { Input } from "@/components/ui/input";
- import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type T = {
   id: string; number: number; subject: string; status: string;
@@ -26,26 +26,36 @@ type T = {
 };
 
 const Board = () => {
-  const { org } = useAuth();
-    const { columns, updateSettings } = useKanbanSettings();
-    const [localCols, setLocalCols] = useState<any[]>([]);
- 
-    useEffect(() => {
-      if (columns.length > 0) setLocalCols(columns);
-    }, [columns]);
+  const { org, profile } = useAuth();
+  const { columns, updateSettings } = useKanbanSettings();
+  const [localCols, setLocalCols] = useState<any[]>([]);
+  
+  useEffect(() => {
+    if (columns.length > 0) setLocalCols(columns);
+  }, [columns]);
+  
   const [tickets, setTickets] = useState<T[]>([]);
   const [open, setOpen] = useState(false);
 
-   const load = async () => {
-     if (!org) return;
-     const { data } = await supabase
-       .from("tickets")
-       .select("id,number,subject,status,priority,created_at")
-       .eq("organization_id", org.id)
-       .order("created_at", { ascending: false });
-     setTickets((data as T[]) ?? []);
-   };
-  useEffect(() => { if (org) load(); }, [org]);
+  const load = async () => {
+    let query = supabase
+      .from("tickets")
+      .select("id,number,subject,status,priority,created_at");
+    
+    if (org) {
+      query = query.eq("organization_id", org.id);
+    } else if (!profile?.is_master) {
+      setTickets([]);
+      return;
+    }
+
+    const { data } = await query.order("created_at", { ascending: false });
+    setTickets((data as T[]) ?? []);
+  };
+
+  useEffect(() => { 
+    load(); 
+  }, [org]);
 
   const onDrop = async (status: string, e: React.DragEvent) => {
     e.preventDefault();
@@ -56,7 +66,6 @@ const Board = () => {
     if (status === "resolved") patch.resolved_at = new Date().toISOString();
     await supabase.from("tickets").update(patch).eq("id", id);
   };
-
 
   const colorOptions = [
     { label: "Azul", value: "bg-status-open" },

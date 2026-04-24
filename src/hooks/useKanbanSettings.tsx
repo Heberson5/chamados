@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+const defaultColumns = [
+  { id: "open", label: "Aberto", color: "bg-status-open" },
+  { id: "in_progress", label: "Em andamento", color: "bg-status-progress" },
+  { id: "waiting", label: "Aguardando", color: "bg-status-waiting" },
+  { id: "resolved", label: "Resolvido", color: "bg-status-resolved" },
+  { id: "closed", label: "Fechado", color: "bg-muted" },
+];
+
 export const useKanbanSettings = () => {
   const { profile, org } = useAuth();
   const queryClient = useQueryClient();
@@ -9,7 +17,7 @@ export const useKanbanSettings = () => {
   const query = useQuery({
     queryKey: ["kanban_settings", profile?.id, org?.id],
     queryFn: async () => {
-      if (!profile?.id || !org?.id) return null;
+      if (!profile?.id || !org?.id) return { columns: defaultColumns };
       const { data } = await supabase
         .from("kanban_settings")
         .select("*")
@@ -18,13 +26,6 @@ export const useKanbanSettings = () => {
         .maybeSingle();
       
        const config = data?.config as any;
-       const defaultColumns = [
-         { id: "open", label: "Aberto", color: "bg-status-open" },
-         { id: "in_progress", label: "Em andamento", color: "bg-status-progress" },
-         { id: "waiting", label: "Aguardando", color: "bg-status-waiting" },
-         { id: "resolved", label: "Resolvido", color: "bg-status-resolved" },
-         { id: "closed", label: "Fechado", color: "bg-muted" },
-       ];
  
        if (!config) return { columns: defaultColumns };
        
@@ -39,11 +40,12 @@ export const useKanbanSettings = () => {
  
        return config || { columns: defaultColumns };
     },
-    enabled: !!profile?.id && !!org?.id,
+    enabled: !!profile?.id,
   });
 
   const mutation = useMutation({
     mutationFn: async (config: any) => {
+      if (!org?.id) return;
       const { error } = await supabase
         .from("kanban_settings")
         .upsert({
@@ -61,15 +63,13 @@ export const useKanbanSettings = () => {
   });
 
    const getStatusLabel = (status: string) => {
-     const columns = query.data?.columns as any[];
-     if (!columns) return status;
+     const columns = (query.data?.columns as any[]) || defaultColumns;
      const col = columns.find(c => c.id === status);
      return col ? col.label : status;
    };
  
    const getStatusColor = (status: string) => {
-     const columns = query.data?.columns as any[];
-     if (!columns) return "bg-muted";
+     const columns = (query.data?.columns as any[]) || defaultColumns;
      const col = columns.find(c => c.id === status);
      return col ? col.color : "bg-muted";
    };
@@ -79,6 +79,6 @@ export const useKanbanSettings = () => {
      updateSettings: mutation.mutate,
      getStatusLabel,
      getStatusColor,
-     columns: (query.data?.columns as any[]) || []
+     columns: (query.data?.columns as any[]) || defaultColumns
    };
 };

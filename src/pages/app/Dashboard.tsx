@@ -6,33 +6,42 @@ import { Button } from "@/components/ui/button";
 import { Plus, Inbox, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
 import { Link } from "react-router-dom";
- import { PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
- import { useKanbanSettings } from "@/hooks/useKanbanSettings";
- import { cn } from "@/lib/utils";
+import { PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
+import { useKanbanSettings } from "@/hooks/useKanbanSettings";
+import { cn } from "@/lib/utils";
 
 type T = {
   id: string; number: number; subject: string; status: string;
   priority: string; created_at: string;
 };
 
- const Dashboard = () => {
-   const { getStatusLabel, getStatusColor } = useKanbanSettings();
+const Dashboard = () => {
+  const { getStatusLabel, getStatusColor } = useKanbanSettings();
   const { org, profile } = useAuth();
   const [tickets, setTickets] = useState<T[]>([]);
   const [open, setOpen] = useState(false);
 
-   const load = async () => {
-     if (!org) return;
-     const { data } = await supabase
-       .from("tickets")
-       .select("id,number,subject,status,priority,created_at")
-       .eq("organization_id", org.id)
-       .order("created_at", { ascending: false })
-       .limit(50);
-     setTickets((data as T[]) ?? []);
-   };
+  const load = async () => {
+    let query = supabase
+      .from("tickets")
+      .select("id,number,subject,status,priority,created_at");
+    
+    if (org) {
+      query = query.eq("organization_id", org.id);
+    } else if (!profile?.is_master) {
+      setTickets([]);
+      return;
+    }
 
-  useEffect(() => { if (org) load(); }, [org]);
+    const { data } = await query
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setTickets((data as T[]) ?? []);
+  };
+
+  useEffect(() => { 
+    load(); 
+  }, [org]);
 
   const counts = {
     open: tickets.filter((t) => t.status === "open").length,

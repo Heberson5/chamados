@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
- import { PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
- import { useKanbanSettings } from "@/hooks/useKanbanSettings";
+import { PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
+import { useKanbanSettings } from "@/hooks/useKanbanSettings";
 import { cn } from "@/lib/utils";
 
 type T = {
@@ -16,24 +16,33 @@ type T = {
   priority: string; created_at: string; category: string | null;
 };
 
- const Tickets = () => {
-   const { getStatusLabel, getStatusColor, columns } = useKanbanSettings();
-  const { org } = useAuth();
+const Tickets = () => {
+  const { getStatusLabel, getStatusColor, columns } = useKanbanSettings();
+  const { org, profile } = useAuth();
   const [tickets, setTickets] = useState<T[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
 
-   const load = async () => {
-     if (!org) return;
-     const { data } = await supabase
-       .from("tickets")
-       .select("id,number,subject,status,priority,created_at,category")
-       .eq("organization_id", org.id)
-       .order("created_at", { ascending: false });
-     setTickets((data as T[]) ?? []);
-   };
-  useEffect(() => { if (org) load(); }, [org]);
+  const load = async () => {
+    let query = supabase
+      .from("tickets")
+      .select("id,number,subject,status,priority,created_at,category");
+    
+    if (org) {
+      query = query.eq("organization_id", org.id);
+    } else if (!profile?.is_master) {
+      setTickets([]);
+      return;
+    }
+
+    const { data } = await query.order("created_at", { ascending: false });
+    setTickets((data as T[]) ?? []);
+  };
+
+  useEffect(() => { 
+    load(); 
+  }, [org]);
 
   const filtered = tickets
     .filter((t) => filter === "all" || t.status === filter)

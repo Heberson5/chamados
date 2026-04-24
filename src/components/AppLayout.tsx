@@ -17,7 +17,9 @@ import {
   LayoutGrid,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Lock,
+  Shield
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -83,6 +85,8 @@ export const AppLayout = () => {
       { key: "Usuários", to: "/app/admin/users", icon: Users, label: "Usuários", adminOnly: true },
       { key: "Estrutura", to: "/app/admin/structure", icon: Briefcase, label: "Estrutura", adminOnly: true },
       { key: "Sistema", to: "/app/admin/system", icon: LayoutGrid, label: "Sistema", adminOnly: true },
+      { key: "Permissões", to: "/app/admin/permissions", icon: Lock, label: "Permissões", adminOnly: true },
+      { key: "Auditoria", to: "/app/admin/audit-logs", icon: Shield, label: "Auditoria", adminOnly: true },
       { key: "Configurações", to: "/app/settings", icon: Settings, label: "Configurações" },
     ];
 

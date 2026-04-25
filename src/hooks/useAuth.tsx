@@ -101,9 +101,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setProfile(null);
           setOrgState(null);
         }
-          setProfile(null);
-          setOrgState(null);
-        }
       } catch (err) {
         console.error("Auth state change error:", err);
       } finally {

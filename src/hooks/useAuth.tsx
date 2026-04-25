@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [org, setOrgState] = useState<Org | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = async (uid: string) => {
+  const loadProfile = async (uid: string, retryCount = 0) => {
     try {
       const { data: p, error: pErr } = await supabase
         .from("profiles")
@@ -44,6 +44,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
       
       if (pErr) throw pErr;
+
+      // If profile not found and it's a new login, retry a few times to wait for the trigger
+      if (!p && retryCount < 3) {
+        console.log(`Profile not found for ${uid}, retrying... (${retryCount + 1})`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return loadProfile(uid, retryCount + 1);
+      }
+
       setProfile(p ?? null);
 
       let activeOrgId = p?.organization_id;

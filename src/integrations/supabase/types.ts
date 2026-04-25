@@ -436,6 +436,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_is_master: { Args: never; Returns: boolean }
+      get_my_organization_id: { Args: never; Returns: string }
       get_user_org: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {

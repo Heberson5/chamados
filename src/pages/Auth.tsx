@@ -65,16 +65,21 @@ const Auth = () => {
         if (error) throw error;
         toast.success("Conta criada!");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        
+        if (data.user) {
+          toast.success("Login realizado com sucesso!");
+          // Fallback navigation in case useEffect takes too long
+          setTimeout(() => {
+            if (window.location.pathname === "/auth") {
+              navigate("/app");
+            }
+          }, 1000);
+        }
       }
       
-      // Note: O redirecionamento será feito pelo useEffect acima quando o estado do useAuth atualizar
-       // Reset submitting state if we are still here after 3 seconds
-       setTimeout(() => {
-         setIsSubmitting(false);
-       }, 3000);
-       
+      setIsSubmitting(false);
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");
       setIsSubmitting(false);

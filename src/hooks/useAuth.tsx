@@ -92,13 +92,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       try {
         if (s?.user) {
+          setLoading(true);
           if (event === "SIGNED_IN") {
-            // Log sign in event without blocking profile load
             supabase.rpc("log_user_action", { p_action: "LOGIN" }).then(({ error }) => {
-              if (error) console.error("Error logging action:", error);
+              if (error) console.error("Log error:", error);
             });
           }
-          setLoading(true);
           await loadProfile(s.user.id);
         } else {
           setProfile(null);

@@ -63,25 +63,22 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success("Conta criada!");
+        toast.success("Conta criada! Verifique seu e-mail.");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         
         if (data.user) {
           toast.success("Login realizado com sucesso!");
-          // Fallback navigation in case useEffect takes too long
-          setTimeout(() => {
-            if (window.location.pathname === "/auth") {
-              navigate("/app");
-            }
-          }, 1000);
+          // Redirect immediately if possible
+          const target = profile?.organization_id || profile?.is_master ? "/app" : "/onboarding";
+          navigate(target, { replace: true });
         }
       }
-      
-      setIsSubmitting(false);
     } catch (err: any) {
-      toast.error(err.message ?? "Erro ao autenticar");
+      console.error("Auth error:", err);
+      toast.error(err.message ?? "Erro ao autenticar. Tente novamente.");
+    } finally {
       setIsSubmitting(false);
     }
   };

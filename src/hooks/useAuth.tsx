@@ -141,6 +141,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       
+      // If we get an event, we know the initial auth check is done
+      if (!initialized) setInitialized(true);
+      
       if (s?.user) {
         if (event === "SIGNED_IN") {
           supabase.rpc("log_user_action", { p_action: "LOGIN" }).then(({ error }) => {

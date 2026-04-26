@@ -178,16 +178,25 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
    useEffect(() => {
      fetchUsers();
       getPasswordPolicy().then(setPolicy);
+     (async () => {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) return;
+       const { data: prof } = await supabase
+         .from("profiles")
+         .select("regra, is_master")
+         .eq("id", user.id)
+         .single();
+       if (prof) setCurrentRole({ regra: (prof as any).regra ?? "", is_master: !!(prof as any).is_master });
+     })();
    }, []);
  
    const updateRole = async (userId: string, newRole: string) => {
-     const { error } = await supabase
-       .from("profiles")
-       .update({ regra: newRole as Regra, is_master: newRole === 'MASTER' })
-       .eq("id", userId);
- 
-     if (error) {
-       toast({ variant: "destructive", title: "Erro ao atualizar permissão", description: error.message });
+    const { data, error } = await supabase.functions.invoke("admin-update-user", {
+      body: { user_id: userId, regra: newRole },
+    });
+    if (error || (data as any)?.error) {
+      const msg = (error as any)?.message ?? (data as any)?.error ?? "Erro";
+      toast({ variant: "destructive", title: "Erro ao atualizar permissão", description: msg });
      } else {
        toast({ title: "Sucesso", description: "Permissão atualizada com sucesso!" });
        fetchUsers();

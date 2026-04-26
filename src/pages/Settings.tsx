@@ -366,9 +366,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 pt-6">
-                          <Button variant="ghost" size="icon" disabled={idx === 0} onClick={() => { const nc = [...kanbanConfig]; [nc[idx-1], nc[idx]] = [nc[idx], nc[idx-1]]; setKanbanConfig(nc); }}><Plus size={14} className="rotate-45" /></Button>
-                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setKanbanConfig(kanbanConfig.filter((_, i) => i !== idx))}><Trash2 size={14} /></Button>
+                        <div className="flex flex-col gap-1 pt-4">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            disabled={idx === 0} 
+                            onClick={() => { 
+                              const nc = [...kanbanConfig]; 
+                              [nc[idx-1], nc[idx]] = [nc[idx], nc[idx-1]]; 
+                              setKanbanConfig(nc); 
+                            }}
+                          >
+                            <ChevronUp size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            disabled={idx === kanbanConfig.length - 1} 
+                            onClick={() => { 
+                              const nc = [...kanbanConfig]; 
+                              [nc[idx], nc[idx+1]] = [nc[idx+1], nc[idx]]; 
+                              setKanbanConfig(nc); 
+                            }}
+                          >
+                            <ChevronDown size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive" 
+                            onClick={() => setKanbanConfig(kanbanConfig.filter((_, i) => i !== idx))}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
                         </div>
                       </div>
                     ))}

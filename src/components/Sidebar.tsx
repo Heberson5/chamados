@@ -125,6 +125,6 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
            {!collapsed && <span>Sair</span>}
          </Button>
        </div>
-     </div>
-   );
- }
+    </aside>
+  );
+}

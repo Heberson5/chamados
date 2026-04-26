@@ -48,9 +48,12 @@ const Permissions = () => {
   const { data: departments, isLoading: isLoadingDepts } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("departments").select("*").order("name");
+      const { data, error } = await supabase
+        .from("departments")
+        .select("*, organizations(name)")
+        .order("name");
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 

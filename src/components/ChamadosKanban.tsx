@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
- import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus } from "lucide-react";
+  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, UserClock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
   import { useState, useEffect, useCallback } from "react";
@@ -126,7 +126,7 @@ import { Label } from "@/components/ui/label";
              </div>
            </div>
          </CardContent>
-         <CardFooter className="p-4 pt-0 flex gap-2">
+          <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
            <Button 
              size="sm" 
              variant="ghost"
@@ -144,16 +144,50 @@ import { Label } from "@/components/ui/label";
                <Play size={12} /> Atender
              </Button>
            )}
-           {columnId === "EM_ATENDIMENTO" && userRole !== "USUARIO" && (
-             <Button 
-               size="sm" 
-               variant="outline"
-               className="flex-1 gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-               onClick={(e) => { e.stopPropagation(); onOpenClosure(ticket); }}
-             >
-               <CheckCircle size={12} /> Encerrar
-             </Button>
-           )}
+            {["EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO"].includes(columnId) && userRole !== "USUARIO" && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  onClick={(e) => { e.stopPropagation(); onOpenClosure(ticket); }}
+                >
+                  <CheckCircle size={12} /> Encerrar
+                </Button>
+                
+                {columnId === "EM_ATENDIMENTO" && (
+                  <>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-slate-600"
+                      onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "pausar"); }}
+                    >
+                      <Pause size={12} /> Pausar
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-indigo-600"
+                      onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "aguardar_usuario"); }}
+                    >
+                      <UserClock size={12} /> Aguardar Usuário
+                    </Button>
+                  </>
+                )}
+                
+                {(columnId === "PAUSADO" || columnId === "AGUARDANDO_USUARIO") && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-amber-600"
+                    onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "retomar"); }}
+                  >
+                    <Play size={12} /> Retomar
+                  </Button>
+                )}
+              </>
+            )}
            {ticket.status === "ENCERRADO" && (
              <Button 
                size="sm" 
@@ -256,24 +290,61 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      loadData();
    }, []);
 
-   const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir") => {
+    const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario") => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+        // Fetch current ticket state to calculate time differences
+        const { data: ticket } = await supabase.from("chamados").select("*").eq("id", ticketId).single();
+        if (!ticket) return;
+
       const updates: any = {};
+        const now = new Date().toISOString();
+
       if (action === "atender") {
         updates.status = "EM_ATENDIMENTO";
         updates.tecnico_id = user.id;
+          updates.atendido_em = now;
        } else if (action === "reabrir") {
          updates.status = "EM_ATENDIMENTO";
          updates.encerrado_em = null;
          updates.reaberto = true;
        } else if (action === "encerrar") {
         updates.status = "ENCERRADO";
-        updates.encerrado_em = new Date().toISOString();
+          updates.encerrado_em = now;
         updates.descricao_encerramento = closureNote;
-      }
+
+          // Insert closure note as a comment
+          await supabase.from("comentarios_chamado").insert({
+            chamado_id: ticketId,
+            autor_id: user.id,
+            comentario: `[ENCERRAMENTO] ${closureNote}`
+          });
+        } else if (action === "pausar") {
+          updates.status = "PAUSADO";
+          updates.pausado_em = now;
+        } else if (action === "aguardar_usuario") {
+          updates.status = "AGUARDANDO_USUARIO";
+          updates.aguardando_usuario_em = now;
+        } else if (action === "retomar") {
+          updates.status = "EM_ATENDIMENTO";
+          
+          if (ticket.status === "PAUSADO" && ticket.pausado_em) {
+            const pauseStart = new Date(ticket.pausado_em).getTime();
+            const diff = Math.floor((new Date().getTime() - pauseStart) / 1000);
+            updates.tempo_total_pausado = (ticket.tempo_total_pausado || 0) + diff;
+            updates.pausado_em = null;
+          }
+          
+          if (ticket.status === "AGUARDANDO_USUARIO" && ticket.aguardando_usuario_em) {
+            const waitStart = new Date(ticket.aguardando_usuario_em).getTime();
+            const diff = Math.floor((new Date().getTime() - waitStart) / 1000);
+            updates.tempo_total_aguardando_usuario = (ticket.tempo_total_aguardando_usuario || 0) + diff;
+            updates.aguardando_usuario_em = null;
+          }
+        }
+
       const { error } = await supabase
         .from("chamados")
         .update(updates)
@@ -282,9 +353,10 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       if (error) throw error;
 
       toast({
-        title: "Sucesso",
-        description: action === "atender" ? "Você assumiu o chamado." : "Chamado encerrado.",
-      });
+        title: "Status Atualizado",
+        description: `Chamado ${action === "encerrar" ? "encerrado" : "atualizado"} com sucesso.`,
+      } as any);
+
       onUpdate();
       setIsClosureDialogOpen(false);
       setClosureNote("");

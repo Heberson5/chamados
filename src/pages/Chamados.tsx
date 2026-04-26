@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+ import { format } from "date-fns";
+ import { ptBR } from "date-fns/locale";
+ import { getPriorityLabel } from "@/lib/utils/priority";
 
 export default function Chamados() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -176,17 +177,6 @@ export default function Chamados() {
     const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-   const getPriorityLabel = (priority: string) => {
-     const labels: Record<string, string> = {
-        P1: "Crítico",
-        P2: "Alto",
-        P3: "Médio",
-        P4: "Baixo",
-        P5: "Muito Baixo"
-     };
-     return labels[priority] || priority;
-   };
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">

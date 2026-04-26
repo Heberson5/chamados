@@ -7,8 +7,9 @@ import {
   Settings, 
   LogOut, 
   Headphones, 
-  ChevronLeft, 
-   ChevronRight, Building2, Check, ChevronsUpDown, Users, Briefcase, LayoutGrid, Sun, Moon, Monitor, Lock, Shield, Menu
+  ChevronLeft,
+  ChevronRight, Building2, Check, ChevronsUpDown, Users, Briefcase, LayoutGrid, Sun, Moon, Monitor, Lock, Shield, Menu,
+  Network, BarChart, Book
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -73,9 +74,13 @@ export const AppLayout = () => {
       { key: "Kanban", to: "/app/board", icon: KanbanSquare, label: "Kanban" },
       { key: "Empresas", to: "/app/admin/companies", icon: Building2, label: "Empresas", masterOnly: true },
       { key: "Usuários", to: "/app/admin/users", icon: Users, label: "Usuários", adminOnly: true },
+      { key: "Departamentos", to: "/app/admin/structure", icon: Network, label: "Departamentos", adminOnly: true },
+      { key: "Cargos", to: "/app/admin/structure", icon: Briefcase, label: "Cargos", adminOnly: true },
       { key: "Estrutura", to: "/app/admin/structure", icon: Briefcase, label: "Estrutura", adminOnly: true },
       { key: "Sistema", to: "/app/admin/system", icon: LayoutGrid, label: "Sistema", masterOnly: true },
       { key: "Permissões", to: "/app/admin/permissions", icon: Lock, label: "Permissões", adminOnly: true },
+      { key: "Relatórios", to: "/app/reports", icon: BarChart, label: "Relatórios", adminOnly: true },
+      { key: "Conhecimento", to: "/app/knowledge", icon: Book, label: "Base de Conhecimento", adminOnly: true },
       { key: "Auditoria", to: "/app/admin/audit-logs", icon: Shield, label: "Auditoria", masterOnly: true },
       { key: "Configurações", to: "/app/settings", icon: Settings, label: "Configurações" },
     ];

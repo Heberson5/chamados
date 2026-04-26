@@ -347,7 +347,12 @@ import { supabase } from "@/integrations/supabase/client";
                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
                      itemStyle={{ color: 'hsl(var(--foreground))' }}
                    />
-                   <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar 
+                      dataKey="valor" 
+                      fill="hsl(var(--primary))" 
+                      radius={[6, 6, 0, 0]} 
+                      className="transition-all duration-300 hover:opacity-80"
+                    />
                  </BarChart>
                </ResponsiveContainer>
              </CardContent>
@@ -370,9 +375,16 @@ import { supabase } from "@/integrations/supabase/client";
                      paddingAngle={5}
                      dataKey="value"
                    >
-                     {stats.byStatus.map((entry, index) => (
-                       <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--destructive))', 'hsl(var(--warning))'][index % 5]} />
-                     ))}
+                      {stats.byStatus.map((entry, index) => {
+                        const colors = [
+                          'hsl(var(--primary))',
+                          'hsl(var(--chart-1, 217 91% 60%))',
+                          'hsl(var(--chart-2, 142 71% 45%))',
+                          'hsl(var(--chart-3, 31 97% 55%))',
+                          'hsl(var(--chart-4, 262 83% 58%))',
+                        ];
+                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />;
+                      })}
                    </Pie>
                    <Tooltip 
                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}

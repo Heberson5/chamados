@@ -20,6 +20,7 @@ import {
  import { useTheme } from "@/components/ThemeProvider";
  import { supabase } from "@/integrations/supabase/client";
  import UserMenu from "./UserMenu";
+ import { useBranding } from "@/hooks/useBranding";
  
 interface SidebarProps {
   onMobileClose?: () => void;
@@ -28,7 +29,7 @@ interface SidebarProps {
  export default function Sidebar({ onMobileClose }: SidebarProps) {
    const [collapsed, setCollapsed] = useState(false);
    const [role, setRole] = useState<string | null>(null);
-   const [layout, setLayout] = useState<any>({ companyName: "Help-Me", companyLogo: "" });
+    const { branding: layout } = useBranding();
    const { theme, setTheme } = useTheme();
    const navigate = useNavigate();
    const location = useLocation();
@@ -45,31 +46,6 @@ interface SidebarProps {
            .single();
          if (data) {
            setRole(data.is_master ? 'MASTER' : data.regra);
-         }
-       }
- 
-       const { data: settings } = await supabase
-         .from("system_settings")
-         .select("value")
-         .eq("key", "layout_settings")
-         .single();
-       
-       if (settings) {
-         const config = settings.value as any;
-         setLayout(config);
-         if (config.companyName) {
-           document.title = config.companyName;
-         }
-         if (config.companyFavicon) {
-           const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-           if (link) {
-             link.href = config.companyFavicon;
-           } else {
-             const newLink = document.createElement('link');
-             newLink.rel = 'icon';
-             newLink.href = config.companyFavicon;
-             document.getElementsByTagName('head')[0].appendChild(newLink);
-           }
          }
        }
      };

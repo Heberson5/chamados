@@ -24,11 +24,12 @@ const AdminSystem = () => {
 
   useEffect(() => {
     if (settings) {
-       const defaultKeys = [
-         "Dashboard", "Chamados", "Kanban", "Empresas", "Usuários", 
-         "Departamentos", "Cargos", "Estrutura", "Sistema", "Permissões", 
-         "Relatórios", "Conhecimento", "Auditoria", "Configurações"
-       ];
+        const defaultKeys = [
+          "Dashboard", "Chamados", "Kanban", "Empresas", "Usuários", 
+          "Departamentos", "Cargos", "Filas", "SLA", "Automações", 
+          "Templates", "Relatórios", "Permissões", "Conhecimento", 
+          "Sistema", "Auditoria", "Configurações"
+        ];
       const existingConfig = (settings.menu_config as any[]) || [];
       
       // Merge with default keys to ensure all are present and in correct order if not already configured

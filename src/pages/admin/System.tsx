@@ -24,7 +24,7 @@ const AdminSystem = () => {
 
   useEffect(() => {
     if (settings) {
-      const defaultKeys = ["Dashboard", "Chamados", "Kanban", "Empresas", "Usuários", "Estrutura", "Sistema", "Configurações"];
+       const defaultKeys = ["Dashboard", "Chamados", "Kanban", "Empresas", "Usuários", "Estrutura", "Sistema", "Permissões", "Auditoria", "Configurações"];
       const existingConfig = (settings.menu_config as any[]) || [];
       
       // Merge with default keys to ensure all are present and in correct order if not already configured

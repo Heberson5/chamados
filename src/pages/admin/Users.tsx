@@ -3,7 +3,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
  import { UserPlus, User, Building2, Pencil, Save, Trash2, Shield } from "lucide-react";
- import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+  import { Badge } from "@/components/ui/badge";
  import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
@@ -29,13 +30,14 @@ import { supabase } from "@/integrations/supabase/client";
       organization_id: "",
       is_master: false,
       department_id: "",
-      position_id: ""
+      position_id: "",
+      role: "customer" as "admin" | "agent" | "customer"
     });
 
    const load = async () => {
      const { data } = await supabase
        .from("profiles")
-       .select("*, organizations(name), departments(name), positions(name)")
+       .select("*, organizations(name), departments(name), positions(name), user_roles(role)")
        .order("full_name");
      setUsers(data || []);
      
@@ -55,20 +57,34 @@ import { supabase } from "@/integrations/supabase/client";
  
    const createUser = async () => {
      if (!newUser.email || !newUser.full_name) return;
-     // In a real app, we'd use an edge function to create the auth user too.
-     // Here we'll just insert the profile or show a message.
-     const { error } = await supabase.from("profiles").insert({
-       ...newUser,
-       id: crypto.randomUUID() // Fallback if not linked to auth yet
-     });
      
-     if (error) {
-       toast({ variant: "destructive", title: "Erro", description: error.message });
-     } else {
-       toast({ title: "Sucesso", description: "Usuário cadastrado com sucesso." });
-       setOpen(false);
-       load();
+     const userId = crypto.randomUUID();
+     const { role, ...profileData } = newUser;
+ 
+     const { error: profileError } = await supabase.from("profiles").insert({
+       ...profileData,
+       id: userId,
+       organization_id: profileData.organization_id || null,
+       department_id: profileData.department_id || null,
+       position_id: profileData.position_id || null,
+     } as any);
+     
+     if (profileError) {
+       toast({ variant: "destructive", title: "Erro ao criar perfil", description: profileError.message });
+       return;
      }
+ 
+     if (newUser.organization_id && !newUser.is_master) {
+       await supabase.from("user_roles").insert({
+         user_id: userId,
+         organization_id: newUser.organization_id,
+         role: role
+       });
+     }
+     
+     toast({ title: "Sucesso", description: "Usuário cadastrado com sucesso." });
+     setOpen(false);
+     load();
    };
  
   const handleEdit = (user: any) => {
@@ -76,7 +92,8 @@ import { supabase } from "@/integrations/supabase/client";
       ...user,
       organization_id: user.organization_id || "",
       department_id: user.department_id || "",
-      position_id: user.position_id || ""
+       position_id: user.position_id || "",
+       role: user.user_roles?.[0]?.role || "customer"
     });
     setEditOpen(true);
   };
@@ -84,16 +101,38 @@ import { supabase } from "@/integrations/supabase/client";
   const updateUser = async () => {
     if (!editingUser || !editingUser.full_name) return;
     
+     const { role, ...profileData } = editingUser;
+
     const { error } = await supabase
       .from("profiles")
       .update({
-        full_name: editingUser.full_name,
-        organization_id: editingUser.organization_id || null,
-        department_id: editingUser.department_id || null,
-        position_id: editingUser.position_id || null,
-        is_master: editingUser.is_master
+         full_name: profileData.full_name,
+         organization_id: profileData.organization_id || null,
+         department_id: profileData.department_id || null,
+         position_id: profileData.position_id || null,
+         is_master: profileData.is_master
       })
-      .eq("id", editingUser.id);
+       .eq("id", profileData.id);
+
+     if (!error && editingUser.organization_id && !editingUser.is_master) {
+       // Update or insert role
+       const { data: existingRole } = await supabase
+         .from("user_roles")
+         .select("id")
+         .eq("user_id", editingUser.id)
+         .maybeSingle();
+
+       if (existingRole) {
+         await supabase
+           .from("user_roles")
+           .update({ role, organization_id: editingUser.organization_id })
+           .eq("id", existingRole.id);
+       } else {
+         await supabase
+           .from("user_roles")
+           .insert({ user_id: editingUser.id, role, organization_id: editingUser.organization_id });
+       }
+     }
 
     if (error) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
@@ -200,7 +239,22 @@ import { supabase } from "@/integrations/supabase/client";
                   </Select>
                 </div>
               </div>
-                 <div className="flex items-center space-x-2">
+                  <div className="space-y-2">
+                    <Label>Nível de Acesso</Label>
+                    <Select 
+                      value={newUser.role} 
+                      onValueChange={(v) => setNewUser({ ...newUser, role: v as any })}
+                      disabled={newUser.is_master}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione o nível" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="agent">Agente / Suporte</SelectItem>
+                        <SelectItem value="customer">Usuário (Solicitante)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
                    <Checkbox 
                      id="is_master" 
                      checked={newUser.is_master} 
@@ -293,7 +347,22 @@ import { supabase } from "@/integrations/supabase/client";
                   </Select>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="space-y-2">
+                <Label>Nível de Acesso</Label>
+                <Select 
+                  value={editingUser.role} 
+                  onValueChange={(v) => setEditingUser({ ...editingUser, role: v as any })}
+                  disabled={editingUser.is_master}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione o nível" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="agent">Agente / Suporte</SelectItem>
+                    <SelectItem value="customer">Usuário (Solicitante)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2 pt-2">
                 <Checkbox 
                   id="edit_is_master" 
                   checked={editingUser.is_master} 
@@ -328,6 +397,7 @@ import { supabase } from "@/integrations/supabase/client";
                 <TableHead>Nome</TableHead>
                 <TableHead>Empresa</TableHead>
                 <TableHead>Depto / Cargo</TableHead>
+                <TableHead>Nível</TableHead>
                 <TableHead>Master?</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -353,6 +423,13 @@ import { supabase } from "@/integrations/supabase/client";
                   <TableCell>
                     <div className="text-xs">{u.departments?.name || "—"}</div>
                     <div className="text-[11px] text-muted-foreground">{u.positions?.name || "—"}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-normal capitalize">
+                      {u.user_roles?.[0]?.role === 'admin' ? 'Administrador' : 
+                       u.user_roles?.[0]?.role === 'agent' ? 'Agente' : 
+                       u.user_roles?.[0]?.role === 'customer' ? 'Usuário' : '—'}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {u.is_master ? (

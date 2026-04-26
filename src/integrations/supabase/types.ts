@@ -779,6 +779,7 @@ export type Database = {
           ativo: boolean | null
           atualizado_em: string | null
           avatar_url: string | null
+          cidade: string | null
           created_at: string
           deletado_em: string | null
           department_id: string | null
@@ -786,9 +787,11 @@ export type Database = {
           gerado_em: string | null
           id: string
           is_master: boolean | null
+          must_change_password: boolean | null
           nivel: Database["public"]["Enums"]["nivel_tecnico"] | null
           nome: string | null
           organization_id: string | null
+          password_changed_at: string | null
           position_id: string | null
           ramal: string | null
           regra: Database["public"]["Enums"]["regra"]
@@ -802,6 +805,7 @@ export type Database = {
           ativo?: boolean | null
           atualizado_em?: string | null
           avatar_url?: string | null
+          cidade?: string | null
           created_at?: string
           deletado_em?: string | null
           department_id?: string | null
@@ -809,9 +813,11 @@ export type Database = {
           gerado_em?: string | null
           id: string
           is_master?: boolean | null
+          must_change_password?: boolean | null
           nivel?: Database["public"]["Enums"]["nivel_tecnico"] | null
           nome?: string | null
           organization_id?: string | null
+          password_changed_at?: string | null
           position_id?: string | null
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]
@@ -825,6 +831,7 @@ export type Database = {
           ativo?: boolean | null
           atualizado_em?: string | null
           avatar_url?: string | null
+          cidade?: string | null
           created_at?: string
           deletado_em?: string | null
           department_id?: string | null
@@ -832,9 +839,11 @@ export type Database = {
           gerado_em?: string | null
           id?: string
           is_master?: boolean | null
+          must_change_password?: boolean | null
           nivel?: Database["public"]["Enums"]["nivel_tecnico"] | null
           nome?: string | null
           organization_id?: string | null
+          password_changed_at?: string | null
           position_id?: string | null
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]

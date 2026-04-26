@@ -29,13 +29,14 @@ import { supabase } from "@/integrations/supabase/client";
       organization_id: "",
       is_master: false,
       department_id: "",
-      position_id: ""
+      position_id: "",
+      role: "customer" as "admin" | "agent" | "customer"
     });
 
    const load = async () => {
      const { data } = await supabase
        .from("profiles")
-       .select("*, organizations(name), departments(name), positions(name)")
+       .select("*, organizations(name), departments(name), positions(name), user_roles(role)")
        .order("full_name");
      setUsers(data || []);
      

@@ -2,7 +2,6 @@
  import { supabase } from "@/integrations/supabase/client";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
- import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
  import { Button } from "@/components/ui/button";
  import { Plus, Search, Mail, Phone, MoreVertical } from "lucide-react";
  import { Input } from "@/components/ui/input";
@@ -74,18 +73,15 @@
              {filteredUsers.map((user) => (
                <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
                  <TableCell>
-                   <div className="flex items-center gap-3">
-                     <Avatar>
-                       <AvatarImage src={user.avatar_url} />
-                       <AvatarFallback className="bg-primary/10 text-primary">
-                         {user.nome?.charAt(0)}{user.sobrenome?.charAt(0)}
-                       </AvatarFallback>
-                     </Avatar>
-                     <div className="flex flex-col">
-                       <span className="font-medium">{user.nome} {user.sobrenome}</span>
-                       <span className="text-xs text-muted-foreground">{user.email}</span>
-                     </div>
-                   </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                      {user.nome?.charAt(0)}{user.sobrenome?.charAt(0)}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{user.nome} {user.sobrenome}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </div>
+                  </div>
                  </TableCell>
                  <TableCell>
                    <div className="flex flex-col">

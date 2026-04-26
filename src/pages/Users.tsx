@@ -242,7 +242,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
              </TableRow>
            </TableHeader>
            <TableBody>
-             {users.map((user) => (
+             {users.filter(u => isCurrentMaster ? true : !(u.is_master || u.regra === "MASTER")).map((user) => (
                <TableRow key={user.id}>
                  <TableCell className="font-medium">
                    <div className="flex items-center gap-3">

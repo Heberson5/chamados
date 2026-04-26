@@ -31,7 +31,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       { id: '3', label: "Usuários", path: "/usuarios", visible: true },
       { id: '4', label: "Permissões", path: "/permissions", visible: true },
       { id: '5', label: "Auditoria", path: "/audit", visible: true },
-      { id: '7', label: "Meu Perfil", path: "/perfil", visible: true },
       { id: '8', label: "Configurações", path: "/settings", visible: true },
     ];
 

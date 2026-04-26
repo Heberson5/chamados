@@ -1,66 +1,137 @@
- import { useEffect, useState } from "react";
+ import { useEffect, useState, useMemo } from "react";
  import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
- import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { 
-  Ticket, 
-  AlertCircle, 
-  CheckCircle2, 
-  Clock, 
-  Package, 
-  Users 
-} from "lucide-react";
-
-export default function Dashboard() {
+ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
+ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon } from "lucide-react";
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+ import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay } from "date-fns";
+ import { ptBR } from "date-fns/locale";
+ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+ import { Button } from "@/components/ui/button";
+ import { Calendar } from "@/components/ui/calendar";
+ 
+ export default function Dashboard() {
    const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalTickets: 0,
-    openTickets: 0,
-    resolvedTickets: 0,
-    slaViolations: 0,
-    activeUsers: 0
-  });
-
+   const [loading, setLoading] = useState(true);
+   const [tickets, setTickets] = useState<any[]>([]);
+   const [profiles, setProfiles] = useState<any[]>([]);
+   const [filters, setFilters] = useState({
+     period: "7d",
+     technician: "all",
+     user: "all",
+     dateRange: { from: subDays(new Date(), 7), to: new Date() }
+   });
+ 
+   const [stats, setStats] = useState({
+     totalTickets: 0,
+     openTickets: 0,
+     resolvedTickets: 0,
+     slaViolations: 0,
+     activeUsers: 0
+   });
+ 
    useEffect(() => {
-     const checkRoleAndFetchStats = async () => {
+     const checkRole = async () => {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;
-       
        const { data: profile } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
-       
        if (profile && profile.regra !== 'ADMIN' && profile.regra !== 'MASTER' && !profile.is_master) {
          navigate("/chamados");
-         return;
        }
-
-       const [
-         { count: total },
-         { count: open },
-         { count: resolved },
-         { count: sla },
-         { count: users }
-       ] = await Promise.all([
-         supabase.from("chamados").select("*", { count: 'exact', head: true }),
-         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ABERTO'),
-         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ENCERRADO'),
-         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('sla_violado', true),
-         supabase.from("profiles").select("*", { count: 'exact', head: true }).eq('ativo', true)
-       ]);
-
-       setStats({
-         totalTickets: total || 0,
-         openTickets: open || 0,
-         resolvedTickets: resolved || 0,
-         slaViolations: sla || 0,
-         activeUsers: users || 0
-       });
      };
-
-      checkRoleAndFetchStats();
-      const interval = setInterval(checkRoleAndFetchStats, 30000); // 30s update
-      return () => clearInterval(interval);
-    }, [navigate]);
+     checkRole();
+   }, [navigate]);
+ 
+   const fetchData = async () => {
+     try {
+       const [ticketsRes, profilesRes] = await Promise.all([
+         supabase.from("chamados").select("*").order('gerado_em', { ascending: false }),
+         supabase.from("profiles").select("*").eq('ativo', true)
+       ]);
+ 
+       if (ticketsRes.data) setTickets(ticketsRes.data);
+       if (profilesRes.data) setProfiles(profilesRes.data);
+ 
+       const activeUsersCount = profilesRes.data?.length || 0;
+       setStats(prev => ({ ...prev, activeUsers: activeUsersCount }));
+     } catch (error) {
+       console.error("Error fetching dashboard data:", error);
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   useEffect(() => {
+     fetchData();
+     const interval = setInterval(fetchData, 30000);
+     return () => clearInterval(interval);
+   }, []);
+ 
+   const filteredTickets = useMemo(() => {
+     let result = [...tickets];
+ 
+     // Period Filter
+     let startDate = filters.dateRange.from;
+     let endDate = filters.dateRange.to;
+ 
+     if (filters.period !== "custom") {
+       endDate = new Date();
+       if (filters.period === "1d") startDate = startOfDay(new Date());
+       else if (filters.period === "7d") startDate = subDays(new Date(), 7);
+       else if (filters.period === "30d") startDate = subDays(new Date(), 30);
+       else if (filters.period === "1y") startDate = subDays(new Date(), 365);
+     }
+ 
+     result = result.filter(t => {
+       const date = new Date(t.gerado_em);
+       const withinInterval = isWithinInterval(date, { start: startOfDay(startDate), end: endOfDay(endDate) });
+       const technicianMatch = filters.technician === "all" || t.tecnico_id === filters.technician;
+       const userMatch = filters.user === "all" || t.usuario_id === filters.user;
+       return withinInterval && technicianMatch && userMatch;
+     });
+ 
+     return result;
+   }, [tickets, filters]);
+ 
+   useEffect(() => {
+     const total = filteredTickets.length;
+     const open = filteredTickets.filter(t => t.status === 'ABERTO').length;
+     const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
+     const sla = filteredTickets.filter(t => t.sla_violado).length;
+ 
+     setStats(prev => ({
+       ...prev,
+       totalTickets: total,
+       openTickets: open,
+       resolvedTickets: resolved,
+       slaViolations: sla
+     }));
+   }, [filteredTickets]);
+ 
+   const chartData = useMemo(() => {
+     let startDate = filters.dateRange.from;
+     let endDate = filters.dateRange.to;
+ 
+     if (filters.period !== "custom") {
+       endDate = new Date();
+       if (filters.period === "1d") startDate = startOfDay(new Date());
+       else if (filters.period === "7d") startDate = subDays(new Date(), 7);
+       else if (filters.period === "30d") startDate = subDays(new Date(), 30);
+       else if (filters.period === "1y") startDate = subDays(new Date(), 365);
+     }
+ 
+     const days = eachDayOfInterval({ start: startDate, end: endDate });
+     
+     return days.map(day => {
+       const dayTickets = filteredTickets.filter(t => isSameDay(new Date(t.gerado_em), day));
+       return {
+         name: format(day, "dd/MM"),
+         chamados: dayTickets.length,
+         sla: dayTickets.filter(t => !t.sla_violado).length
+       };
+     });
+   }, [filteredTickets, filters]);
 
   const cards = [
     { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },

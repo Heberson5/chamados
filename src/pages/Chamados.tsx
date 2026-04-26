@@ -3,7 +3,7 @@
  import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
- import { Plus, Search, ArrowRight, AlertTriangle, Loader2 } from "lucide-react";
+ import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X } from "lucide-react";
  import { Input } from "@/components/ui/input";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
  import { Label } from "@/components/ui/label";
@@ -19,16 +19,15 @@
    const [isDialogOpen, setIsDialogOpen] = useState(false);
    const [isLoading, setIsLoading] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
-    const [newTicket, setNewTicket] = useState<{ 
-      titulo: string; 
-      os: string; 
-      descricao: string; 
-      prioridade: "P1" | "P2" | "P3" | "P4" | "P5" 
-    }>({ 
+    const [previews, setPreviews] = useState<string[]>([]);
+    const [newTicket, setNewTicket] = useState<{
+      titulo: string;
+      descricao: string;
+      prioridade: "P1" | "P2" | "P3" | "P4" | "P5"
+    }>({
       titulo: "",
-      os: "", 
-      descricao: "", 
-      prioridade: "P3" 
+      descricao: "",
+      prioridade: "P3"
     });
    const { toast } = useToast();
  
@@ -70,8 +69,18 @@
           });
           return;
         }
-        setFiles(selectedFiles);
+        setFiles(prev => [...prev, ...selectedFiles]);
+        const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
+        setPreviews(prev => [...prev, ...newPreviews]);
       }
+    };
+
+    const removeFile = (index: number) => {
+      setFiles(prev => prev.filter((_, i) => i !== index));
+      setPreviews(prev => {
+        URL.revokeObjectURL(prev[index]);
+        return prev.filter((_, i) => i !== index);
+      });
     };
 
     const handleCreateTicket = async (e: React.FormEvent) => {
@@ -100,9 +109,9 @@
           uploadedUrls.push(publicUrl);
         }
   
-        const { error } = await supabase.from("chamados").insert({ 
+        const { error } = await supabase.from("chamados").insert({
           titulo: newTicket.titulo,
-          os: newTicket.os || `OS-${Date.now()}`,
+          os: `OS-${new Date().getFullYear()}${String(Date.now()).slice(-6)}`,
           descricao: newTicket.descricao,
           prioridade: newTicket.prioridade,
           usuario_id: user.id,
@@ -114,8 +123,9 @@
   
         toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
         setIsDialogOpen(false);
-        setNewTicket({ titulo: "", os: "", descricao: "", prioridade: "P3" });
+        setNewTicket({ titulo: "", descricao: "", prioridade: "P3" });
         setFiles([]);
+        setPreviews([]);
         fetchTickets();
       } catch (error: any) {
         toast({ variant: "destructive", title: "Erro ao criar chamado", description: error.message });
@@ -201,22 +211,14 @@
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="os">Número da OS (Opcional)</Label>
-                    <Input 
-                      id="os" 
-                      value={newTicket.os}
-                      onChange={e => setNewTicket({...newTicket, os: e.target.value})}
-                      placeholder="Ex: OS-2024-001"
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="descricao">Descrição</Label>
-                    <Input 
-                      id="descricao" 
-                      required 
+                    <textarea
+                      id="descricao"
+                      required
+                      className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
                       value={newTicket.descricao}
                       onChange={e => setNewTicket({...newTicket, descricao: e.target.value})}
-                      placeholder="Descreva o problema"
+                      placeholder="Descreva o problema detalhadamente..."
                     />
                   </div>
                   <div className="space-y-2">
@@ -246,6 +248,23 @@
                       onChange={handleFileChange}
                     />
                     <p className="text-[10px] text-muted-foreground">Vídeos e áudios não são permitidos.</p>
+                    
+                    {previews.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2 mt-2">
+                        {previews.map((url, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-md overflow-hidden border">
+                            <img src={url} alt={`Preview ${idx}`} className="object-cover w-full h-full" />
+                            <button
+                              type="button"
+                              onClick={() => removeFile(idx)}
+                              className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                  <DialogFooter>
                    <Button type="submit" disabled={isLoading}>

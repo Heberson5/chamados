@@ -11,6 +11,7 @@ type Profile = {
   is_master: boolean;
   department_id: string | null;
   position_id: string | null;
+  role: "admin" | "agent" | "customer" | null;
 };
 
 type Org = { id: string; name: string; slug: string; email_settings?: any };
@@ -39,7 +40,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data: p, error: pErr } = await supabase
         .from("profiles")
-        .select("id,email,full_name,avatar_url,organization_id,is_master,department_id,position_id")
+        .select(`
+          id, email, full_name, avatar_url, organization_id, is_master, department_id, position_id,
+          user_roles ( role )
+        `)
         .eq("id", uid)
         .maybeSingle();
       
@@ -52,7 +56,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return loadProfile(uid, retryCount + 1);
       }
 
-      setProfile(p ?? null);
+      const profileData = p ? {
+        ...p,
+        role: (p as any).user_roles?.[0]?.role ?? null
+      } : null;
+
+      setProfile(profileData as any);
 
       let activeOrgId = p?.organization_id;
 

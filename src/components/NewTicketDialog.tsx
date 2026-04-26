@@ -38,7 +38,9 @@ export const NewTicketDialog = ({
   onOpenChange: (o: boolean) => void;
   onCreated?: () => void;
 }) => {
-  const { user, org } = useAuth();
+   const { user, org, profile } = useAuth();
+   const [selectedOrgId, setSelectedOrgId] = useState("");
+   const [allOrgs, setAllOrgs] = useState<any[]>([]);
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
    const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
@@ -77,7 +79,8 @@ export const NewTicketDialog = ({
   const submit = async () => {
      const parsed = schema.safeParse({ subject, description, priority, category });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
-    if (!user || !org) return;
+     const targetOrgId = org?.id || selectedOrgId;
+     if (!user || !targetOrgId) return;
     setBusy(true);
  
      const uploadedUrls: string[] = [];
@@ -102,7 +105,30 @@ export const NewTicketDialog = ({
       priority: parsed.data.priority,
        category: parsed.data.category,
        attachment_urls: uploadedUrls,
-      organization_id: org.id,
+       organization_id: targetOrgId,
+   useState(() => {
+     if (profile?.is_master) {
+       supabase.from("organizations").select("id, name").order("name").then(({ data }) => {
+         setAllOrgs(data || []);
+       });
+     }
+   });
+ 
+           {profile?.is_master && !org && (
+             <div className="space-y-1.5">
+               <Label>Empresa</Label>
+               <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+                 <SelectTrigger>
+                   <SelectValue placeholder="Selecione a empresa..." />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {allOrgs.map((o) => (
+                     <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+           )}
       requester_id: user.id,
     });
     setBusy(false);

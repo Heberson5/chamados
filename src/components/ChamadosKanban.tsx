@@ -41,8 +41,8 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       } else if (action === "encerrar") {
         updates.status = "ENCERRADO";
         updates.encerrado_em = new Date().toISOString();
+        updates.descricao_encerramento = closureNote;
       }
-
       const { error } = await supabase
         .from("chamados")
         .update(updates)
@@ -82,7 +82,8 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-[600px]">
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-[600px]">
       {columns.map((column) => (
         <div key={column.id} className={`flex flex-col rounded-xl border ${column.color} p-4`}>
           <div className="flex items-center justify-between mb-4 px-2">
@@ -166,7 +167,7 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           </div>
         </div>
       ))}
-    </div>
+      </div>
 
     <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
       <DialogContent>

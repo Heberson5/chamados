@@ -11,6 +11,17 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
  
+  function formatMinutes(min: number): string {
+    if (!min || min <= 0) return "0 min";
+    if (min < 60) return `${Math.round(min)} min`;
+    const hours = Math.floor(min / 60);
+    const mins = Math.round(min % 60);
+    if (hours < 24) return mins ? `${hours}h ${mins}min` : `${hours}h`;
+    const days = Math.floor(hours / 24);
+    const restH = hours % 24;
+    return restH ? `${days}d ${restH}h` : `${days}d`;
+  }
+
  export default function Dashboard() {
    const navigate = useNavigate();
    const [loading, setLoading] = useState(true);
@@ -37,7 +48,8 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
        byPriority: [] as any[],
         byStatus: [] as any[],
         byStatusType: [] as any[],
-        byCategory: [] as any[]
+        byCategory: [] as any[],
+        byUser: [] as any[]
      });
  
    useEffect(() => {
@@ -159,17 +171,10 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
             const diff = (new Date(t.atendido_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
             if (diff > 0) acceptanceTimes.push(diff);
           }
-          // Completion time = (encerrado - atendido) - paused - waiting (effective working time)
-          // Falls back to (encerrado - gerado) when atendido_em is missing.
-          if (t.encerrado_em) {
-            const start = t.atendido_em ?? t.gerado_em;
-            if (start) {
-              const grossMin = (new Date(t.encerrado_em).getTime() - new Date(start).getTime()) / (1000 * 60);
-              const pausedMin = (t.tempo_total_pausado || 0) / 60;
-              const waitingMin = (t.tempo_total_aguardando_usuario || 0) / 60;
-              const effective = grossMin - pausedMin - waitingMin;
-              if (effective > 0) completionTimes.push(effective);
-            }
+          // Completion time = total elapsed from ticket open to closure (encerrado - gerado), in minutes.
+          if (t.encerrado_em && t.gerado_em && t.status === 'ENCERRADO') {
+            const diff = (new Date(t.encerrado_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
+            if (diff > 0) completionTimes.push(diff);
           }
           totalPaused += (t.tempo_total_pausado || 0);
           totalWaiting += (t.tempo_total_aguardando_usuario || 0);
@@ -177,6 +182,18 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
   
         const avgAcceptance = acceptanceTimes.length > 0 ? acceptanceTimes.reduce((a, b) => a + b, 0) / acceptanceTimes.length : 0;
         const avgCompletion = completionTimes.length > 0 ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length : 0;
+
+        // By User (count of tickets each user opened)
+        const userCounts = filteredTickets.reduce((acc: any, t) => {
+          const profile = profiles.find(p => p.id === t.usuario_id);
+          const name = profile ? `${profile.nome ?? ''} ${profile.sobrenome ?? ''}`.trim() || profile.email : 'Desconhecido';
+          acc[name] = (acc[name] || 0) + 1;
+          return acc;
+        }, {});
+        const byUser = Object.keys(userCounts)
+          .map(name => ({ name, value: userCounts[name] }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10);
     
         setStats(prev => ({
           ...prev,
@@ -190,8 +207,9 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
           totalWaitingTime: Math.round(totalWaiting / 60),
           byPriority,
            byStatus,
+           byUser,
         }));
-    }, [filteredTickets]);
+    }, [filteredTickets, profiles, kanbanConfig]);
  
     const chartData = useMemo(() => {
       let startDate = filters.dateRange.from;
@@ -231,10 +249,10 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
      const cards = [
        { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },
        { title: "Chamados Abertos", value: stats.openTickets, icon: Clock, color: "text-orange-600" },
-       { title: "Tempo Médio Aceite", value: `${stats.avgAcceptanceTime} min`, icon: Play, color: "text-amber-600" },
-       { title: "Tempo Médio Conclusão", value: `${stats.avgCompletionTime} min`, icon: CheckCircle2, color: "text-green-600" },
-       { title: "Tempo Total Pausado", value: `${stats.totalPausedTime} min`, icon: Pause, color: "text-slate-600" },
-       { title: "Aguardando Usuário", value: `${stats.totalWaitingTime} min`, icon: History, color: "text-indigo-600" },
+       { title: "Tempo Médio Aceite", value: formatMinutes(stats.avgAcceptanceTime), icon: Play, color: "text-amber-600" },
+       { title: "Tempo Médio Conclusão", value: formatMinutes(stats.avgCompletionTime), icon: CheckCircle2, color: "text-green-600" },
+       { title: "Tempo Total Pausado", value: formatMinutes(stats.totalPausedTime), icon: Pause, color: "text-slate-600" },
+       { title: "Aguardando Usuário", value: formatMinutes(stats.totalWaitingTime), icon: History, color: "text-indigo-600" },
      ];
 
    return (
@@ -273,7 +291,13 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                    type="date" 
                    className="h-9 w-40" 
                    value={format(filters.dateRange.from, "yyyy-MM-dd")} 
-                   onChange={(e) => setFilters({ ...filters, dateRange: { ...filters.dateRange, from: new Date(e.target.value) } })}
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const [y, m, d] = e.target.value.split("-").map(Number);
+                      const next = new Date(y, m - 1, d);
+                      const to = filters.dateRange.to < next ? next : filters.dateRange.to;
+                      setFilters({ ...filters, dateRange: { from: next, to } });
+                    }}
                  />
                </div>
                <div className="space-y-2">
@@ -281,8 +305,14 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                  <Input 
                    type="date" 
                    className="h-9 w-40" 
+                    min={format(filters.dateRange.from, "yyyy-MM-dd")}
                    value={format(filters.dateRange.to, "yyyy-MM-dd")} 
-                   onChange={(e) => setFilters({ ...filters, dateRange: { ...filters.dateRange, to: new Date(e.target.value) } })}
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const [y, m, d] = e.target.value.split("-").map(Number);
+                      const next = new Date(y, m - 1, d);
+                      setFilters({ ...filters, dateRange: { ...filters.dateRange, to: next } });
+                    }}
                  />
                </div>
              </>
@@ -490,6 +520,33 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                    <Bar dataKey="value" name="Quantidade" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
                  </BarChart>
                </ResponsiveContainer>
+             </CardContent>
+           </Card>
+
+           <Card className="lg:col-span-2">
+             <CardHeader>
+               <CardTitle>Chamados por Usuário</CardTitle>
+               <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[360px]">
+               {stats.byUser.length === 0 ? (
+                 <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                   Sem chamados no período selecionado.
+                 </div>
+               ) : (
+                 <ResponsiveContainer width="100%" height="100%">
+                   <BarChart data={stats.byUser} layout="vertical" margin={{ left: 20, right: 20 }}>
+                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--muted))" />
+                     <XAxis type="number" stroke="currentColor" fontSize={12} allowDecimals={false} />
+                     <YAxis dataKey="name" type="category" stroke="currentColor" fontSize={12} width={150} />
+                     <Tooltip
+                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                       itemStyle={{ color: 'hsl(var(--foreground))' }}
+                     />
+                     <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                   </BarChart>
+                 </ResponsiveContainer>
+               )}
              </CardContent>
            </Card>
          </div>

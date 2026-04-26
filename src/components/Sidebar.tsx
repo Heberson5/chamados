@@ -61,6 +61,17 @@ interface SidebarProps {
          if (config.companyName) {
            document.title = config.companyName;
          }
+         if (config.companyFavicon) {
+           const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+           if (link) {
+             link.href = config.companyFavicon;
+           } else {
+             const newLink = document.createElement('link');
+             newLink.rel = 'icon';
+             newLink.href = config.companyFavicon;
+             document.getElementsByTagName('head')[0].appendChild(newLink);
+           }
+         }
        }
      };
      loadData();

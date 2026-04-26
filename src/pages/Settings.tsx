@@ -329,23 +329,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                       <Label>Mostrar Logo</Label>
                       <Switch checked={reportLayout.showLogo} onCheckedChange={v => setReportLayout({ ...reportLayout, showLogo: v })} />
                     </div>
-                     <div className="flex items-center gap-4">
-                       <Label>Cor do Cabeçalho</Label>
-                       <div className="flex items-center gap-3">
-                         <div 
-                           className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden" 
-                           style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
-                         >
-                           <Input 
-                             type="color" 
-                             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
-                             value={reportLayout.headerColor || "#000000"} 
-                             onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
-                           />
-                         </div>
-                         <span className="text-xs font-mono">{reportLayout.headerColor || "#000000"}</span>
-                       </div>
-                     </div>
+                      <div className="flex items-center gap-4">
+                        <Label>Cor do Cabeçalho</Label>
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden" 
+                            style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
+                          >
+                            <Input 
+                              type="color" 
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
+                              value={reportLayout.headerColor || "#000000"} 
+                              onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
+                            />
+                          </div>
+                          <span className="text-xs font-mono">{reportLayout.headerColor || "#000000"}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Texto do Rodapé</Label>
+                        <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
+                      </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="layout" className="space-y-6">
                 <Card>
                   <CardHeader>

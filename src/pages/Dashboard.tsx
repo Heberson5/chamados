@@ -37,7 +37,8 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
        byPriority: [] as any[],
         byStatus: [] as any[],
         byStatusType: [] as any[],
-        byCategory: [] as any[]
+        byCategory: [] as any[],
+        byUser: [] as any[]
      });
  
    useEffect(() => {

@@ -31,13 +31,17 @@ const Auth = () => {
     if (user && !authLoading) {
       console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
       
-       if (profile) {
-         if (profile.organization_id || profile.is_master) {
-           navigate("/app", { replace: true });
-         } else {
-           navigate("/onboarding", { replace: true });
-         }
-       }
+      if (profile) {
+        if (profile.organization_id || profile.is_master) {
+          navigate("/app", { replace: true });
+        } else {
+          navigate("/onboarding", { replace: true });
+        }
+      } else {
+        // Se o carregamento terminou, temos usuário mas não temos perfil,
+        // redirecionamos para o onboarding onde o perfil pode ser tratado.
+        navigate("/onboarding", { replace: true });
+      }
     }
   }, [user, profile, authLoading, navigate]);
 
@@ -131,7 +135,7 @@ const Auth = () => {
      }
   }, [settings]);
 
-   if (authLoading || (user && !profile)) {
+    if (authLoading) {
      return (
        <div className="min-h-screen grid place-items-center">
          <div className="flex flex-col items-center gap-3">

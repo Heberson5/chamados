@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState } from "react";
+ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
+   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalTickets: 0,
     openTickets: 0,
@@ -21,8 +23,18 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const fetchStats = async () => {
+    const checkRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
+      if (data && data.regra !== 'ADMIN' && data.regra !== 'MASTER' && !data.is_master) {
+        navigate("/chamados");
+      }
+    };
+
+    checkRole();
+
+    const fetchStatsData = async () => {
         const [
           { count: total },
           { count: open },

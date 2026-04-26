@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, User as UserIcon, Mail, Phone, Hash } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+ import { Badge } from "@/components/ui/badge";
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
@@ -63,6 +64,13 @@ export default function Profile() {
     }
   };
 
+   const getRoleLabel = (profile: any) => {
+     if (profile?.is_master || profile?.regra === 'MASTER') return "Master";
+     if (profile?.regra === 'ADMIN') return "Administrador";
+     if (profile?.regra === 'TECNICO') return "Técnico";
+     return "Usuário";
+   };
+
   if (loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -88,6 +96,16 @@ export default function Profile() {
               <div>
                 <CardTitle className="text-xl">{profile?.nome} {profile?.sobrenome}</CardTitle>
                 <CardDescription>{profile?.email}</CardDescription>
+                 <div className="mt-2">
+                   <Badge variant="outline" className={
+                     profile?.is_master || profile?.regra === 'MASTER' ? 'border-purple-500 text-purple-500 bg-purple-50' :
+                     profile?.regra === 'ADMIN' ? 'border-blue-500 text-blue-500 bg-blue-50' :
+                     profile?.regra === 'TECNICO' ? 'border-amber-500 text-amber-500 bg-amber-50' :
+                     'border-slate-500 text-slate-500 bg-slate-50'
+                   }>
+                     {getRoleLabel(profile)}
+                   </Badge>
+                 </div>
               </div>
             </div>
           </CardHeader>

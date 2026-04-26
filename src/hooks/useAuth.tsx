@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
        if (activeOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeOrgId)) {
         const { data: o, error: oErr } = await supabase
           .from("organizations")
-          .select("id,name,slug")
+          .select("id,name,slug,email_settings")
           .eq("id", activeOrgId)
           .maybeSingle();
         

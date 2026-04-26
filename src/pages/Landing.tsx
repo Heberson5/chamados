@@ -25,13 +25,9 @@ const Landing = () => {
 
   useEffect(() => {
     if (!authLoading && user) {
-      if (profile?.organization_id || profile?.is_master) {
-        navigate("/app", { replace: true });
-      } else {
-        navigate("/onboarding", { replace: true });
-      }
+      navigate("/app", { replace: true });
     }
-  }, [user, profile, authLoading, navigate]);
+  }, [user, authLoading, navigate]);
 
    useEffect(() => {
      if (settings?.system_name) {

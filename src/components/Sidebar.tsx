@@ -26,30 +26,45 @@ interface SidebarProps {
   onMobileClose?: () => void;
 }
 
-export default function Sidebar({ onMobileClose }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
+ export default function Sidebar({ onMobileClose }: SidebarProps) {
+   const [collapsed, setCollapsed] = useState(false);
+   const [role, setRole] = useState<string | null>(null);
+   const [layout, setLayout] = useState<any>({ companyName: "Help-Me", companyLogo: "" });
    const { theme, setTheme } = useTheme();
    const navigate = useNavigate();
    const location = useLocation();
  
 
-  useEffect(() => {
-    const getProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("regra, is_master")
-          .eq("id", user.id)
-          .single();
-        if (data) {
-          setRole(data.is_master ? 'MASTER' : data.regra);
-        }
-      }
-    };
-    getProfile();
-  }, []);
+   useEffect(() => {
+     const loadData = async () => {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (user) {
+         const { data } = await supabase
+           .from("profiles")
+           .select("regra, is_master")
+           .eq("id", user.id)
+           .single();
+         if (data) {
+           setRole(data.is_master ? 'MASTER' : data.regra);
+         }
+       }
+ 
+       const { data: settings } = await supabase
+         .from("system_settings")
+         .select("value")
+         .eq("key", "layout_settings")
+         .single();
+       
+       if (settings) {
+         const config = settings.value as any;
+         setLayout(config);
+         if (config.companyName) {
+           document.title = config.companyName;
+         }
+       }
+     };
+     loadData();
+   }, []);
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -74,8 +89,18 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
       "fixed inset-y-0 left-0 z-50 md:relative flex h-screen flex-col bg-sidebar border-r transition-all duration-300 shadow-xl md:shadow-none",
       collapsed ? "w-16" : "w-64"
     )}>
-      <div className="p-4 flex justify-between items-center border-b shrink-0">
-        {!collapsed && <span className="font-bold text-xl truncate">Help-Me</span>}
+       <div className={cn(
+         "p-4 flex justify-between items-center border-b shrink-0",
+         layout.sidebarColor || "bg-sidebar"
+       )}>
+         {!collapsed && (
+           <div className="flex items-center gap-2 overflow-hidden">
+             {layout.companyLogo && (
+               <img src={layout.companyLogo} alt="Logo" className="w-8 h-8 object-contain shrink-0" />
+             )}
+             <span className="font-bold text-xl truncate">{layout.companyName || "Help-Me"}</span>
+           </div>
+         )}
         <div className="flex items-center ml-auto">
           <Button 
             variant="ghost" 

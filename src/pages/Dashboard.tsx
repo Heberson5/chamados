@@ -60,8 +60,8 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8">Painel Analítico</h1>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Painel Analítico</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.map((card) => (

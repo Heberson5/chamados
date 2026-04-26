@@ -32,8 +32,8 @@ import { useTheme } from "@/components/ThemeProvider";
        if (data) {
          const kConfig = data.find(s => s.key === 'kanban_config');
          const rLayout = data.find(s => s.key === 'report_layout');
-         if (kConfig) setKanbanConfig(kConfig.value);
-         if (rLayout) setReportLayout(rLayout.value);
+         if (kConfig) setKanbanConfig(kConfig.value as any[]);
+         if (rLayout) setReportLayout(rLayout.value as any);
        }
      };
      loadSettings();

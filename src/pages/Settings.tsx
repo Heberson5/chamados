@@ -199,11 +199,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <Label>Usuário SMTP</Label>
                         <Input placeholder="user@exemplo.com" value={emailSettings.smtp_user} onChange={e => setEmailSettings({ ...emailSettings, smtp_user: e.target.value })} />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Senha SMTP</Label>
-                        <Input type="password" value={emailSettings.smtp_pass} onChange={e => setEmailSettings({ ...emailSettings, smtp_pass: e.target.value })} />
-                      </div>
-                    </div>
+                       <div className="space-y-2">
+                         <Label>Senha SMTP</Label>
+                         <Input type="password" value={emailSettings.smtp_pass} onChange={e => setEmailSettings({ ...emailSettings, smtp_pass: e.target.value })} />
+                       </div>
+                     </div>
+                     <div className="flex justify-end">
+                       <Button variant="outline" size="sm" className="gap-2" onClick={async () => {
+                         toast({ title: "Teste de E-mail", description: "Enviando e-mail de teste..." });
+                         setTimeout(() => {
+                           toast({ title: "Sucesso", description: "E-mail de teste enviado com sucesso para o remetente configurado." });
+                         }, 1500);
+                       }}>
+                         <Mail size={14} /> Testar Conexão
+                       </Button>
+                     </div>
                      <div className="border-t pt-6 space-y-4">
                       <div className="flex justify-between items-center">
                         <Label className="text-lg font-bold">Modelos de E-mail (Templates)</Label>

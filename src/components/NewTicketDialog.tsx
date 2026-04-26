@@ -18,13 +18,7 @@ const schema = z.object({
    category: z.string().trim().min(1, "Selecione uma categoria"),
 });
 
- const CATEGORIES = [
-   "Suporte Técnico",
-   "Financeiro / Faturamento",
-   "Dúvidas Gerais",
-   "Sugestões / Feedback",
-   "Comercial",
- ];
+  import { useSystemSettings } from "@/hooks/useSystemSettings";
  
  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -38,7 +32,15 @@ export const NewTicketDialog = ({
   onOpenChange: (o: boolean) => void;
   onCreated?: () => void;
 }) => {
-   const { user, org, profile } = useAuth();
+    const { user, org, profile } = useAuth();
+    const { data: settings } = useSystemSettings();
+    const categories = settings?.ticket_categories || [
+      "Suporte Técnico",
+      "Financeiro / Faturamento",
+      "Dúvidas Gerais",
+      "Sugestões / Feedback",
+      "Comercial",
+    ];
    const [selectedOrgId, setSelectedOrgId] = useState("");
    const [allOrgs, setAllOrgs] = useState<any[]>([]);
   const [subject, setSubject] = useState("");
@@ -182,9 +184,9 @@ export const NewTicketDialog = ({
                <Label>Categoria</Label>
                <Select value={category} onValueChange={setCategory}>
                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                 <SelectContent>
-                   {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                 </SelectContent>
+                  <SelectContent>
+                    {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
                </Select>
              </div>
           </div>

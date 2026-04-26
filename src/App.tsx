@@ -9,6 +9,10 @@ import Login from "./pages/Login";
 import Chamados from "./pages/Chamados";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
+import Inventory from "./pages/Inventory";
+import Users from "./pages/Users";
+import Finance from "./pages/Finance";
+import Reports from "./pages/Reports";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +35,10 @@ const App = () => {
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/chamados" element={<Chamados />} />
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/finance" element={<Finance />} />
+              <Route path="/reports" element={<Reports />} />
               <Route path="/perfil" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
- import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload } from "lucide-react";
+ import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { useState, useEffect } from "react";
@@ -366,9 +366,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 pt-6">
-                          <Button variant="ghost" size="icon" disabled={idx === 0} onClick={() => { const nc = [...kanbanConfig]; [nc[idx-1], nc[idx]] = [nc[idx], nc[idx-1]]; setKanbanConfig(nc); }}><Plus size={14} className="rotate-45" /></Button>
-                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setKanbanConfig(kanbanConfig.filter((_, i) => i !== idx))}><Trash2 size={14} /></Button>
+                        <div className="flex flex-col gap-1 pt-4">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            disabled={idx === 0} 
+                            onClick={() => { 
+                              const nc = [...kanbanConfig]; 
+                              [nc[idx-1], nc[idx]] = [nc[idx], nc[idx-1]]; 
+                              setKanbanConfig(nc); 
+                            }}
+                          >
+                            <ChevronUp size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            disabled={idx === kanbanConfig.length - 1} 
+                            onClick={() => { 
+                              const nc = [...kanbanConfig]; 
+                              [nc[idx], nc[idx+1]] = [nc[idx+1], nc[idx]]; 
+                              setKanbanConfig(nc); 
+                            }}
+                          >
+                            <ChevronDown size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive" 
+                            onClick={() => setKanbanConfig(kanbanConfig.filter((_, i) => i !== idx))}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -539,7 +571,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                                    setLayoutConfig({...layoutConfig, menuOrder: newOrder});
                                  }}
                                >
-                                 <Plus size={10} className="-rotate-180" />
+                                 <ChevronUp size={10} />
                                </Button>
                                <Button 
                                  variant="ghost" 
@@ -552,7 +584,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                                    setLayoutConfig({...layoutConfig, menuOrder: newOrder});
                                  }}
                                >
-                                 <Plus size={10} />
+                                 <ChevronDown size={10} />
                                </Button>
                              </div>
                              <Input 

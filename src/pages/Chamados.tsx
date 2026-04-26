@@ -87,8 +87,20 @@
       e.preventDefault();
       setIsLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Usuário não autenticado");
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) throw new Error("Usuário não autenticado. Por favor, faça login novamente.");
+
+        // Verificar se o perfil existe
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error("Perfil não encontrado para o usuário:", user.id, profileError);
+          throw new Error("Seu perfil de usuário não foi encontrado. Entre em contato com o administrador.");
+        }
 
         const uploadedUrls = [];
         for (const file of files) {
@@ -109,17 +121,20 @@
           uploadedUrls.push(publicUrl);
         }
   
-        const { error } = await supabase.from("chamados").insert({
+        const { error: insertError } = await supabase.from("chamados").insert({
           titulo: newTicket.titulo,
-          os: `OS-${new Date().getFullYear()}${String(Date.now()).slice(-6)}`,
+          os: `OS-${new Date().getFullYear()}${Math.floor(Math.random() * 1000)}${String(Date.now()).slice(-4)}`,
           descricao: newTicket.descricao,
           prioridade: newTicket.prioridade,
           usuario_id: user.id,
-          status: "ABERTO" as any,
-          anexos: uploadedUrls
+          status: "ABERTO",
+          anexos: uploadedUrls.length > 0 ? uploadedUrls : null
         });
-  
-        if (error) throw error;
+
+        if (insertError) {
+          console.error("Erro na inserção do chamado:", insertError);
+          throw insertError;
+        }
   
         toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
         setIsDialogOpen(false);

@@ -61,14 +61,14 @@ import { Label } from "@/components/ui/label";
      opacity: isDragging ? 0.5 : 1,
    };
  
-   const getPriorityColor = (priority: string) => {
-     switch (priority) {
-       case "P1": return "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400";
-       case "P2": return "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400";
-       case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
-       default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
-     }
-   };
+     const getPriorityColor = (priority: string) => {
+       switch (priority) {
+         case "P1": return "text-destructive bg-destructive/10 border-destructive/20";
+         case "P2": return "text-orange-600 bg-orange-500/10 border-orange-500/20";
+         case "P3": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
+         default: return "text-muted-foreground bg-muted border-border";
+       }
+     };
  
    const getPriorityLabel = (priority: string) => {
      const labels: Record<string, string> = { P1: "Crítica", P2: "Alta", P3: "Média", P4: "Baixa", P5: "Muito Baixa" };
@@ -84,10 +84,10 @@ import { Label } from "@/components/ui/label";
       return () => clearInterval(interval);
     }, [ticket]);
  
-   return (
-     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-       <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-slate-200 dark:border-slate-800 ${ticket.status === "ENCERRADO" ? "cursor-default grayscale-[0.3]" : ""}`}>
-         <CardHeader className="p-4 pb-2">
+     return (
+       <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-4">
+         <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" ? "cursor-default grayscale-[0.3]" : ""}`}>
+           <CardHeader className="p-4 pb-2">
            <div className="flex justify-between items-start mb-2">
              <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
                {getPriorityLabel(ticket.prioridade)}
@@ -497,24 +497,23 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      return labels[priority] || priority;
    };
 
-   return (
-     <>
-       <DndContext 
-         sensors={sensors} 
-         collisionDetection={closestCorners} 
-         onDragEnd={handleDragEnd}
-       >
-         <div className={`grid grid-cols-1 md:grid-cols-${kanbanCols.length} gap-6 h-full min-h-[600px]`}>
-           {kanbanCols.map((column) => (
-             <div 
-               key={column.id} 
-               className="flex flex-col rounded-xl border p-4"
-               style={{ 
-                 backgroundColor: column.color_hex ? `${column.color_hex}1a` : undefined, // 1a is 10% opacity in hex
-                 borderColor: column.color_hex ? `${column.color_hex}33` : undefined    // 33 is 20% opacity in hex
-               }}
-             >
-               <div className="flex items-center justify-between mb-4 px-2">
+     return (
+       <>
+         <DndContext 
+           sensors={sensors} 
+           collisionDetection={closestCorners} 
+           onDragEnd={handleDragEnd}
+         >
+           <div className="flex flex-col md:flex-row gap-6 h-full min-h-[600px] overflow-x-auto pb-4 custom-scrollbar">
+             {kanbanCols.map((column) => (
+               <div 
+                 key={column.id} 
+                 className="flex flex-col rounded-xl border bg-card/50 p-4 min-w-[320px] max-w-[400px] flex-shrink-0"
+                 style={{ 
+                   borderTop: `4px solid ${column.color_hex || 'hsl(var(--primary))'}`,
+                 }}
+               >
+                 <div className="flex items-center justify-between mb-4 px-2">
                  <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
                    {column.title}
                    <Badge variant="secondary" className="rounded-full px-2 py-0">

@@ -16,11 +16,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
    const { toast } = useToast();
    const [loading, setLoading] = useState(false);
     const [kanbanConfig, setKanbanConfig] = useState<any[]>([
-      { id: "ABERTO", title: "Aguardando", color_hex: "#3b82f6", type: "waiting" },
-      { id: "EM_ATENDIMENTO", title: "Andamento", color_hex: "#f59e0b", type: "in_progress" },
-      { id: "PAUSADO", title: "Pausado", color_hex: "#94a3b8", type: "paused" },
-      { id: "AGUARDANDO_USUARIO", title: "Aguardando o Usuário", color_hex: "#6366f1", type: "waiting_user" },
-      { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981", type: "completed" },
+      { id: "ABERTO", title: "Aguardando", color_hex: "#3b82f6" },
+      { id: "EM_ATENDIMENTO", title: "Andamento", color_hex: "#f59e0b" },
+      { id: "PAUSADO", title: "Pausado", color_hex: "#94a3b8" },
+      { id: "AGUARDANDO_USUARIO", title: "Aguardando o Usuário", color_hex: "#6366f1" },
+      { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981" },
     ]);
      const [reportLayout, setReportLayout] = useState<any>({ headerColor: "#000000", footerText: "", showLogo: true });
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
@@ -315,7 +315,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <LayoutGrid className="h-5 w-5 text-primary" />
                         <CardTitle>Colunas do Kanban</CardTitle>
                       </div>
-                      <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color_hex: "#94a3b8", type: "waiting" }])}>
+                      <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color_hex: "#94a3b8" }])}>
                         <Plus size={14} className="mr-1" /> Adicionar Status
                       </Button>
                     </div>

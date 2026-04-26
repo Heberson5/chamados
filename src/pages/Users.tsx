@@ -22,7 +22,34 @@
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
    const [reassignToId, setReassignToId] = useState("");
-   const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra });
+    const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra });
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editUser, setEditUser] = useState<any>(null);
+
+    const handleEditUser = async () => {
+      if (!editUser) return;
+      setLoading(true);
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            nome: editUser.nome,
+            sobrenome: editUser.sobrenome,
+            regra: editUser.regra,
+            is_master: editUser.regra === 'MASTER'
+          })
+          .eq("id", editUser.id);
+
+        if (error) throw error;
+        toast({ title: "Sucesso", description: "Usuário atualizado com sucesso." });
+        setIsEditDialogOpen(false);
+        fetchUsers();
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Erro", description: error.message });
+      } finally {
+        setLoading(false);
+      }
+    };
    const handleAddUser = async () => {
      setLoading(true);
      try {
@@ -220,10 +247,16 @@
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => toggleStatus(user)} className="gap-2">
-                            {user.ativo ? <PowerOff size={14} /> : <Power size={14} />}
-                            {user.ativo ? 'Desativar' : 'Ativar'}
-                          </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => {
+                             setEditUser(user);
+                             setIsEditDialogOpen(true);
+                           }} className="gap-2">
+                             <Pencil size={14} /> Editar
+                           </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => toggleStatus(user)} className="gap-2">
+                             {user.ativo ? <PowerOff size={14} /> : <Power size={14} />}
+                             {user.ativo ? 'Desativar' : 'Ativar'}
+                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDeleteRequest(user)} className="gap-2 text-destructive">
                             <Trash2 size={14} /> Excluir
                           </DropdownMenuItem>
@@ -279,7 +312,51 @@
           </DialogContent>
         </Dialog>
  
-        <Dialog open={isReassignDialogOpen} onOpenChange={setIsReassignDialogOpen}>
+         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+           <DialogContent>
+             <DialogHeader>
+               <DialogTitle>Editar Usuário</DialogTitle>
+             </DialogHeader>
+             {editUser && (
+               <div className="space-y-4 py-4">
+                 <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label>Nome</Label>
+                     <Input value={editUser.nome} onChange={e => setEditUser({...editUser, nome: e.target.value})} />
+                   </div>
+                   <div className="space-y-2">
+                     <Label>Sobrenome</Label>
+                     <Input value={editUser.sobrenome} onChange={e => setEditUser({...editUser, sobrenome: e.target.value})} />
+                   </div>
+                 </div>
+                 <div className="space-y-2">
+                   <Label>E-mail</Label>
+                   <Input type="email" value={editUser.email} disabled className="bg-muted" />
+                 </div>
+                 <div className="space-y-2">
+                   <Label>Permissão</Label>
+                   <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                     <SelectTrigger>
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="MASTER">Master</SelectItem>
+                       <SelectItem value="ADMIN">Administrador</SelectItem>
+                       <SelectItem value="TECNICO">Técnico</SelectItem>
+                       <SelectItem value="USUARIO">Usuário</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </div>
+             )}
+             <DialogFooter>
+               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+               <Button onClick={handleEditUser} disabled={loading}>Salvar Alterações</Button>
+             </DialogFooter>
+           </DialogContent>
+         </Dialog>
+
+         <Dialog open={isReassignDialogOpen} onOpenChange={setIsReassignDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Remanejar Chamados em Aberto</DialogTitle>

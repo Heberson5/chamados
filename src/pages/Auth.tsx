@@ -124,7 +124,8 @@ const Auth = () => {
      }
   }, [settings]);
 
-    if (authLoading) {
+    // Only show full-screen loader on initial app load when we don't know the auth state yet
+    if (authLoading && !user && !isSubmitting) {
      return (
        <div className="min-h-screen grid place-items-center">
          <div className="flex flex-col items-center gap-3">

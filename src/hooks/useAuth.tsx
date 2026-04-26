@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    const [loading, setLoading] = useState(false);
    const [initialized, setInitialized] = useState(false);
    const [isInitialLoad, setIsInitialLoad] = useState(true);
+   const [error, setError] = useState<Error | null>(null);
 
   const loadProfile = async (uid: string, retryCount = 0) => {
     try {
@@ -84,21 +85,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .eq("id", activeOrgId)
           .maybeSingle();
         
-        if (oErr) throw oErr;
-        if (o) {
-          setOrgState(o);
-        } else {
-          setOrgState(null);
-          if (p?.is_master) localStorage.removeItem("selected_org_id");
-        }
+      if (oErr) {
+        console.error("Error loading organization:", oErr);
+        setOrgState(null);
+      } else if (o) {
+        setOrgState(o);
       } else {
         setOrgState(null);
+        if (p?.is_master) localStorage.removeItem("selected_org_id");
       }
-     } catch (err) {
-       console.error("Error loading profile:", err);
-       setProfile(null);
-       setOrgState(null);
-     }
+    } else {
+      setOrgState(null);
+    }
+  } catch (err) {
+    console.error("Error loading profile:", err);
+    if (retryCount >= 3) {
+      setProfile(null);
+      setOrgState(null);
+    }
+    throw err;
+  }
   };
 
   useEffect(() => {
@@ -112,7 +118,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(s);
         setUser(s?.user ?? null);
         
-        if (s?.user) await loadProfile(s.user.id);
+        if (s?.user) {
+          try {
+            await loadProfile(s.user.id);
+          } catch (err) {
+            console.error("Failed to load profile during init:", err);
+          }
+        }
       } catch (err) {
         console.error("Auth init error:", err);
       } finally {
@@ -134,8 +146,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (s?.user) {
         if (event === "SIGNED_IN" || event === "USER_UPDATED") {
           setLoading(true);
-          await loadProfile(s.user.id);
-          if (mounted) setLoading(false);
+          try {
+            await loadProfile(s.user.id);
+          } catch (err) {
+            console.error("Failed to load profile on auth change:", err);
+            if (mounted) setError(err instanceof Error ? err : new Error(String(err)));
+          } finally {
+            if (mounted) setLoading(false);
+          }
         }
       } else {
         setProfile(null);

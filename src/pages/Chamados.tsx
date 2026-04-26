@@ -1,32 +1,75 @@
- import { useEffect, useState } from "react";
+ import { useEffect, useState, useCallback } from "react";
  import { supabase } from "@/integrations/supabase/client";
  import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
- import { Plus, Filter, Search, ArrowRight, Clock, AlertTriangle } from "lucide-react";
+ import { Plus, Search, ArrowRight, AlertTriangle, Loader2 } from "lucide-react";
  import { Input } from "@/components/ui/input";
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+ import { Label } from "@/components/ui/label";
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+ import { useToast } from "@/components/ui/use-toast";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  
  export default function Chamados() {
    const [tickets, setTickets] = useState<any[]>([]);
    const [searchTerm, setSearchTerm] = useState("");
+   const [statusFilter, setStatusFilter] = useState<string>("todos");
+   const [isDialogOpen, setIsDialogOpen] = useState(false);
+   const [isLoading, setIsLoading] = useState(false);
+   const [newTicket, setNewTicket] = useState({ os: "", descricao: "", prioridade: "P3" });
+   const { toast } = useToast();
+ 
+   const fetchTickets = useCallback(async () => {
+     const { data, error } = await supabase
+       .from("chamados")
+       .select(`
+         *,
+         tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome),
+         usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome),
+         chamado_pai:chamados!chamados_chamado_pai_id_fkey(os)
+       `)
+       .order("gerado_em", { ascending: false });
+     
+     if (error) {
+       toast({ variant: "destructive", title: "Erro ao buscar chamados", description: error.message });
+       return;
+     }
+     if (data) setTickets(data);
+   }, [toast]);
  
    useEffect(() => {
-     const fetchTickets = async () => {
-       const { data } = await supabase
-         .from("chamados")
-         .select(`
-           *,
-           tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome),
-           usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome),
-           chamado_pai:chamados!chamados_chamado_pai_id_fkey(os)
-         `)
-         .order("gerado_em", { ascending: false });
-       if (data) setTickets(data);
-     };
      fetchTickets();
-   }, []);
+   }, [fetchTickets]);
+ 
+   const handleCreateTicket = async (e: React.FormEvent) => {
+     e.preventDefault();
+     setIsLoading(true);
+     try {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) throw new Error("Usuário não autenticado");
+ 
+       const { error } = await supabase.from("chamados").insert([
+         { 
+           ...newTicket, 
+           usuario_id: user.id,
+           status: "ABERTO"
+         }
+       ]);
+ 
+       if (error) throw error;
+ 
+       toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
+       setIsDialogOpen(false);
+       setNewTicket({ os: "", descricao: "", prioridade: "P3" });
+       fetchTickets();
+     } catch (error: any) {
+       toast({ variant: "destructive", title: "Erro ao criar chamado", description: error.message });
+     } finally {
+       setIsLoading(false);
+     }
+   };
  
    const getSLAStatus = (ticket: any) => {
      if (ticket.sla_violado) return { label: "VENCIDO", color: "bg-red-500" };
@@ -41,10 +84,12 @@
      return { label: "NO PRAZO", color: "bg-green-500" };
    };
  
-   const filteredTickets = tickets.filter(t => 
-     t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     t.descricao.toLowerCase().includes(searchTerm.toLowerCase())
-   );
+   const filteredTickets = tickets.filter(t => {
+     const matchesSearch = t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+     const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
+     return matchesSearch && matchesStatus;
+   });
  
    return (
      <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
@@ -54,14 +99,77 @@
            <p className="text-muted-foreground">Visualize, gerencie e vincule atendimentos técnicos.</p>
          </div>
          <div className="flex gap-2">
-           <Button variant="outline" className="gap-2">
-             <Filter size={18} />
-             Filtros
-           </Button>
-           <Button className="flex items-center gap-2">
-             <Plus size={18} />
-             Novo Chamado
-           </Button>
+           <Select value={statusFilter} onValueChange={setStatusFilter}>
+             <SelectTrigger className="w-[180px]">
+               <SelectValue placeholder="Filtrar por status" />
+             </SelectTrigger>
+             <SelectContent>
+               <SelectItem value="todos">Todos os status</SelectItem>
+               <SelectItem value="ABERTO">Aberto</SelectItem>
+               <SelectItem value="EM_ATENDIMENTO">Em Atendimento</SelectItem>
+               <SelectItem value="ENCERRADO">Encerrado</SelectItem>
+               <SelectItem value="CANCELADO">Cancelado</SelectItem>
+             </SelectContent>
+           </Select>
+ 
+           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+             <DialogTrigger asChild>
+               <Button className="flex items-center gap-2">
+                 <Plus size={18} />
+                 Novo Chamado
+               </Button>
+             </DialogTrigger>
+             <DialogContent>
+               <DialogHeader>
+                 <DialogTitle>Criar Novo Chamado</DialogTitle>
+               </DialogHeader>
+               <form onSubmit={handleCreateTicket} className="space-y-4">
+                 <div className="space-y-2">
+                   <Label htmlFor="os">Número da OS</Label>
+                   <Input 
+                     id="os" 
+                     required 
+                     value={newTicket.os}
+                     onChange={e => setNewTicket({...newTicket, os: e.target.value})}
+                     placeholder="Ex: OS-2024-001"
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="descricao">Descrição</Label>
+                   <Input 
+                     id="descricao" 
+                     required 
+                     value={newTicket.descricao}
+                     onChange={e => setNewTicket({...newTicket, descricao: e.target.value})}
+                     placeholder="Descreva o problema"
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="prioridade">Prioridade</Label>
+                   <Select 
+                     value={newTicket.prioridade} 
+                     onValueChange={v => setNewTicket({...newTicket, prioridade: v})}
+                   >
+                     <SelectTrigger>
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="P1">P1 - Crítica</SelectItem>
+                       <SelectItem value="P2">P2 - Alta</SelectItem>
+                       <SelectItem value="P3">P3 - Média</SelectItem>
+                       <SelectItem value="P4">P4 - Baixa</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+                 <DialogFooter>
+                   <Button type="submit" disabled={isLoading}>
+                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Criar Chamado
+                   </Button>
+                 </DialogFooter>
+               </form>
+             </DialogContent>
+           </Dialog>
          </div>
        </div>
  

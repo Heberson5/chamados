@@ -119,7 +119,7 @@ export default function Chamados() {
         usuario_id: user.id,
         status: "ABERTO",
         anexos: uploadedUrls.length > 0 ? uploadedUrls : null
-      });
+      } as any);
 
       if (insertError) throw insertError;
 

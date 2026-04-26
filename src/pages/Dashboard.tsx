@@ -307,7 +307,29 @@ import { supabase } from "@/integrations/supabase/client";
          ))}
        </div>
  
-       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tempos Médios (min)</CardTitle>
+              <CardDescription>Eficiência operacional em minutos</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[
+                  { name: 'Aceite', valor: stats.avgAcceptanceTime },
+                  { name: 'Conclusão', valor: stats.avgCompletionTime },
+                  { name: 'Pausa', valor: stats.totalPausedTime },
+                  { name: 'Espera', valor: stats.totalWaitingTime }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" fontSize={12} />
+                  <YAxis fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
          <Card>
            <CardHeader>
              <CardTitle>Volume de Chamados</CardTitle>

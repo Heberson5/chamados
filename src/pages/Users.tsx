@@ -278,7 +278,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="MASTER">Master</SelectItem>
+                          {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
                           <SelectItem value="ADMIN">Admin</SelectItem>
                           <SelectItem value="TECNICO">Técnico</SelectItem>
                           <SelectItem value="USUARIO">Usuário</SelectItem>
@@ -362,7 +362,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="MASTER">Master</SelectItem>
+                    {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
                     <SelectItem value="ADMIN">Administrador</SelectItem>
                     <SelectItem value="TECNICO">Técnico</SelectItem>
                     <SelectItem value="USUARIO">Usuário</SelectItem>
@@ -440,7 +440,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                        <SelectValue />
                      </SelectTrigger>
                      <SelectContent>
-                       <SelectItem value="MASTER">Master</SelectItem>
+                       {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
                        <SelectItem value="ADMIN">Administrador</SelectItem>
                        <SelectItem value="TECNICO">Técnico</SelectItem>
                        <SelectItem value="USUARIO">Usuário</SelectItem>

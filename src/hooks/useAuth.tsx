@@ -85,21 +85,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .eq("id", activeOrgId)
           .maybeSingle();
         
-        if (oErr) throw oErr;
-        if (o) {
-          setOrgState(o);
-        } else {
-          setOrgState(null);
-          if (p?.is_master) localStorage.removeItem("selected_org_id");
-        }
+      if (oErr) {
+        console.error("Error loading organization:", oErr);
+        setOrgState(null);
+      } else if (o) {
+        setOrgState(o);
       } else {
         setOrgState(null);
+        if (p?.is_master) localStorage.removeItem("selected_org_id");
       }
-     } catch (err) {
-       console.error("Error loading profile:", err);
-       setProfile(null);
-       setOrgState(null);
-     }
+    } else {
+      setOrgState(null);
+    }
+  } catch (err) {
+    console.error("Error loading profile:", err);
+    if (retryCount >= 3) {
+      setProfile(null);
+      setOrgState(null);
+    }
+    throw err;
+  }
   };
 
   useEffect(() => {

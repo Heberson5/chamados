@@ -21,7 +21,6 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
     period: "7d",
     technician: "all",
     user: "all",
-    statusType: "all",
     dateRange: { from: subDays(new Date(), 7), to: new Date() }
   });
  
@@ -121,9 +120,8 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
       let statusMatch = true;
       if (filters.statusType !== "all") {
         const statusDef = kanbanConfig.find(c => c.id === t.status);
-        statusMatch = statusDef?.type === filters.statusType;
+        statusMatch = statusDef?.id === filters.statusType;
       }
-
       return withinInterval && technicianMatch && userMatch && statusMatch;
     });
 
@@ -133,12 +131,9 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
   useEffect(() => {
     const total = filteredTickets.length;
     
-    // Get IDs of statuses that represent "open" and "resolved"
-    const openStatusIds = kanbanConfig.filter(c => c.type !== 'completed').map(c => c.id);
-    const resolvedStatusIds = kanbanConfig.filter(c => c.type === 'completed').map(c => c.id);
-    
-    const open = filteredTickets.filter(t => openStatusIds.includes(t.status) || (!kanbanConfig.length && t.status !== 'ENCERRADO')).length;
-    const resolved = filteredTickets.filter(t => resolvedStatusIds.includes(t.status) || (!kanbanConfig.length && t.status === 'ENCERRADO')).length;
+    // Simplify open/resolved logic - based on 'ENCERRADO' status
+    const open = filteredTickets.filter(t => t.status !== 'ENCERRADO').length;
+    const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
     const sla = filteredTickets.filter(t => t.sla_violado).length;
   
          // By Priority
@@ -158,24 +153,6 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
         }, {});
         const byStatus = Object.keys(statusCounts).map(s => ({ name: s, value: statusCounts[s] }));
 
-        // By Status Type
-        const typeLabels: any = {
-          waiting: "Aguardando",
-          in_progress: "Andamento",
-          paused: "Pausado",
-          waiting_user: "Aguardando Usuário",
-          completed: "Encerrado"
-        };
-
-        const typeCounts = filteredTickets.reduce((acc: any, t) => {
-          const statusDef = kanbanConfig.find(c => c.id === t.status);
-          const type = statusDef?.type || (t.status === 'ENCERRADO' ? 'completed' : 'waiting');
-          const label = typeLabels[type] || type;
-          acc[label] = (acc[label] || 0) + 1;
-          return acc;
-        }, {});
-        const byStatusType = Object.keys(typeCounts).map(name => ({ name, value: typeCounts[name] }));
-  
         // Calculate averages
         let acceptanceTimes: number[] = [];
         let completionTimes: number[] = [];
@@ -210,7 +187,6 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
           totalWaitingTime: Math.round(totalWaiting / 60),
           byPriority,
            byStatus,
-           byStatusType
         }));
     }, [filteredTickets]);
  
@@ -339,22 +315,6 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium flex items-center gap-1"><LayoutGrid size={12} /> Tipo de Status</label>
-            <Select value={filters.statusType} onValueChange={(v) => setFilters({ ...filters, statusType: v })}>
-              <SelectTrigger className="w-[200px] h-9 bg-background">
-                <SelectValue placeholder="Todos os tipos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="waiting">Aguardando</SelectItem>
-                <SelectItem value="in_progress">Andamento</SelectItem>
-                <SelectItem value="paused">Pausado</SelectItem>
-                <SelectItem value="waiting_user">Aguardando o Usuário</SelectItem>
-                <SelectItem value="completed">Encerrado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           <Button variant="ghost" className="h-9 text-xs" onClick={() => {
             setFilters({

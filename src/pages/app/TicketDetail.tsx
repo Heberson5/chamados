@@ -31,7 +31,8 @@ const commentSchema = z.string().trim().min(1).max(5000);
  const TicketDetail = () => {
    const { getStatusLabel, getStatusColor, columns } = useKanbanSettings();
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const isCustomer = profile?.role === 'customer';
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [authors, setAuthors] = useState<Record<string, ProfileLite>>({});
@@ -170,10 +171,12 @@ const commentSchema = z.string().trim().min(1).max(5000);
           <div className="rounded-xl border border-border bg-background p-4 space-y-3">
             <Textarea rows={4} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Escrever um comentário..." />
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Switch id="internal" checked={internal} onCheckedChange={setInternal} />
-                <Label htmlFor="internal" className="text-xs cursor-pointer">Nota interna</Label>
-              </div>
+              {!isCustomer && (
+                <div className="flex items-center gap-2">
+                  <Switch id="internal" checked={internal} onCheckedChange={setInternal} />
+                  <Label htmlFor="internal" className="text-xs cursor-pointer">Nota interna</Label>
+                </div>
+              )}
               <Button size="sm" onClick={sendComment} disabled={busy || !body.trim()} className="gap-1.5">
                 <Send className="size-3.5" /> Enviar
               </Button>
@@ -185,7 +188,11 @@ const commentSchema = z.string().trim().min(1).max(5000);
           <div className="rounded-xl border border-border bg-background p-4 space-y-4">
             <div>
               <div className="text-xs text-muted-foreground mb-1.5">Status</div>
-               <Select value={ticket.status} onValueChange={(v) => updateField({ status: v })}>
+               <Select 
+                 value={ticket.status} 
+                 onValueChange={(v) => updateField({ status: v })}
+                 disabled={isCustomer}
+               >
                  <SelectTrigger>
                    <span className="flex items-center gap-2">
                      <span className={cn("size-1.5 rounded-full", getStatusColor(ticket.status))} />
@@ -201,7 +208,11 @@ const commentSchema = z.string().trim().min(1).max(5000);
             </div>
             <div>
               <div className="text-xs text-muted-foreground mb-1.5">Prioridade</div>
-              <Select value={ticket.priority} onValueChange={(v) => updateField({ priority: v as any })}>
+              <Select 
+                value={ticket.priority} 
+                onValueChange={(v) => updateField({ priority: v as any })}
+                disabled={isCustomer}
+              >
                 <SelectTrigger>
                   <span className="flex items-center gap-2">
                     <span className={`size-1.5 rounded-full ${PRIORITY_DOT[ticket.priority]}`} />

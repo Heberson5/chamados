@@ -915,6 +915,54 @@ export type Database = {
           },
         ]
       }
+      role_definitions: {
+        Row: {
+          bg_color: string | null
+          can_create: boolean | null
+          can_delete: boolean | null
+          can_edit: boolean | null
+          can_inactivate: boolean | null
+          color: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          permissions: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          bg_color?: string | null
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_inactivate?: boolean | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          permissions?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          bg_color?: string | null
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_inactivate?: boolean | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          permissions?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       servicos: {
         Row: {
           ativo: boolean | null

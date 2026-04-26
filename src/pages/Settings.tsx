@@ -16,11 +16,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
    const { toast } = useToast();
    const [loading, setLoading] = useState(false);
     const [kanbanConfig, setKanbanConfig] = useState<any[]>([
-      { id: "ABERTO", title: "Aguardando", color_hex: "#3b82f6", type: "waiting" },
-      { id: "EM_ATENDIMENTO", title: "Andamento", color_hex: "#f59e0b", type: "in_progress" },
-      { id: "PAUSADO", title: "Pausado", color_hex: "#94a3b8", type: "paused" },
-      { id: "AGUARDANDO_USUARIO", title: "Aguardando o Usuário", color_hex: "#6366f1", type: "waiting_user" },
-      { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981", type: "completed" },
+      { id: "ABERTO", title: "Aguardando", color_hex: "#3b82f6" },
+      { id: "EM_ATENDIMENTO", title: "Andamento", color_hex: "#f59e0b" },
+      { id: "PAUSADO", title: "Pausado", color_hex: "#94a3b8" },
+      { id: "AGUARDANDO_USUARIO", title: "Aguardando o Usuário", color_hex: "#6366f1" },
+      { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981" },
     ]);
      const [reportLayout, setReportLayout] = useState<any>({ headerColor: "#000000", footerText: "", showLogo: true });
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
@@ -29,16 +29,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
      companyName: "Help-Me System", 
      sidebarColor: "bg-slate-900", 
      accentColor: "#3b82f6", 
-     menuOrder: [
-       { id: '1', label: "Dashboard", path: "/dashboard", visible: true },
-       { id: '2', label: "Chamados", path: "/chamados", visible: true },
-       { id: '3', label: "Usuários", path: "/usuarios", visible: true },
-       { id: '4', label: "Permissões", path: "/permissions", visible: true },
-       { id: '5', label: "Auditoria", path: "/audit", visible: true },
-       { id: '6', label: "Relatórios", path: "/reports", visible: true },
-       { id: '7', label: "Perfil", path: "/perfil", visible: true },
-       { id: '8', label: "Configurações", path: "/settings", visible: true },
-     ] 
+      menuOrder: [
+        { id: '1', label: "Painel", path: "/dashboard", visible: true },
+        { id: '2', label: "Chamados", path: "/chamados", visible: true },
+        { id: '3', label: "Relatórios", path: "/reports", visible: true },
+        { id: '4', label: "Usuários", path: "/usuarios", visible: true },
+        { id: '5', label: "Permissões", path: "/permissions", visible: true },
+        { id: '6', label: "Auditoria", path: "/audit", visible: true },
+        { id: '7', label: "Meu Perfil", path: "/perfil", visible: true },
+        { id: '8', label: "Configurações", path: "/settings", visible: true },
+      ] 
    });
     const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
    const [isAdmin, setIsAdmin] = useState(false);
@@ -315,7 +315,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <LayoutGrid className="h-5 w-5 text-primary" />
                         <CardTitle>Colunas do Kanban</CardTitle>
                       </div>
-                      <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color_hex: "#94a3b8", type: "waiting" }])}>
+                      <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color_hex: "#94a3b8" }])}>
                         <Plus size={14} className="mr-1" /> Adicionar Status
                       </Button>
                     </div>
@@ -323,32 +323,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                   <CardContent className="space-y-4">
                     {kanbanConfig.map((col, idx) => (
                       <div key={col.id} className="flex items-center gap-4 border p-3 rounded-lg group">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                           <div className="space-y-2">
                             <Label className="text-[10px] uppercase">Nome da Coluna</Label>
                             <Input value={col.title} onChange={e => { const nc = [...kanbanConfig]; nc[idx].title = e.target.value; setKanbanConfig(nc); }} />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-[10px] uppercase">Tipo de Status</Label>
-                            <Select 
-                              value={col.type || "waiting"} 
-                              onValueChange={v => {
-                                const nc = [...kanbanConfig];
-                                nc[idx].type = v;
-                                setKanbanConfig(nc);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="waiting">Aguardando</SelectItem>
-                                <SelectItem value="in_progress">Andamento</SelectItem>
-                                <SelectItem value="paused">Pausado</SelectItem>
-                                <SelectItem value="waiting_user">Aguardando o Usuário</SelectItem>
-                                <SelectItem value="completed">Encerrado</SelectItem>
-                              </SelectContent>
-                            </Select>
                           </div>
                           <div className="space-y-2">
                             <Label className="text-[10px] uppercase">Cor</Label>

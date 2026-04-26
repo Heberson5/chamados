@@ -1,31 +1,78 @@
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Ticket, Shield, Clock, Package } from "lucide-react";
 
 export default function Index() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900">Help-Me System</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Iniciando a migração para o sistema Help-Me baseado no repositório diego64/help-me.
-          </p>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <header className="px-6 py-4 border-b flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Ticket className="text-blue-600" size={24} />
+          <span className="font-bold text-xl">Help-Me</span>
         </div>
-        <div className="p-6">
-          <p className="text-sm text-gray-600 mb-4">
-            Este projeto está sendo resetado para utilizar a estrutura de chamados, técnicos e SLA do novo repositório.
+        <Button variant="ghost" onClick={() => navigate("/login")}>Entrar</Button>
+      </header>
+
+      <main>
+        <section className="py-20 px-6 text-center max-w-4xl mx-auto">
+          <h1 className="text-5xl font-extrabold tracking-tight mb-6">
+            Gestão de Atendimento <span className="text-blue-600">Inteligente</span>
+          </h1>
+          <p className="text-xl text-muted-foreground mb-10">
+            Sistema completo de Help Desk com controle de SLA, gestão de inventário e financeiro integrado. 
+            Inspirado na arquitetura do repositório Help-Me.
           </p>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => navigate("/login")}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
-            >
-              Entrar no Sistema
-            </button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" className="px-8" onClick={() => navigate("/login")}>
+              Começar Agora
+            </Button>
+            <Button size="lg" variant="outline" className="px-8">
+              Saiba Mais
+            </Button>
           </div>
-        </div>
-      </div>
+        </section>
+
+        {/* Features */}
+        <section className="py-20 bg-gray-50 px-6">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                <Shield size={24} />
+              </div>
+              <h3 className="text-xl font-bold">Hierarquia e SLA</h3>
+              <p className="text-muted-foreground">
+                Controle rigoroso de prazos com cálculos automáticos e suporte a chamados pai/filho.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                <Clock size={24} />
+              </div>
+              <h3 className="text-xl font-bold">Atendimento Real-time</h3>
+              <p className="text-muted-foreground">
+                Acompanhe o status dos seus chamados em tempo real com notificações inteligentes.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
+                <Package size={24} />
+              </div>
+              <h3 className="text-xl font-bold">Gestão de Inventário</h3>
+              <p className="text-muted-foreground">
+                Controle de estoque, solicitações de compra e baixas de material de forma integrada.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="py-12 border-t text-center text-muted-foreground text-sm">
+        <p>&copy; 2026 Help-Me System. Todos os direitos reservados.</p>
+        <p className="mt-2">Contato: hebersohas@gmail.com</p>
+      </footer>
     </div>
   );
 }

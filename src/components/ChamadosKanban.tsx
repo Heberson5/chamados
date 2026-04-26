@@ -25,7 +25,23 @@ import { Label } from "@/components/ui/label";
     useSortable
   } from "@dnd-kit/sortable";
   import { CSS } from "@dnd-kit/utilities";
- function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
+  const getSLAInfo = (ticket: any) => {
+    if (ticket.status === "ENCERRADO") {
+      return { label: "FINALIZADO", color: "bg-blue-500" };
+    }
+    if (!ticket.sla_deadline) {
+      return { label: "N/A", color: "bg-gray-400" };
+    }
+    const deadline = new Date(ticket.sla_deadline);
+    const now = new Date();
+    const diffMinutes = (deadline.getTime() - now.getTime()) / (1000 * 60);
+    
+    if (diffMinutes < 0) return { label: "VENCIDO", color: "bg-red-500" };
+    if (diffMinutes < 30) return { label: "VENCENDO", color: "bg-yellow-500 animate-pulse" };
+    return { label: "NO PRAZO", color: "bg-green-500" };
+  };
+
+  function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
    const {
      attributes,
      listeners,
@@ -61,28 +77,12 @@ import { Label } from "@/components/ui/label";
  
    const [slaInfo, setSlaInfo] = useState({ label: "Calculando...", color: "bg-gray-400" });
  
-   useEffect(() => {
-     const calc = () => {
-       if (ticket.status === "ENCERRADO") {
-         setSlaInfo({ label: "FINALIZADO", color: "bg-blue-500" });
-         return;
-       }
-       if (!ticket.sla_deadline) {
-         setSlaInfo({ label: "N/A", color: "bg-gray-400" });
-         return;
-       }
-       const deadline = new Date(ticket.sla_deadline);
-       const now = new Date();
-       const diffMinutes = (deadline.getTime() - now.getTime()) / (1000 * 60);
-       
-       if (diffMinutes < 0) setSlaInfo({ label: "VENCIDO", color: "bg-red-500" });
-       else if (diffMinutes < 30) setSlaInfo({ label: "VENCENDO", color: "bg-yellow-500 animate-pulse" });
-       else setSlaInfo({ label: "NO PRAZO", color: "bg-green-500" });
-     };
-     calc();
-     const interval = setInterval(calc, 60000);
-     return () => clearInterval(interval);
-   }, [ticket]);
+    useEffect(() => {
+      const calc = () => setSlaInfo(getSLAInfo(ticket));
+      calc();
+      const interval = setInterval(calc, 60000);
+      return () => clearInterval(interval);
+    }, [ticket]);
  
    return (
      <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
@@ -603,7 +603,42 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {selectedTicket && (
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-slate-100 dark:border-slate-800 mb-2">
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col">
+                      <Label className="text-[10px] text-muted-foreground uppercase">Status SLA</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className={`w-2 h-2 rounded-full ${getSLAInfo(selectedTicket).color}`} />
+                        <span className="text-xs font-bold">{getSLAInfo(selectedTicket).label}</span>
+                      </div>
+                    </div>
+                    {selectedTicket.sla_deadline && (
+                      <div className="flex flex-col border-l pl-4">
+                        <Label className="text-[10px] text-muted-foreground uppercase">Deadline</Label>
+                        <span className="text-xs font-medium mt-1">
+                          {format(new Date(selectedTicket.sla_deadline), "dd/MM HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex flex-col text-right">
+                      <Label className="text-[10px] text-muted-foreground uppercase">Pausado</Label>
+                      <span className="text-xs font-medium mt-1">
+                        {Math.round((selectedTicket.tempo_total_pausado || 0) / 60)} min
+                      </span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <Label className="text-[10px] text-muted-foreground uppercase">Aguardando Usuário</Label>
+                      <span className="text-xs font-medium mt-1">
+                        {Math.round((selectedTicket.tempo_total_aguardando_usuario || 0) / 60)} min
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Solicitante</Label>

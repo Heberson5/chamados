@@ -14,14 +14,16 @@ import { supabase } from "@/integrations/supabase/client";
  export default function Dashboard() {
    const navigate = useNavigate();
    const [loading, setLoading] = useState(true);
-   const [tickets, setTickets] = useState<any[]>([]);
-   const [profiles, setProfiles] = useState<any[]>([]);
-   const [filters, setFilters] = useState({
-     period: "7d",
-     technician: "all",
-     user: "all",
-     dateRange: { from: subDays(new Date(), 7), to: new Date() }
-   });
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [kanbanConfig, setKanbanConfig] = useState<any[]>([]);
+  const [filters, setFilters] = useState({
+    period: "7d",
+    technician: "all",
+    user: "all",
+    statusType: "all",
+    dateRange: { from: subDays(new Date(), 7), to: new Date() }
+  });
  
      const [stats, setStats] = useState({
        totalTickets: 0,
@@ -50,24 +52,26 @@ import { supabase } from "@/integrations/supabase/client";
      checkRole();
    }, [navigate]);
  
-   const fetchData = async () => {
-     try {
-       const [ticketsRes, profilesRes] = await Promise.all([
-         supabase.from("chamados").select("*").order('gerado_em', { ascending: false }),
-         supabase.from("profiles").select("*").eq('ativo', true)
-       ]);
- 
-       if (ticketsRes.data) setTickets(ticketsRes.data);
-       if (profilesRes.data) setProfiles(profilesRes.data);
- 
-       const activeUsersCount = profilesRes.data?.length || 0;
-       setStats(prev => ({ ...prev, activeUsers: activeUsersCount }));
-     } catch (error) {
-       console.error("Error fetching dashboard data:", error);
-     } finally {
-       setLoading(false);
-     }
-   };
+  const fetchData = async () => {
+    try {
+      const [ticketsRes, profilesRes, settingsRes] = await Promise.all([
+        supabase.from("chamados").select("*").order('gerado_em', { ascending: false }),
+        supabase.from("profiles").select("*").eq('ativo', true),
+        supabase.from("system_settings").select("*").eq('key', 'kanban_config').single()
+      ]);
+
+      if (ticketsRes.data) setTickets(ticketsRes.data);
+      if (profilesRes.data) setProfiles(profilesRes.data);
+      if (settingsRes.data) setKanbanConfig(settingsRes.data.value as any[]);
+
+      const activeUsersCount = profilesRes.data?.length || 0;
+      setStats(prev => ({ ...prev, activeUsers: activeUsersCount }));
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
  
     useEffect(() => {
       fetchData();
@@ -107,22 +111,34 @@ import { supabase } from "@/integrations/supabase/client";
        else if (filters.period === "1y") startDate = subDays(new Date(), 365);
      }
  
-     result = result.filter(t => {
-       const date = new Date(t.gerado_em);
-       const withinInterval = isWithinInterval(date, { start: startOfDay(startDate), end: endOfDay(endDate) });
-       const technicianMatch = filters.technician === "all" || t.tecnico_id === filters.technician;
-       const userMatch = filters.user === "all" || t.usuario_id === filters.user;
-       return withinInterval && technicianMatch && userMatch;
-     });
+    result = result.filter(t => {
+      const date = new Date(t.gerado_em);
+      const withinInterval = isWithinInterval(date, { start: startOfDay(startDate), end: endOfDay(endDate) });
+      const technicianMatch = filters.technician === "all" || t.tecnico_id === filters.technician;
+      const userMatch = filters.user === "all" || t.usuario_id === filters.user;
+      
+      let statusMatch = true;
+      if (filters.statusType !== "all") {
+        const statusDef = kanbanConfig.find(c => c.id === t.status);
+        statusMatch = statusDef?.type === filters.statusType;
+      }
+
+      return withinInterval && technicianMatch && userMatch && statusMatch;
+    });
+
+    return result;
+  }, [tickets, filters, kanbanConfig]);
  
-     return result;
-   }, [tickets, filters]);
- 
-    useEffect(() => {
-        const total = filteredTickets.length;
-        const open = filteredTickets.filter(t => t.status === 'ABERTO').length;
-        const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
-        const sla = filteredTickets.filter(t => t.sla_violado).length;
+  useEffect(() => {
+    const total = filteredTickets.length;
+    
+    // Get IDs of statuses that represent "open" and "resolved"
+    const openStatusIds = kanbanConfig.filter(c => c.type !== 'completed').map(c => c.id);
+    const resolvedStatusIds = kanbanConfig.filter(c => c.type === 'completed').map(c => c.id);
+    
+    const open = filteredTickets.filter(t => openStatusIds.includes(t.status) || (!kanbanConfig.length && t.status !== 'ENCERRADO')).length;
+    const resolved = filteredTickets.filter(t => resolvedStatusIds.includes(t.status) || (!kanbanConfig.length && t.status === 'ENCERRADO')).length;
+    const sla = filteredTickets.filter(t => t.sla_violado).length;
   
          // By Priority
          const priorityCounts = filteredTickets.reduce((acc: any, t) => {

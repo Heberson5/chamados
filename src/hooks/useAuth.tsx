@@ -118,7 +118,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(s);
         setUser(s?.user ?? null);
         
-        if (s?.user) await loadProfile(s.user.id);
+        if (s?.user) {
+          try {
+            await loadProfile(s.user.id);
+          } catch (err) {
+            console.error("Failed to load profile during init:", err);
+          }
+        }
       } catch (err) {
         console.error("Auth init error:", err);
       } finally {

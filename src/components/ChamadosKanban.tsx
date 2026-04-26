@@ -402,58 +402,59 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
    };
 
    return (
-     <DndContext 
-       sensors={sensors} 
-       collisionDetection={closestCorners} 
-       onDragEnd={handleDragEnd}
-     >
-       <div className={`grid grid-cols-1 md:grid-cols-${kanbanCols.length} gap-6 h-full min-h-[600px]`}>
-         {kanbanCols.map((column) => (
-           <div key={column.id} className={`flex flex-col rounded-xl border ${column.color} p-4`}>
-             <div className="flex items-center justify-between mb-4 px-2">
-               <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
-                 {column.title}
-                 <Badge variant="secondary" className="rounded-full px-2 py-0">
-                   {tickets.filter(t => t.status === column.id).length}
-                 </Badge>
-               </h3>
-             </div>
- 
-             <SortableContext 
-               id={column.id} 
-               items={tickets.filter(t => t.status === column.id).map(t => t.id)} 
-               strategy={verticalListSortingStrategy}
-             >
-               <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
-                 {tickets
-                   .filter((t) => t.status === column.id)
-                   .map((ticket) => (
-                     <SortableCard 
-                       key={ticket.id} 
-                       ticket={ticket} 
-                       columnId={column.id} 
-                       userRole={userRole} 
-                       onUpdate={onUpdate}
-                       onDetails={openDetails}
-                       onAction={handleAction}
-                       onOpenClosure={openClosureDialog}
-                     />
-                   ))}
-                 
-                 {tickets.filter(t => t.status === column.id).length === 0 && (
-                   <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50 border-2 border-dashed rounded-lg">
-                     <AlertTriangle size={24} className="mb-2 opacity-20" />
-                     <p className="text-xs">Nenhum chamado</p>
-                   </div>
-                 )}
+     <>
+       <DndContext 
+         sensors={sensors} 
+         collisionDetection={closestCorners} 
+         onDragEnd={handleDragEnd}
+       >
+         <div className={`grid grid-cols-1 md:grid-cols-${kanbanCols.length} gap-6 h-full min-h-[600px]`}>
+           {kanbanCols.map((column) => (
+             <div key={column.id} className={`flex flex-col rounded-xl border ${column.color} p-4`}>
+               <div className="flex items-center justify-between mb-4 px-2">
+                 <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
+                   {column.title}
+                   <Badge variant="secondary" className="rounded-full px-2 py-0">
+                     {tickets.filter(t => t.status === column.id).length}
+                   </Badge>
+                 </h3>
                </div>
-             </SortableContext>
-           </div>
-         ))}
-       </div>
-     </DndContext>
-
-    <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
+ 
+               <SortableContext 
+                 id={column.id} 
+                 items={tickets.filter(t => t.status === column.id).map(t => t.id)} 
+                 strategy={verticalListSortingStrategy}
+               >
+                 <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
+                   {tickets
+                     .filter((t) => t.status === column.id)
+                     .map((ticket) => (
+                       <SortableCard 
+                         key={ticket.id} 
+                         ticket={ticket} 
+                         columnId={column.id} 
+                         userRole={userRole} 
+                         onUpdate={onUpdate}
+                         onDetails={openDetails}
+                         onAction={handleAction}
+                         onOpenClosure={openClosureDialog}
+                       />
+                     ))}
+                   
+                   {tickets.filter(t => t.status === column.id).length === 0 && (
+                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50 border-2 border-dashed rounded-lg">
+                       <AlertTriangle size={24} className="mb-2 opacity-20" />
+                       <p className="text-xs">Nenhum chamado</p>
+                     </div>
+                   )}
+                 </div>
+               </SortableContext>
+             </div>
+           ))}
+         </div>
+       </DndContext>
+ 
+       <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Encerrar Chamado: {selectedTicket?.os}</DialogTitle>

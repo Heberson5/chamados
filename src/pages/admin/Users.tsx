@@ -396,6 +396,7 @@ import { supabase } from "@/integrations/supabase/client";
                 <TableHead>Nome</TableHead>
                 <TableHead>Empresa</TableHead>
                 <TableHead>Depto / Cargo</TableHead>
+                <TableHead>Nível</TableHead>
                 <TableHead>Master?</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -421,6 +422,13 @@ import { supabase } from "@/integrations/supabase/client";
                   <TableCell>
                     <div className="text-xs">{u.departments?.name || "—"}</div>
                     <div className="text-[11px] text-muted-foreground">{u.positions?.name || "—"}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-normal capitalize">
+                      {u.user_roles?.[0]?.role === 'admin' ? 'Administrador' : 
+                       u.user_roles?.[0]?.role === 'agent' ? 'Agente' : 
+                       u.user_roles?.[0]?.role === 'customer' ? 'Usuário' : '—'}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {u.is_master ? (

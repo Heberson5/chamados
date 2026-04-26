@@ -304,7 +304,7 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
     fetchComments(ticket.id);
   };
 
-  const fetchComments = async (ticketId: string) => {
+   const fetchComments = useCallback(async (ticketId: string) => {
     const { data, error } = await supabase
       .from("comentarios_chamado")
       .select(`*, autor:profiles(nome, sobrenome)`)
@@ -395,7 +395,31 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
        case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
        default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
      }
-   };
+   }, []);
+ 
+   useEffect(() => {
+     if (isDetailsOpen && selectedTicket) {
+       const channel = supabase
+         .channel(`comments-${selectedTicket.id}`)
+         .on(
+           'postgres_changes',
+           {
+             event: '*',
+             schema: 'public',
+             table: 'comentarios_chamado',
+             filter: `chamado_id=eq.${selectedTicket.id}`
+           },
+           () => {
+             fetchComments(selectedTicket.id);
+           }
+         )
+         .subscribe();
+ 
+       return () => {
+         supabase.removeChannel(channel);
+       };
+     }
+   }, [isDetailsOpen, selectedTicket, fetchComments]);
  
    const getPriorityLabel = (priority: string) => {
      const labels: Record<string, string> = {

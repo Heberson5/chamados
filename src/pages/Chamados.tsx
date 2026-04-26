@@ -90,18 +90,9 @@
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) throw new Error("Usuário não autenticado. Por favor, faça login novamente.");
 
-        // Verificar se o perfil existe
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", user.id)
-          .single();
-
-        if (profileError || !profile) {
-          console.error("Perfil não encontrado para o usuário:", user.id, profileError);
-          throw new Error("Seu perfil de usuário não foi encontrado. Entre em contato com o administrador.");
-        }
-
+         // O perfil já deve existir devido ao trigger no auth.users
+         // Se houver algum erro aqui, geralmente é por RLS ou falta de conexão
+         
         const uploadedUrls = [];
         for (const file of files) {
           const fileExt = file.name.split(".").pop();

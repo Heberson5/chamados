@@ -70,8 +70,10 @@
          doc.setPage(i);
          doc.setFontSize(10);
          doc.setTextColor(150);
-         doc.text(layout.footerText || "Help-Me System", 10, 285);
-         doc.text(`Página ${i} de ${pageCount}`, 180, 285);
+          const printDate = new Date().toLocaleString('pt-BR');
+          doc.text(layout.footerText || "Help-Me System", 10, 280);
+          doc.text(`Impresso em: ${printDate}`, 10, 285);
+          doc.text(`Página ${i} de ${pageCount}`, 180, 285);
        }
  
        doc.save("Relatorio_Chamados.pdf");

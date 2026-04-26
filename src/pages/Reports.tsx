@@ -7,7 +7,8 @@
  import * as XLSX from 'xlsx';
  import jsPDF from 'jspdf';
  import autoTable from 'jspdf-autotable';
- import { useToast } from "@/hooks/use-toast";
+  import { useToast } from "@/hooks/use-toast";
+  import { getPriorityLabel } from "@/lib/utils/priority";
   import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart } from 'recharts';
  
    export default function Reports() {
@@ -52,11 +53,12 @@
        }, {});
        const byTechnician = Object.keys(technicianCounts).map(name => ({ name, resolvidos: technicianCounts[name] }));
  
-       const priorityCounts = tickets.reduce((acc: any, t) => {
-         acc[t.prioridade] = (acc[t.prioridade] || 0) + 1;
-         return acc;
-       }, {});
-       const byPriority = Object.keys(priorityCounts).map(p => ({ name: p, value: priorityCounts[p] }));
+        const priorityCounts = tickets.reduce((acc: any, t) => {
+          const label = getPriorityLabel(t.prioridade);
+          acc[label] = (acc[label] || 0) + 1;
+          return acc;
+        }, {});
+        const byPriority = Object.keys(priorityCounts).map(name => ({ name, value: priorityCounts[name] }));
  
        return { byStatus, byTechnician, byPriority };
      }, [tickets]);
@@ -64,12 +66,12 @@
      const exportToExcel = async () => {
        try {
          const worksheet = XLSX.utils.json_to_sheet(tickets.map(t => ({
-           OS: t.os,
-           Titulo: t.titulo,
-           Descricao: t.descricao,
-           Status: t.status,
-           Prioridade: t.prioridade,
-           Data: new Date(t.gerado_em).toLocaleDateString()
+            OS: t.os,
+            Titulo: t.titulo,
+            Descricao: t.descricao,
+            Status: t.status,
+            Prioridade: getPriorityLabel(t.prioridade),
+            Data: new Date(t.gerado_em).toLocaleDateString()
          })));
          const workbook = XLSX.utils.book_new();
          XLSX.utils.book_append_sheet(workbook, worksheet, "Chamados");
@@ -99,8 +101,8 @@
  
          autoTable(doc, {
            startY: 30,
-           head: [['OS', 'Título', 'Status', 'Prioridade', 'Data']],
-           body: tickets.map(t => [t.os, t.titulo, t.status, t.prioridade, new Date(t.gerado_em).toLocaleDateString()]),
+            head: [['OS', 'Título', 'Status', 'Prioridade', 'Data']],
+            body: tickets.map(t => [t.os, t.titulo, t.status, getPriorityLabel(t.prioridade), new Date(t.gerado_em).toLocaleDateString()]),
            theme: 'striped',
            headStyles: { fillColor: layout.headerColor || [0, 0, 0] }
          });

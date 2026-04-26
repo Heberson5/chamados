@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+ import { format } from "date-fns";
+ import { ptBR } from "date-fns/locale";
+ import { getPriorityLabel } from "@/lib/utils/priority";
 
 export default function Chamados() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -177,17 +178,6 @@ export default function Chamados() {
     return matchesSearch && matchesStatus;
   });
 
-   const getPriorityLabel = (priority: string) => {
-     const labels: Record<string, string> = {
-        P1: "Crítico",
-        P2: "Alto",
-        P3: "Médio",
-        P4: "Baixo",
-        P5: "Muito Baixo"
-     };
-     return labels[priority] || priority;
-   };
-
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -252,10 +242,11 @@ export default function Chamados() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="P1">Crítico</SelectItem>
-                      <SelectItem value="P2">Alto</SelectItem>
-                      <SelectItem value="P3">Médio</SelectItem>
-                      <SelectItem value="P4">Baixo</SelectItem>
+                       <SelectItem value="P1">{getPriorityLabel("P1")}</SelectItem>
+                       <SelectItem value="P2">{getPriorityLabel("P2")}</SelectItem>
+                       <SelectItem value="P3">{getPriorityLabel("P3")}</SelectItem>
+                       <SelectItem value="P4">{getPriorityLabel("P4")}</SelectItem>
+                       <SelectItem value="P5">{getPriorityLabel("P5")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

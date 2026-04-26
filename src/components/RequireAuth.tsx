@@ -15,17 +15,11 @@ export const RequireAuth = ({ children }: { children: ReactNode }) => {
   }
   if (!user) return <Navigate to="/auth" state={{ from: location }} replace />;
   
-  // Se o usuário está logado mas o perfil ainda não carregou E ainda está carregando, esperamos.
-  // Se o carregamento terminou e o perfil continua nulo, seguimos para o onboarding (onde será criado).
-  if (user && !profile && loading) {
-    return (
-      <div className="min-h-screen grid place-items-center">
-        <div className="size-6 rounded-full border-2 border-muted border-t-foreground animate-spin" />
-      </div>
-    );
+   if (!profile && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
   }
 
-   if (profile && !profile.is_master && !profile.organization_id && location.pathname !== "/onboarding") {
+  if (profile && !profile.is_master && !profile.organization_id && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
   return <>{children}</>;

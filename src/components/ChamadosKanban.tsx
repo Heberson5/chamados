@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, UserClock } from "lucide-react";
+  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
   import { useState, useEffect, useCallback } from "react";
@@ -171,7 +171,7 @@ import { Label } from "@/components/ui/label";
                       className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-indigo-600"
                       onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "aguardar_usuario"); }}
                     >
-                      <UserClock size={12} /> Aguardar Usuário
+                      <History size={12} /> Aguardar Usuário
                     </Button>
                   </>
                 )}

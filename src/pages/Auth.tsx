@@ -133,8 +133,19 @@ const Auth = () => {
      }
   }, [settings]);
 
-  return (
-    <div className="min-h-screen grid md:grid-cols-2">
+   if (authLoading && !user) {
+     return (
+       <div className="min-h-screen grid place-items-center">
+         <div className="flex flex-col items-center gap-3">
+           <Loader2 className="size-8 animate-spin text-primary" />
+           <p className="text-sm text-muted-foreground animate-pulse">Carregando...</p>
+         </div>
+       </div>
+     );
+   }
+ 
+   return (
+     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex flex-col justify-between p-10 bg-surface-1 border-r border-border">
         <Link to="/" className="flex items-center gap-2">
           {settings?.logo_url ? (

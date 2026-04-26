@@ -1,24 +1,23 @@
-  import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
- import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
- import { toast } from "sonner";
- import { ImagePlus, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { ImagePlus, X, Loader2 } from "lucide-react";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
 
 const schema = z.object({
   subject: z.string().trim().min(3, "Assunto muito curto").max(200),
   description: z.string().trim().max(5000).optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]),
-   category: z.string().trim().min(1, "Selecione uma categoria"),
+  category: z.string().trim().min(1, "Selecione uma categoria"),
 });
-
-  import { useSystemSettings } from "@/hooks/useSystemSettings";
  
  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];

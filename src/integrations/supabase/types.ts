@@ -1130,6 +1130,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: never; Returns: boolean }
       is_member_of_same_org: {
         Args: { _profile_org_id: string }
         Returns: boolean

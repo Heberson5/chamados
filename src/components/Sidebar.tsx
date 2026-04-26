@@ -66,16 +66,16 @@ interface SidebarProps {
      loadData();
    }, []);
 
-   const defaultMenuItems = [
-     { id: '1', icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-     { id: '2', icon: Ticket, label: "Chamados", path: "/chamados" },
-     { id: '3', icon: Users, label: "Usuários", path: "/usuarios" },
-     { id: '4', icon: Lock, label: "Permissões", path: "/permissions" },
-     { id: '5', icon: History, label: "Auditoria", path: "/audit" },
-     { id: '6', icon: BarChart3, label: "Relatórios", path: "/reports" },
-     { id: '7', icon: User, label: "Perfil", path: "/perfil" },
-     { id: '8', icon: Settings, label: "Configurações", path: "/settings" },
-   ];
+    const defaultMenuItems = [
+      { id: '1', icon: LayoutDashboard, label: "Painel", path: "/dashboard" },
+      { id: '2', icon: Ticket, label: "Chamados", path: "/chamados" },
+      { id: '6', icon: BarChart3, label: "Relatórios", path: "/reports" },
+      { id: '3', icon: Users, label: "Usuários", path: "/usuarios" },
+      { id: '4', icon: Lock, label: "Permissões", path: "/permissions" },
+      { id: '5', icon: History, label: "Auditoria", path: "/audit" },
+      { id: '7', icon: User, label: "Meu Perfil", path: "/perfil" },
+      { id: '8', icon: Settings, label: "Configurações", path: "/settings" },
+    ];
  
    const menuItems = (layout.menuOrder && layout.menuOrder.length > 0) 
      ? layout.menuOrder

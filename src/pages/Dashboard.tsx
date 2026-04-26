@@ -385,6 +385,44 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
        </div>
  
          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Chamados por Tipo de Status</CardTitle>
+                <CardDescription>Agrupamento por categoria de status</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.byStatusType}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                       {stats.byStatusType.map((entry, index) => {
+                         const colors = [
+                           '#3b82f6', // waiting
+                           '#f59e0b', // in_progress
+                           '#94a3b8', // paused
+                           '#6366f1', // waiting_user
+                           '#10b981', // completed
+                         ];
+                         return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />;
+                       })}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
            <Card>
              <CardHeader>
                <CardTitle>Tempos Médios (min)</CardTitle>

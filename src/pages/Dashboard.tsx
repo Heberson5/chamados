@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
   import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon, Play, Pause, History } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay, eachHourOfInterval, isSameHour } from "date-fns";
- import { ptBR } from "date-fns/locale";
+  import { ptBR } from "date-fns/locale";
+  import { getPriorityLabel } from "@/lib/utils/priority";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
  
@@ -123,12 +124,13 @@ import { supabase } from "@/integrations/supabase/client";
         const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
         const sla = filteredTickets.filter(t => t.sla_violado).length;
   
-        // By Priority
-        const priorityCounts = filteredTickets.reduce((acc: any, t) => {
-          acc[t.prioridade] = (acc[t.prioridade] || 0) + 1;
-          return acc;
-        }, {});
-        const byPriority = Object.keys(priorityCounts).map(p => ({ name: p, value: priorityCounts[p] }));
+         // By Priority
+         const priorityCounts = filteredTickets.reduce((acc: any, t) => {
+           const label = getPriorityLabel(t.prioridade);
+           acc[label] = (acc[label] || 0) + 1;
+           return acc;
+         }, {});
+         const byPriority = Object.keys(priorityCounts).map(name => ({ name, value: priorityCounts[name] }));
   
         // By Status
         const statusCounts = filteredTickets.reduce((acc: any, t) => {

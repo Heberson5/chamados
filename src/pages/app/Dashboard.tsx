@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, Inbox, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Inbox, CheckCircle2, Clock, AlertTriangle, Building2 } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
 import { Link } from "react-router-dom";
 import { PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
@@ -11,8 +11,13 @@ import { useKanbanSettings } from "@/hooks/useKanbanSettings";
 import { cn } from "@/lib/utils";
 
 type T = {
-  id: string; number: number; subject: string; status: string;
-  priority: string; created_at: string;
+  id: string;
+  number: number;
+  subject: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  organizations?: { name: string };
 };
 
 const Dashboard = () => {
@@ -24,8 +29,8 @@ const Dashboard = () => {
   const load = async () => {
     let query = supabase
       .from("tickets")
-      .select("id,number,subject,status,priority,created_at");
-    
+      .select("id,number,subject,status,priority,created_at,organizations(name)");
+
     if (org) {
       query = query.eq("organization_id", org.id);
     } else if (!profile?.is_master) {
@@ -95,17 +100,25 @@ const Dashboard = () => {
               {tickets.slice(0, 8).map((t) => (
                 <li key={t.id}>
                   <Link to={`/app/tickets/${t.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-1">
-                    <span className="text-xs text-muted-foreground tabular-nums w-12">#{t.number}</span>
-                     <span className="flex items-center gap-1.5 text-xs w-32 shrink-0">
-                       <span className={cn("size-1.5 rounded-full", getStatusColor(t.status))} />
-                       {getStatusLabel(t.status)}
-                     </span>
-                    <span className="flex-1 text-sm font-medium truncate">{t.subject}</span>
-                    <span className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground tabular-nums w-12 shrink-0">#{t.number}</span>
+                    <span className="flex items-center gap-1.5 text-xs w-32 shrink-0">
+                      <span className={cn("size-1.5 rounded-full", getStatusColor(t.status))} />
+                      {getStatusLabel(t.status)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{t.subject}</div>
+                      {!org && (
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Building2 className="size-2.5" />
+                          {t.organizations?.name}
+                        </div>
+                      )}
+                    </div>
+                    <span className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground w-24 shrink-0">
                       <span className={`size-1.5 rounded-full ${PRIORITY_DOT[t.priority]}`} />
                       {PRIORITY_LABEL[t.priority]}
                     </span>
-                    <span className="text-xs text-muted-foreground w-12 text-right">{timeAgo(t.created_at)}</span>
+                    <span className="text-xs text-muted-foreground w-12 text-right shrink-0">{timeAgo(t.created_at)}</span>
                   </Link>
                 </li>
               ))}

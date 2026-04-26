@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, Settings2, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Settings2, Trash2, GripVertical, ChevronUp, ChevronDown, Building2 } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
 import { cn } from "@/lib/utils";
 import { STATUS_LABEL, STATUS_ORDER, PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
@@ -21,8 +21,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type T = {
-  id: string; number: number; subject: string; status: string;
-  priority: string; created_at: string;
+  id: string;
+  number: number;
+  subject: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  organizations?: { name: string };
 };
 
 const Board = () => {
@@ -41,8 +46,8 @@ const Board = () => {
   const load = async () => {
     let query = supabase
       .from("tickets")
-      .select("id,number,subject,status,priority,created_at");
-    
+      .select("id,number,subject,status,priority,created_at,organizations(name)");
+
     if (org) {
       query = query.eq("organization_id", org.id);
     } else if (!profile?.is_master) {
@@ -238,10 +243,18 @@ const Board = () => {
                       onDragStart={(e) => e.dataTransfer.setData("text/plain", t.id)}
                       className="rounded-lg border border-border bg-background p-3 shadow-xs hover:shadow-soft transition-shadow cursor-grab active:cursor-grabbing"
                     >
-                      <Link to={`/app/tickets/${t.id}`} className="block">
-                        <div className="text-[11px] text-muted-foreground tabular-nums">#{t.number}</div>
-                        <div className="text-sm font-medium mt-0.5 line-clamp-2">{t.subject}</div>
-                        <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                      <Link to={`/app/tickets/${t.id}`} className="block space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11px] text-muted-foreground tabular-nums">#{t.number}</div>
+                          {!org && (
+                            <div className="text-[10px] text-muted-foreground flex items-center gap-1 bg-secondary/30 px-1 rounded">
+                              <Building2 className="size-2.5" />
+                              {t.organizations?.name}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-sm font-medium line-clamp-2">{t.subject}</div>
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
                           <span className="flex items-center gap-1.5">
                             <span className={`size-1.5 rounded-full ${PRIORITY_DOT[t.priority]}`} />
                             {PRIORITY_LABEL[t.priority]}

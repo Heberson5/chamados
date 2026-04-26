@@ -279,7 +279,7 @@ export default function Chamados() {
         </div>
       </div>
 
-      <Tabs defaultValue="list" className="w-full">
+      <Tabs defaultValue="kanban" className="w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <div className="relative w-full md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />

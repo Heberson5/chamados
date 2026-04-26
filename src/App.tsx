@@ -10,8 +10,6 @@ import Chamados from "./pages/Chamados";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
  import Reports from "./pages/Reports";
- import Inventory from "./pages/Inventory";
- import Baixas from "./pages/Baixas";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,10 +31,8 @@ const App = () => {
             
             <Route element={<Layout />}>
                <Route path="/dashboard" element={<Dashboard />} />
-               <Route path="/chamados" element={<Chamados />} />
-               <Route path="/inventario" element={<Inventory />} />
-               <Route path="/baixas" element={<Baixas />} />
-               <Route path="/reports" element={<Reports />} />
+                <Route path="/chamados" element={<Chamados />} />
+                <Route path="/reports" element={<Reports />} />
               <Route path="/perfil" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

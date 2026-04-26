@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Play, CheckCircle, Clock, AlertTriangle, User, MoreVertical } from "lucide-react";
+import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,6 +18,10 @@ interface ChamadosKanbanProps {
 
 export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProps) {
   const { toast } = useToast();
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [closureNote, setClosureNote] = useState("");
+  const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const columns = [
     { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
@@ -47,9 +55,21 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
         description: action === "atender" ? "Você assumiu o chamado." : "Chamado encerrado.",
       });
       onUpdate();
+      setIsClosureDialogOpen(false);
+      setClosureNote("");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
     }
+  };
+
+  const openClosureDialog = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setIsClosureDialogOpen(true);
+  };
+
+  const openDetails = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setIsDetailsOpen(true);
   };
 
   const getPriorityColor = (priority: string) => {
@@ -105,24 +125,32 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="p-4 pt-0">
+                  <CardFooter className="p-4 pt-0 flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="flex-1 gap-2 text-[10px] h-8"
+                      onClick={() => openDetails(ticket)}
+                    >
+                      <Eye size={12} /> Detalhes
+                    </Button>
                     {column.id === "ABERTO" && (
                       <Button 
                         size="sm" 
-                        className="w-full gap-2 text-xs h-8"
+                        className="flex-1 gap-2 text-[10px] h-8"
                         onClick={() => handleAction(ticket.id, "atender")}
                       >
-                        <Play size={14} /> Atender
+                        <Play size={12} /> Atender
                       </Button>
                     )}
                     {column.id === "EM_ATENDIMENTO" && (
                       <Button 
                         size="sm" 
                         variant="outline"
-                        className="w-full gap-2 text-xs h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                        onClick={() => handleAction(ticket.id, "encerrar")}
+                        className="flex-1 gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                        onClick={() => openClosureDialog(ticket)}
                       >
-                        <CheckCircle size={14} /> Encerrar
+                        <CheckCircle size={12} /> Encerrar
                       </Button>
                     )}
                   </CardFooter>
@@ -139,5 +167,98 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
         </div>
       ))}
     </div>
+
+    <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Encerrar Chamado: {selectedTicket?.os}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Resumo do Atendimento</Label>
+            <Textarea 
+              placeholder="Descreva o que foi feito para resolver este chamado..."
+              value={closureNote}
+              onChange={(e) => setClosureNote(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsClosureDialogOpen(false)}>Cancelar</Button>
+          <Button 
+            className="bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => handleAction(selectedTicket.id, "encerrar")}
+            disabled={!closureNote.trim()}
+          >
+            Confirmar Encerramento
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {selectedTicket?.titulo}
+            <Badge variant="outline">{selectedTicket?.os}</Badge>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-muted-foreground text-xs">Solicitante</Label>
+              <p className="text-sm font-medium">{selectedTicket?.usuario?.nome} {selectedTicket?.usuario?.sobrenome}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground text-xs">Aberto em</Label>
+              <p className="text-sm font-medium">
+                {selectedTicket?.gerado_em && format(new Date(selectedTicket.gerado_em), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-muted-foreground text-xs">Descrição do Problema</Label>
+            <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
+              {selectedTicket?.descricao}
+            </div>
+          </div>
+
+          {selectedTicket?.anexos && selectedTicket.anexos.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">Anexos</Label>
+              <div className="flex flex-wrap gap-2">
+                {selectedTicket.anexos.map((url: string, idx: number) => (
+                  <a 
+                    key={idx} 
+                    href={url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 border rounded-md hover:bg-muted transition-colors text-xs"
+                  >
+                    <FileText size={14} className="text-blue-500" />
+                    Anexo {idx + 1}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {selectedTicket?.status === "ENCERRADO" && selectedTicket?.descricao_encerramento && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">Resolução</Label>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-md text-sm whitespace-pre-wrap">
+                {selectedTicket.descricao_encerramento}
+              </div>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button onClick={() => setIsDetailsOpen(false)}>Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

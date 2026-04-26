@@ -161,18 +161,21 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          email_settings: Json | null
           id: string
           name: string
           slug: string
         }
         Insert: {
           created_at?: string
+          email_settings?: Json | null
           id?: string
           name: string
           slug: string
         }
         Update: {
           created_at?: string
+          email_settings?: Json | null
           id?: string
           name?: string
           slug?: string

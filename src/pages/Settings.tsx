@@ -571,7 +571,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                                    setLayoutConfig({...layoutConfig, menuOrder: newOrder});
                                  }}
                                >
-                                 <Plus size={10} className="-rotate-180" />
+                                 <ChevronUp size={10} />
                                </Button>
                                <Button 
                                  variant="ghost" 
@@ -584,7 +584,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                                    setLayoutConfig({...layoutConfig, menuOrder: newOrder});
                                  }}
                                >
-                                 <Plus size={10} />
+                                 <ChevronDown size={10} />
                                </Button>
                              </div>
                              <Input 

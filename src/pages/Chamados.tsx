@@ -17,8 +17,8 @@ export default function Chamados() {
   }, []);
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold">Gerenciamento de Chamados</h1>
           <p className="text-muted-foreground">Visualize e gerencie todos os atendimentos técnicos.</p>
@@ -29,7 +29,7 @@ export default function Chamados() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-md border">
+      <div className="bg-card rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

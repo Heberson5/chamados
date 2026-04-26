@@ -1023,6 +1023,24 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       transferencias_chamado: {
         Row: {
           chamado_id: string

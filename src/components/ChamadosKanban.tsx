@@ -21,10 +21,15 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
   const [closureNote, setClosureNote] = useState("");
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+   const [userRole, setUserRole] = useState<string | null>(null);
+   const [kanbanCols, setKanbanCols] = useState<any[]>([
+     { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
+     { id: "EM_ATENDIMENTO", title: "Em Atendimento", color: "bg-amber-500/10 border-amber-500/20" },
+     { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
+   ]);
 
-  useEffect(() => {
-    const getRole = async () => {
+   useEffect(() => {
+     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
@@ -32,21 +37,25 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           .select("regra, is_master")
           .eq("id", user.id)
           .single();
-        if (data) {
-          setUserRole(data.is_master ? 'MASTER' : data.regra);
-        }
-      }
-    };
-    getRole();
-  }, []);
+         if (data) {
+           setUserRole(data.is_master ? 'MASTER' : data.regra);
+         }
+       }
+ 
+       const { data: settings } = await supabase
+         .from("system_settings")
+         .select("value")
+         .eq("key", "kanban_config")
+         .single();
+       
+       if (settings) {
+         setKanbanCols(settings.value as any[]);
+       }
+     };
+     loadData();
+   }, []);
 
-  const columns = [
-    { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
-    { id: "EM_ATENDIMENTO", title: "Em Atendimento", color: "bg-amber-500/10 border-amber-500/20" },
-    { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
-  ];
-
-  const handleAction = async (ticketId: string, action: "atender" | "encerrar") => {
+   const handleAction = async (ticketId: string, action: "atender" | "encerrar") => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -89,19 +98,30 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
     setIsDetailsOpen(true);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "P1": return "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400";
-      case "P2": return "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400";
-      case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
-      default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
-    }
-  };
+   const getPriorityColor = (priority: string) => {
+     switch (priority) {
+       case "P1": return "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400";
+       case "P2": return "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400";
+       case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
+       default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
+     }
+   };
+ 
+   const getPriorityLabel = (priority: string) => {
+     const labels: Record<string, string> = {
+       P1: "Crítica",
+       P2: "Alta",
+       P3: "Média",
+       P4: "Baixa",
+       P5: "Muito Baixa"
+     };
+     return labels[priority] || priority;
+   };
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-[600px]">
-      {columns.map((column) => (
+       <div className={`grid grid-cols-1 md:grid-cols-${kanbanCols.length} gap-6 h-full min-h-[600px]`}>
+       {kanbanCols.map((column) => (
         <div key={column.id} className={`flex flex-col rounded-xl border ${column.color} p-4`}>
           <div className="flex items-center justify-between mb-4 px-2">
             <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
@@ -119,9 +139,9 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
                 <Card key={ticket.id} className="shadow-sm hover:shadow-md transition-shadow cursor-default border-slate-200 dark:border-slate-800">
                   <CardHeader className="p-4 pb-2">
                     <div className="flex justify-between items-start mb-2">
-                      <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
-                        {ticket.prioridade}
-                      </Badge>
+                       <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
+                         {getPriorityLabel(ticket.prioridade)}
+                       </Badge>
                       <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
                     </div>
                     <CardTitle className="text-sm font-bold line-clamp-2 leading-tight">

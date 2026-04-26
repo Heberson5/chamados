@@ -92,7 +92,14 @@ import { Label } from "@/components/ui/label";
              <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
                {getPriorityLabel(ticket.prioridade)}
              </Badge>
-             <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
+               <div className="flex items-center gap-1">
+                 {ticket.reaberto && (
+                   <Badge variant="outline" className="text-[9px] bg-yellow-100 text-yellow-700 border-yellow-200 px-1 py-0">
+                     Reaberto
+                   </Badge>
+                 )}
+                 <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
+               </div>
            </div>
            <CardTitle className="text-sm font-bold line-clamp-2 leading-tight">
              {ticket.titulo || "Sem título"}
@@ -258,10 +265,11 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       if (action === "atender") {
         updates.status = "EM_ATENDIMENTO";
         updates.tecnico_id = user.id;
-      } else if (action === "reabrir") {
-        updates.status = "EM_ATENDIMENTO";
-        updates.encerrado_em = null;
-      } else if (action === "encerrar") {
+       } else if (action === "reabrir") {
+         updates.status = "EM_ATENDIMENTO";
+         updates.encerrado_em = null;
+         updates.reaberto = true;
+       } else if (action === "encerrar") {
         updates.status = "ENCERRADO";
         updates.encerrado_em = new Date().toISOString();
         updates.descricao_encerramento = closureNote;

@@ -30,22 +30,28 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
      const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editUser, setEditUser] = useState<any>(null);
+    const [currentRole, setCurrentRole] = useState<{ regra: string; is_master: boolean } | null>(null);
+
+    const isCurrentMaster = !!currentRole && (currentRole.is_master || currentRole.regra === "MASTER");
 
     const handleEditUser = async () => {
       if (!editUser) return;
       setLoading(true);
       try {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
+        const { data, error } = await supabase.functions.invoke("admin-update-user", {
+          body: {
+            user_id: editUser.id,
             nome: editUser.nome,
             sobrenome: editUser.sobrenome,
+            email: editUser.email,
             regra: editUser.regra,
-            is_master: editUser.regra === 'MASTER'
-          })
-          .eq("id", editUser.id);
-
+            telefone: editUser.telefone,
+            ramal: editUser.ramal,
+            cidade: editUser.cidade,
+          },
+        });
         if (error) throw error;
+        if ((data as any)?.error) throw new Error((data as any).error);
         toast({ title: "Sucesso", description: "Usuário atualizado com sucesso." });
         setIsEditDialogOpen(false);
         fetchUsers();

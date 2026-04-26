@@ -71,12 +71,10 @@ const Auth = () => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         
-        if (data.user) {
-          toast.success("Login realizado com sucesso!");
-          // Redirect immediately if possible
-          const target = profile?.organization_id || profile?.is_master ? "/app" : "/onboarding";
-          navigate(target, { replace: true });
-        }
+         if (data.user) {
+           toast.success("Login realizado com sucesso!");
+           // The useEffect will handle redirection once profile is loaded
+         }
       }
     } catch (err: any) {
       console.error("Auth error:", err);
@@ -136,7 +134,7 @@ const Auth = () => {
      }
   }, [settings]);
 
-   if (authLoading && !user) {
+   if (authLoading || user) {
      return (
        <div className="min-h-screen grid place-items-center">
          <div className="flex flex-col items-center gap-3">

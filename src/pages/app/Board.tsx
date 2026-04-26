@@ -28,6 +28,7 @@ type T = {
 const Board = () => {
   const { org, profile } = useAuth();
   const { columns, updateSettings } = useKanbanSettings();
+  const isCustomer = profile?.role === 'customer';
   const [localCols, setLocalCols] = useState<any[]>([]);
   
   useEffect(() => {
@@ -59,6 +60,7 @@ const Board = () => {
 
   const onDrop = async (status: string, e: React.DragEvent) => {
     e.preventDefault();
+    if (isCustomer) return;
     const id = e.dataTransfer.getData("text/plain");
     if (!id) return;
     setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
@@ -83,19 +85,20 @@ const Board = () => {
         description="Arraste cards para atualizar o status"
         actions={
           <div className="flex gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setLocalCols(columns)}>
-                  <Settings2 className="size-4" /> Personalizar
-                </Button>
-              </DialogTrigger>
+            {!isCustomer && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setLocalCols(columns)}>
+                    <Settings2 className="size-4" /> Personalizar
+                  </Button>
+                </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader>
-                  <DialogTitle>Personalizar Kanban</DialogTitle>
-                </DialogHeader>
+                  <DialogHeader>
+                    <DialogTitle>Personalizar Kanban</DialogTitle>
+                  </DialogHeader>
                   <div className="flex-1 overflow-y-auto p-6 space-y-4">
                     {localCols.map((col: any, index: number) => (
-                     <div key={col.id} className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg group">
+                      <div key={col.id} className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg group">
                         <div className="flex flex-col gap-1">
                           <Button 
                             variant="ghost" 
@@ -126,68 +129,68 @@ const Board = () => {
                             <ChevronDown className="size-4" />
                           </Button>
                         </div>
-                       <div className="flex-1 space-y-3">
-                         <div className="flex gap-3">
-                           <div className="flex-1 space-y-1.5">
-                             <Label>Nome da Coluna</Label>
-                             <Input 
-                               value={col.label} 
-                               onChange={(e) => {
-                                 const newCols = [...localCols];
-                                 newCols[index] = { ...col, label: e.target.value };
-                                 setLocalCols(newCols);
-                               }}
-                             />
-                           </div>
-                           <div className="w-40 space-y-1.5">
-                             <Label>Cor</Label>
-                             <Select 
-                               value={col.color} 
-                               onValueChange={(val) => {
-                                 const newCols = [...localCols];
-                                 newCols[index] = { ...col, color: val };
-                                 setLocalCols(newCols);
-                               }}
-                             >
-                               <SelectTrigger><SelectValue /></SelectTrigger>
-                               <SelectContent>
-                                 {colorOptions.map((opt) => (
-                                   <SelectItem key={opt.value} value={opt.value}>
-                                     <div className="flex items-center gap-2">
-                                       <div className={cn("size-2 rounded-full", opt.value)} />
-                                       {opt.label}
-                                     </div>
-                                   </SelectItem>
-                                 ))}
-                               </SelectContent>
-                             </Select>
-                           </div>
-                         </div>
-                       </div>
-                       <Button 
-                         variant="ghost" 
-                         size="icon" 
-                         className="mt-6 text-destructive hover:text-destructive hover:bg-destructive/10"
-                         onClick={() => {
-                           const newCols = localCols.filter((_: any, i: number) => i !== index);
-                           setLocalCols(newCols);
-                         }}
-                       >
-                         <Trash2 className="size-4" />
-                       </Button>
-                     </div>
-                   ))}
-                   <Button 
-                     variant="outline" 
-                     className="w-full border-dashed" 
-                     onClick={() => {
-                       const newId = `custom_${Math.random().toString(36).substr(2, 9)}`;
-                       const newCols = [...localCols, { id: newId, label: "Nova Coluna", color: "bg-muted" }];
-                       setLocalCols(newCols);
-                     }}
-                   >
-                     <Plus className="size-4 mr-2" /> Adicionar Coluna
-                   </Button>
+                        <div className="flex-1 space-y-3">
+                          <div className="flex gap-3">
+                            <div className="flex-1 space-y-1.5">
+                              <Label>Nome da Coluna</Label>
+                              <Input 
+                                value={col.label} 
+                                onChange={(e) => {
+                                  const newCols = [...localCols];
+                                  newCols[index] = { ...col, label: e.target.value };
+                                  setLocalCols(newCols);
+                                }}
+                              />
+                            </div>
+                            <div className="w-40 space-y-1.5">
+                              <Label>Cor</Label>
+                              <Select 
+                                value={col.color} 
+                                onValueChange={(val) => {
+                                  const newCols = [...localCols];
+                                  newCols[index] = { ...col, color: val };
+                                  setLocalCols(newCols);
+                                }}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {colorOptions.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value}>
+                                      <div className="flex items-center gap-2">
+                                        <div className={cn("size-2 rounded-full", opt.value)} />
+                                        {opt.label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="mt-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            const newCols = localCols.filter((_: any, i: number) => i !== index);
+                            setLocalCols(newCols);
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-dashed" 
+                      onClick={() => {
+                        const newId = `custom_${Math.random().toString(36).substr(2, 9)}`;
+                        const newCols = [...localCols, { id: newId, label: "Nova Coluna", color: "bg-muted" }];
+                        setLocalCols(newCols);
+                      }}
+                    >
+                      <Plus className="size-4 mr-2" /> Adicionar Coluna
+                    </Button>
                   </div>
                   <div className="p-4 border-t bg-muted/20 flex justify-end gap-2">
                     <DialogTrigger asChild>
@@ -197,8 +200,9 @@ const Board = () => {
                       Salvar alterações
                     </Button>
                   </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            )}
             <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
               <Plus className="size-4" /> Novo chamado
             </Button>

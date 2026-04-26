@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
- import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus } from "lucide-react";
+  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
   import { useState, useEffect, useCallback } from "react";
@@ -25,7 +25,23 @@ import { Label } from "@/components/ui/label";
     useSortable
   } from "@dnd-kit/sortable";
   import { CSS } from "@dnd-kit/utilities";
- function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
+  const getSLAInfo = (ticket: any) => {
+    if (ticket.status === "ENCERRADO") {
+      return { label: "FINALIZADO", color: "bg-blue-500" };
+    }
+    if (!ticket.sla_deadline) {
+      return { label: "N/A", color: "bg-gray-400" };
+    }
+    const deadline = new Date(ticket.sla_deadline);
+    const now = new Date();
+    const diffMinutes = (deadline.getTime() - now.getTime()) / (1000 * 60);
+    
+    if (diffMinutes < 0) return { label: "VENCIDO", color: "bg-red-500" };
+    if (diffMinutes < 30) return { label: "VENCENDO", color: "bg-yellow-500 animate-pulse" };
+    return { label: "NO PRAZO", color: "bg-green-500" };
+  };
+
+  function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
    const {
      attributes,
      listeners,
@@ -61,28 +77,12 @@ import { Label } from "@/components/ui/label";
  
    const [slaInfo, setSlaInfo] = useState({ label: "Calculando...", color: "bg-gray-400" });
  
-   useEffect(() => {
-     const calc = () => {
-       if (ticket.status === "ENCERRADO") {
-         setSlaInfo({ label: "FINALIZADO", color: "bg-blue-500" });
-         return;
-       }
-       if (!ticket.sla_deadline) {
-         setSlaInfo({ label: "N/A", color: "bg-gray-400" });
-         return;
-       }
-       const deadline = new Date(ticket.sla_deadline);
-       const now = new Date();
-       const diffMinutes = (deadline.getTime() - now.getTime()) / (1000 * 60);
-       
-       if (diffMinutes < 0) setSlaInfo({ label: "VENCIDO", color: "bg-red-500" });
-       else if (diffMinutes < 30) setSlaInfo({ label: "VENCENDO", color: "bg-yellow-500 animate-pulse" });
-       else setSlaInfo({ label: "NO PRAZO", color: "bg-green-500" });
-     };
-     calc();
-     const interval = setInterval(calc, 60000);
-     return () => clearInterval(interval);
-   }, [ticket]);
+    useEffect(() => {
+      const calc = () => setSlaInfo(getSLAInfo(ticket));
+      calc();
+      const interval = setInterval(calc, 60000);
+      return () => clearInterval(interval);
+    }, [ticket]);
  
    return (
      <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
@@ -126,7 +126,7 @@ import { Label } from "@/components/ui/label";
              </div>
            </div>
          </CardContent>
-         <CardFooter className="p-4 pt-0 flex gap-2">
+          <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
            <Button 
              size="sm" 
              variant="ghost"
@@ -144,16 +144,50 @@ import { Label } from "@/components/ui/label";
                <Play size={12} /> Atender
              </Button>
            )}
-           {columnId === "EM_ATENDIMENTO" && userRole !== "USUARIO" && (
-             <Button 
-               size="sm" 
-               variant="outline"
-               className="flex-1 gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-               onClick={(e) => { e.stopPropagation(); onOpenClosure(ticket); }}
-             >
-               <CheckCircle size={12} /> Encerrar
-             </Button>
-           )}
+            {["EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO"].includes(columnId) && userRole !== "USUARIO" && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  onClick={(e) => { e.stopPropagation(); onOpenClosure(ticket); }}
+                >
+                  <CheckCircle size={12} /> Encerrar
+                </Button>
+                
+                {columnId === "EM_ATENDIMENTO" && (
+                  <>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-slate-600"
+                      onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "pausar"); }}
+                    >
+                      <Pause size={12} /> Pausar
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-indigo-600"
+                      onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "aguardar_usuario"); }}
+                    >
+                      <History size={12} /> Aguardar Usuário
+                    </Button>
+                  </>
+                )}
+                
+                {(columnId === "PAUSADO" || columnId === "AGUARDANDO_USUARIO") && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-amber-600"
+                    onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "retomar"); }}
+                  >
+                    <Play size={12} /> Retomar
+                  </Button>
+                )}
+              </>
+            )}
            {ticket.status === "ENCERRADO" && (
              <Button 
                size="sm" 
@@ -256,24 +290,61 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      loadData();
    }, []);
 
-   const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir") => {
+    const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario") => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+        // Fetch current ticket state to calculate time differences
+        const { data: ticket } = await supabase.from("chamados").select("*").eq("id", ticketId).single();
+        if (!ticket) return;
+
       const updates: any = {};
+        const now = new Date().toISOString();
+
       if (action === "atender") {
         updates.status = "EM_ATENDIMENTO";
         updates.tecnico_id = user.id;
+          updates.atendido_em = now;
        } else if (action === "reabrir") {
          updates.status = "EM_ATENDIMENTO";
          updates.encerrado_em = null;
          updates.reaberto = true;
        } else if (action === "encerrar") {
         updates.status = "ENCERRADO";
-        updates.encerrado_em = new Date().toISOString();
+          updates.encerrado_em = now;
         updates.descricao_encerramento = closureNote;
-      }
+
+          // Insert closure note as a comment
+          await supabase.from("comentarios_chamado").insert({
+            chamado_id: ticketId,
+            autor_id: user.id,
+            comentario: `[ENCERRAMENTO] ${closureNote}`
+          });
+        } else if (action === "pausar") {
+          updates.status = "PAUSADO";
+          updates.pausado_em = now;
+        } else if (action === "aguardar_usuario") {
+          updates.status = "AGUARDANDO_USUARIO";
+          updates.aguardando_usuario_em = now;
+        } else if (action === "retomar") {
+          updates.status = "EM_ATENDIMENTO";
+          
+          if (ticket.status === "PAUSADO" && ticket.pausado_em) {
+            const pauseStart = new Date(ticket.pausado_em).getTime();
+            const diff = Math.floor((new Date().getTime() - pauseStart) / 1000);
+            updates.tempo_total_pausado = (ticket.tempo_total_pausado || 0) + diff;
+            updates.pausado_em = null;
+          }
+          
+          if (ticket.status === "AGUARDANDO_USUARIO" && ticket.aguardando_usuario_em) {
+            const waitStart = new Date(ticket.aguardando_usuario_em).getTime();
+            const diff = Math.floor((new Date().getTime() - waitStart) / 1000);
+            updates.tempo_total_aguardando_usuario = (ticket.tempo_total_aguardando_usuario || 0) + diff;
+            updates.aguardando_usuario_em = null;
+          }
+        }
+
       const { error } = await supabase
         .from("chamados")
         .update(updates)
@@ -282,9 +353,10 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       if (error) throw error;
 
       toast({
-        title: "Sucesso",
-        description: action === "atender" ? "Você assumiu o chamado." : "Chamado encerrado.",
-      });
+        title: "Status Atualizado",
+        description: `Chamado ${action === "encerrar" ? "encerrado" : "atualizado"} com sucesso.`,
+      } as any);
+
       onUpdate();
       setIsClosureDialogOpen(false);
       setClosureNote("");
@@ -531,7 +603,42 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {selectedTicket && (
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-slate-100 dark:border-slate-800 mb-2">
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col">
+                      <Label className="text-[10px] text-muted-foreground uppercase">Status SLA</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className={`w-2 h-2 rounded-full ${getSLAInfo(selectedTicket).color}`} />
+                        <span className="text-xs font-bold">{getSLAInfo(selectedTicket).label}</span>
+                      </div>
+                    </div>
+                    {selectedTicket.sla_deadline && (
+                      <div className="flex flex-col border-l pl-4">
+                        <Label className="text-[10px] text-muted-foreground uppercase">Deadline</Label>
+                        <span className="text-xs font-medium mt-1">
+                          {format(new Date(selectedTicket.sla_deadline), "dd/MM HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex flex-col text-right">
+                      <Label className="text-[10px] text-muted-foreground uppercase">Pausado</Label>
+                      <span className="text-xs font-medium mt-1">
+                        {Math.round((selectedTicket.tempo_total_pausado || 0) / 60)} min
+                      </span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <Label className="text-[10px] text-muted-foreground uppercase">Aguardando Usuário</Label>
+                      <span className="text-xs font-medium mt-1">
+                        {Math.round((selectedTicket.tempo_total_aguardando_usuario || 0) / 60)} min
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Solicitante</Label>

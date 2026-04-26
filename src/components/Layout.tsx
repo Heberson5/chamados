@@ -5,11 +5,13 @@ import Sidebar from "./Sidebar";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 import ChangePasswordDialog from "./ChangePasswordDialog";
+import { useBranding } from "@/hooks/useBranding";
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mustChange, setMustChange] = useState(false);
   const location = useLocation();
+  const { branding } = useBranding();
 
   useEffect(() => {
     const trackNavigation = async () => {
@@ -75,7 +77,18 @@ export default function Layout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile Header */}
         <header className="flex items-center justify-between p-4 border-b md:hidden shrink-0">
-          <span className="font-bold text-lg">Help-Me</span>
+          <div className="flex items-center gap-2 overflow-hidden min-w-0">
+            {branding.companyLogo && (
+              <img
+                src={branding.companyLogo}
+                alt="Logo"
+                className="w-7 h-7 object-contain shrink-0"
+              />
+            )}
+            <span className="font-bold text-lg truncate bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              {branding.companyName || "Help-Me"}
+            </span>
+          </div>
           <Button 
             variant="ghost" 
             size="icon" 

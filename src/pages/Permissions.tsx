@@ -1,5 +1,6 @@
- import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
- import { Shield, User, Hammer, Crown } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
  
  export default function Permissions() {
    const roles = [
@@ -9,7 +10,13 @@
        description: "Acesso total ao sistema, todas as configurações e gerenciamento de administradores.",
        color: "text-purple-500",
        bg: "bg-purple-500/10",
-       permissions: ["Acesso Total", "Gerenciar Administradores", "Configurações do Sistema", "Todos os Relatórios"]
+        permissions: ["Acesso Total", "Gerenciar Administradores", "Configurações do Sistema", "Todos os Relatórios"],
+        granular: {
+          create: true,
+          edit: true,
+          delete: true,
+          inactivate: true
+        }
      },
      {
        title: "Administrador",
@@ -17,7 +24,13 @@
        description: "Gerencia usuários, chamados e relatórios. Não tem acesso às configurações críticas do sistema.",
        color: "text-blue-500",
        bg: "bg-blue-500/10",
-       permissions: ["Gerenciar Usuários", "Gerenciar Chamados", "Ver Relatórios", "Gerenciar Categorias"]
+        permissions: ["Gerenciar Usuários", "Gerenciar Chamados", "Ver Relatórios", "Gerenciar Categorias"],
+        granular: {
+          create: true,
+          edit: true,
+          delete: true,
+          inactivate: true
+        }
      },
      {
        title: "Técnico",
@@ -25,7 +38,13 @@
        description: "Responsável por atender e encerrar chamados atribuídos ou disponíveis.",
        color: "text-amber-500",
        bg: "bg-amber-500/10",
-       permissions: ["Atender Chamados", "Encerrar Chamados", "Ver Seus Relatórios", "Adicionar Comentários"]
+        permissions: ["Atender Chamados", "Encerrar Chamados", "Ver Seus Relatórios", "Adicionar Comentários"],
+        granular: {
+          create: true,
+          edit: true,
+          delete: false,
+          inactivate: false
+        }
      },
      {
        title: "Usuário",
@@ -33,7 +52,13 @@
        description: "Pode abrir chamados e acompanhar o progresso dos seus próprios pedidos.",
        color: "text-slate-500",
        bg: "bg-slate-500/10",
-       permissions: ["Abrir Chamados", "Ver Seus Chamados", "Comentar Seus Chamados", "Avaliar Atendimento"]
+        permissions: ["Abrir Chamados", "Ver Seus Chamados", "Comentar Seus Chamados", "Avaliar Atendimento"],
+        granular: {
+          create: true,
+          edit: true,
+          delete: false,
+          inactivate: false
+        }
      }
    ];
  
@@ -66,6 +91,35 @@
                    ))}
                  </ul>
                </div>
+                <div className="space-y-3 mt-6 border-t pt-4">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ações Granulares:</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={role.granular.create ? "outline" : "secondary"} className={`w-full justify-start gap-1 text-[9px] ${role.granular.create ? 'border-green-500/50 text-green-600' : 'opacity-40'}`}>
+                        <Plus size={10} /> Criar
+                        {role.granular.create && <CheckCircle2 size={8} className="ml-auto" />}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={role.granular.edit ? "outline" : "secondary"} className={`w-full justify-start gap-1 text-[9px] ${role.granular.edit ? 'border-blue-500/50 text-blue-600' : 'opacity-40'}`}>
+                        <Pencil size={10} /> Editar
+                        {role.granular.edit && <CheckCircle2 size={8} className="ml-auto" />}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={role.granular.delete ? "outline" : "secondary"} className={`w-full justify-start gap-1 text-[9px] ${role.granular.delete ? 'border-red-500/50 text-red-600' : 'opacity-40'}`}>
+                        <Trash2 size={10} /> Excluir
+                        {role.granular.delete && <CheckCircle2 size={8} className="ml-auto" />}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={role.granular.inactivate ? "outline" : "secondary"} className={`w-full justify-start gap-1 text-[9px] ${role.granular.inactivate ? 'border-orange-500/50 text-orange-600' : 'opacity-40'}`}>
+                        <PowerOff size={10} /> Inativar
+                        {role.granular.inactivate && <CheckCircle2 size={8} className="ml-auto" />}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
              </CardContent>
            </Card>
          ))}

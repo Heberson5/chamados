@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "./Sidebar";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
+import ChangePasswordDialog from "./ChangePasswordDialog";
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [mustChange, setMustChange] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -24,6 +26,37 @@ export default function Layout() {
     };
     trackNavigation();
   }, [location.pathname]);
+
+  useEffect(() => {
+    const checkPasswordChange = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("must_change_password, password_changed_at")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (data?.must_change_password) {
+        setMustChange(true);
+        return;
+      }
+
+      // Check expiration
+      const { data: policy } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "password_policy")
+        .maybeSingle();
+      const exp = (policy?.value as any)?.expiration_days ?? 0;
+      if (exp > 0 && data?.password_changed_at) {
+        const last = new Date(data.password_changed_at).getTime();
+        const ageDays = (Date.now() - last) / (1000 * 60 * 60 * 24);
+        if (ageDays > exp) setMustChange(true);
+      }
+    };
+    checkPasswordChange();
+  }, []);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
@@ -56,6 +89,13 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      <ChangePasswordDialog
+        open={mustChange}
+        onOpenChange={setMustChange}
+        forced
+        onSuccess={() => setMustChange(false)}
+      />
     </div>
   );
 }

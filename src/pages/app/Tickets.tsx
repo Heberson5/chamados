@@ -5,15 +5,21 @@ import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Building2 } from "lucide-react";
 import { NewTicketDialog } from "@/components/NewTicketDialog";
 import { PRIORITY_DOT, PRIORITY_LABEL, timeAgo } from "@/lib/ticket-meta";
 import { useKanbanSettings } from "@/hooks/useKanbanSettings";
 import { cn } from "@/lib/utils";
 
 type T = {
-  id: string; number: number; subject: string; status: string;
-  priority: string; created_at: string; category: string | null;
+  id: string;
+  number: number;
+  subject: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  category: string | null;
+  organizations?: { name: string };
 };
 
 const Tickets = () => {
@@ -27,8 +33,8 @@ const Tickets = () => {
   const load = async () => {
     let query = supabase
       .from("tickets")
-      .select("id,number,subject,status,priority,created_at,category");
-    
+      .select("id,number,subject,status,priority,created_at,category,organizations(name)");
+
     if (org) {
       query = query.eq("organization_id", org.id);
     } else if (!profile?.is_master) {
@@ -97,12 +103,24 @@ const Tickets = () => {
             <ul className="divide-y divide-border">
               {filtered.map((t) => (
                 <li key={t.id}>
-                  <Link to={`/app/tickets/${t.id}`} className="grid grid-cols-[3rem_8rem_1fr_8rem_5rem_3rem] items-center gap-3 px-4 py-3 hover:bg-surface-1 text-sm">
+                  <Link 
+                    to={`/app/tickets/${t.id}`} 
+                    className={cn(
+                      "grid items-center gap-3 px-4 py-3 hover:bg-surface-1 text-sm",
+                      !org ? "grid-cols-[3rem_7rem_8rem_1fr_7rem_5rem_3rem]" : "grid-cols-[3rem_8rem_1fr_8rem_5rem_3rem]"
+                    )}
+                  >
                     <span className="text-xs text-muted-foreground tabular-nums">#{t.number}</span>
-                     <span className="flex items-center gap-1.5 text-xs">
-                       <span className={cn("size-1.5 rounded-full", getStatusColor(t.status))} />
-                       {getStatusLabel(t.status)}
-                     </span>
+                    <span className="flex items-center gap-1.5 text-xs">
+                      <span className={cn("size-1.5 rounded-full", getStatusColor(t.status))} />
+                      {getStatusLabel(t.status)}
+                    </span>
+                    {!org && (
+                      <span className="text-[11px] text-muted-foreground truncate flex items-center gap-1 bg-secondary/30 px-1.5 py-0.5 rounded">
+                        <Building2 className="size-3 shrink-0" />
+                        {t.organizations?.name}
+                      </span>
+                    )}
                     <span className="font-medium truncate">{t.subject}</span>
                     <span className="hidden md:block text-xs text-muted-foreground truncate">{t.category ?? "—"}</span>
                     <span className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">

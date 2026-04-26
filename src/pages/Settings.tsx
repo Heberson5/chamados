@@ -189,6 +189,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                   </div>
                   <Switch />
                 </div>
+                {isAdmin && (
+                  <div className="flex items-center justify-between border-t pt-4 mt-4">
+                    <div className="space-y-0.5">
+                      <Label>Política de Senhas</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Defina regras de complexidade, expiração e troca obrigatória.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => (window.location.href = "/configuracoes/senhas")}
+                    >
+                      Configurar
+                    </Button>
+                  </div>
+                )}
              </CardContent>
            </Card>
          </TabsContent>

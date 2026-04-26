@@ -6,14 +6,14 @@ export default function Index() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
       <header className="px-6 py-4 border-b flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Ticket className="text-blue-600" size={24} />
           <span className="font-bold text-xl">Help-Me</span>
         </div>
-        <Button variant="ghost" onClick={() => navigate("/login")}>Entrar</Button>
+        <Button variant="ghost" onClick={() => navigate("/login")} className="hover:bg-accent hover:text-accent-foreground">Entrar</Button>
       </header>
 
       <main>
@@ -36,10 +36,10 @@ export default function Index() {
         </section>
 
         {/* Features */}
-        <section className="py-20 bg-gray-50 px-6">
+        <section className="py-20 bg-muted/30 px-6">
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="space-y-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+              <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500">
                 <Shield size={24} />
               </div>
               <h3 className="text-xl font-bold">Hierarquia e SLA</h3>
@@ -48,7 +48,7 @@ export default function Index() {
               </p>
             </div>
             <div className="space-y-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+              <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center text-green-500">
                 <Clock size={24} />
               </div>
               <h3 className="text-xl font-bold">Atendimento Real-time</h3>
@@ -57,7 +57,7 @@ export default function Index() {
               </p>
             </div>
             <div className="space-y-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
+              <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-500">
                 <Package size={24} />
               </div>
               <h3 className="text-xl font-bold">Gestão de Inventário</h3>

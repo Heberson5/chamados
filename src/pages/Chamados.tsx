@@ -179,11 +179,11 @@ export default function Chamados() {
 
    const getPriorityLabel = (priority: string) => {
      const labels: Record<string, string> = {
-       P1: "Crítica",
-       P2: "Alta",
-       P3: "Média",
-       P4: "Baixa",
-       P5: "Muito Baixa"
+        P1: "Crítico",
+        P2: "Alto",
+        P3: "Médio",
+        P4: "Baixo",
+        P5: "Muito Baixo"
      };
      return labels[priority] || priority;
    };
@@ -252,10 +252,10 @@ export default function Chamados() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="P1">Crítica</SelectItem>
-                      <SelectItem value="P2">Alta</SelectItem>
-                      <SelectItem value="P3">Média</SelectItem>
-                      <SelectItem value="P4">Baixa</SelectItem>
+                      <SelectItem value="P1">Crítico</SelectItem>
+                      <SelectItem value="P2">Alto</SelectItem>
+                      <SelectItem value="P3">Médio</SelectItem>
+                      <SelectItem value="P4">Baixo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

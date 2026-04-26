@@ -114,6 +114,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
               });
               if (error) throw error;
             }
+            // Notify BrandingProvider immediately for instant in-tab updates
+            window.dispatchEvent(new CustomEvent("branding:updated", { detail: layoutConfig }));
           }
     
           toast({ title: "Sucesso", description: "Configurações salvas com sucesso!" });

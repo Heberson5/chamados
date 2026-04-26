@@ -27,19 +27,22 @@ const Auth = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { data: settings } = useSystemSettings();
 
-   useEffect(() => {
-     if (!authLoading && user) {
-       console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
-       
-       if (profile?.organization_id || profile?.is_master) {
-         navigate("/app", { replace: true });
-       } else {
-         // If we have a user but no profile info that leads to /app, go to /onboarding
-         // This handles new users or cases where profile is still being created/synced
-         navigate("/onboarding", { replace: true });
-       }
-     }
-   }, [user, profile, authLoading, navigate]);
+  useEffect(() => {
+    if (user && !authLoading) {
+      console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
+      
+      // Give it a tiny bit of time to make sure profile is synced if it's a new login
+      const redirect = () => {
+        if (profile?.organization_id || profile?.is_master) {
+          navigate("/app", { replace: true });
+        } else {
+          navigate("/onboarding", { replace: true });
+        }
+      };
+
+      redirect();
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

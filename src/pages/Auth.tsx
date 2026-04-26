@@ -136,7 +136,7 @@ const Auth = () => {
      }
   }, [settings]);
 
-   if (authLoading && !user) {
+   if (authLoading || user) {
      return (
        <div className="min-h-screen grid place-items-center">
          <div className="flex flex-col items-center gap-3">

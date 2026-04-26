@@ -26,13 +26,14 @@
    const handleAddUser = async () => {
      setLoading(true);
      try {
-       const { error } = await supabase.from("profiles").insert({
+       const { error } = await supabase.from("profiles").insert([{
+         id: crypto.randomUUID(),
          nome: newUser.nome,
          sobrenome: newUser.sobrenome,
          email: newUser.email,
          regra: newUser.regra,
          ativo: true
-       });
+       }]);
        if (error) throw error;
        toast({ title: "Sucesso", description: "Perfil de usuário criado." });
        setIsAddDialogOpen(false);

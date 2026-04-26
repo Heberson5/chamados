@@ -107,6 +107,18 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
 
+    // Local in-tab fast-path: Settings page dispatches this on save
+    const onLocalUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail as BrandingSettings | undefined;
+      if (detail) {
+        setBranding(detail);
+        applyBrandingSideEffects(detail);
+      } else {
+        load();
+      }
+    };
+    window.addEventListener("branding:updated", onLocalUpdate);
+
     // Hide Lovable badge style (preserved alternative approach)
     const style = document.createElement("style");
     style.innerHTML = `
@@ -123,6 +135,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener("branding:updated", onLocalUpdate);
     };
   }, []);
 

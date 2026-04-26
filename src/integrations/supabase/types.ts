@@ -793,6 +793,7 @@ export type Database = {
           ramal: string | null
           regra: Database["public"]["Enums"]["regra"]
           setor: Database["public"]["Enums"]["setor"] | null
+          settings: Json | null
           sobrenome: string | null
           telefone: string | null
           updated_at: string
@@ -815,6 +816,7 @@ export type Database = {
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]
           setor?: Database["public"]["Enums"]["setor"] | null
+          settings?: Json | null
           sobrenome?: string | null
           telefone?: string | null
           updated_at?: string
@@ -837,6 +839,7 @@ export type Database = {
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]
           setor?: Database["public"]["Enums"]["setor"] | null
+          settings?: Json | null
           sobrenome?: string | null
           telefone?: string | null
           updated_at?: string

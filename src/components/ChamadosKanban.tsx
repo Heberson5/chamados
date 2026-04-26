@@ -89,14 +89,25 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
     setIsDetailsOpen(true);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "P1": return "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400";
-      case "P2": return "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400";
-      case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
-      default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
-    }
-  };
+   const getPriorityColor = (priority: string) => {
+     switch (priority) {
+       case "P1": return "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400";
+       case "P2": return "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400";
+       case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
+       default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
+     }
+   };
+ 
+   const getPriorityLabel = (priority: string) => {
+     const labels: Record<string, string> = {
+       P1: "Crítica",
+       P2: "Alta",
+       P3: "Média",
+       P4: "Baixa",
+       P5: "Muito Baixa"
+     };
+     return labels[priority] || priority;
+   };
 
   return (
     <>
@@ -119,9 +130,9 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
                 <Card key={ticket.id} className="shadow-sm hover:shadow-md transition-shadow cursor-default border-slate-200 dark:border-slate-800">
                   <CardHeader className="p-4 pb-2">
                     <div className="flex justify-between items-start mb-2">
-                      <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
-                        {ticket.prioridade}
-                      </Badge>
+                       <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
+                         {getPriorityLabel(ticket.prioridade)}
+                       </Badge>
                       <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
                     </div>
                     <CardTitle className="text-sm font-bold line-clamp-2 leading-tight">

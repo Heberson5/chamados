@@ -30,22 +30,28 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
      const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editUser, setEditUser] = useState<any>(null);
+    const [currentRole, setCurrentRole] = useState<{ regra: string; is_master: boolean } | null>(null);
+
+    const isCurrentMaster = !!currentRole && (currentRole.is_master || currentRole.regra === "MASTER");
 
     const handleEditUser = async () => {
       if (!editUser) return;
       setLoading(true);
       try {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
+        const { data, error } = await supabase.functions.invoke("admin-update-user", {
+          body: {
+            user_id: editUser.id,
             nome: editUser.nome,
             sobrenome: editUser.sobrenome,
+            email: editUser.email,
             regra: editUser.regra,
-            is_master: editUser.regra === 'MASTER'
-          })
-          .eq("id", editUser.id);
-
+            telefone: editUser.telefone,
+            ramal: editUser.ramal,
+            cidade: editUser.cidade,
+          },
+        });
         if (error) throw error;
+        if ((data as any)?.error) throw new Error((data as any).error);
         toast({ title: "Sucesso", description: "Usuário atualizado com sucesso." });
         setIsEditDialogOpen(false);
         fetchUsers();
@@ -172,16 +178,25 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
    useEffect(() => {
      fetchUsers();
       getPasswordPolicy().then(setPolicy);
+     (async () => {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) return;
+       const { data: prof } = await supabase
+         .from("profiles")
+         .select("regra, is_master")
+         .eq("id", user.id)
+         .single();
+       if (prof) setCurrentRole({ regra: (prof as any).regra ?? "", is_master: !!(prof as any).is_master });
+     })();
    }, []);
  
    const updateRole = async (userId: string, newRole: string) => {
-     const { error } = await supabase
-       .from("profiles")
-       .update({ regra: newRole as Regra, is_master: newRole === 'MASTER' })
-       .eq("id", userId);
- 
-     if (error) {
-       toast({ variant: "destructive", title: "Erro ao atualizar permissão", description: error.message });
+    const { data, error } = await supabase.functions.invoke("admin-update-user", {
+      body: { user_id: userId, regra: newRole },
+    });
+    if (error || (data as any)?.error) {
+      const msg = (error as any)?.message ?? (data as any)?.error ?? "Erro";
+      toast({ variant: "destructive", title: "Erro ao atualizar permissão", description: msg });
      } else {
        toast({ title: "Sucesso", description: "Permissão atualizada com sucesso!" });
        fetchUsers();
@@ -227,7 +242,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
              </TableRow>
            </TableHeader>
            <TableBody>
-             {users.map((user) => (
+             {users.filter(u => isCurrentMaster ? true : !(u.is_master || u.regra === "MASTER")).map((user) => (
                <TableRow key={user.id}>
                  <TableCell className="font-medium">
                    <div className="flex items-center gap-3">
@@ -263,7 +278,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="MASTER">Master</SelectItem>
+                          {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
                           <SelectItem value="ADMIN">Admin</SelectItem>
                           <SelectItem value="TECNICO">Técnico</SelectItem>
                           <SelectItem value="USUARIO">Usuário</SelectItem>
@@ -347,7 +362,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="MASTER">Master</SelectItem>
+                    {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
                     <SelectItem value="ADMIN">Administrador</SelectItem>
                     <SelectItem value="TECNICO">Técnico</SelectItem>
                     <SelectItem value="USUARIO">Usuário</SelectItem>
@@ -416,7 +431,11 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                  </div>
                  <div className="space-y-2">
                    <Label>E-mail</Label>
-                   <Input type="email" value={editUser.email} disabled className="bg-muted" />
+                  <Input
+                    type="email"
+                    value={editUser.email}
+                    onChange={e => setEditUser({ ...editUser, email: e.target.value })}
+                  />
                  </div>
                  <div className="space-y-2">
                    <Label>Permissão</Label>
@@ -425,7 +444,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                        <SelectValue />
                      </SelectTrigger>
                      <SelectContent>
-                       <SelectItem value="MASTER">Master</SelectItem>
+                       {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
                        <SelectItem value="ADMIN">Administrador</SelectItem>
                        <SelectItem value="TECNICO">Técnico</SelectItem>
                        <SelectItem value="USUARIO">Usuário</SelectItem>

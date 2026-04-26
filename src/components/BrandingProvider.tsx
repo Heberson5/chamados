@@ -29,12 +29,8 @@ export const BrandingProvider = ({ children }: { children: React.ReactNode }) =>
           link.href = settings.companyFavicon;
         }
 
-        // Update Accent Color (Primary)
-        if (settings.accentColor) {
-          document.documentElement.style.setProperty('--primary', settings.accentColor);
-          // You might need to update other related colors or recalculate HSL values here
-          // but setting --primary is a good start if the system uses it.
-        }
+        // NOTE: Accent color is intentionally NOT applied to --primary
+        // to avoid changing the design system colors without explicit user request.
       }
     };
 

@@ -56,20 +56,34 @@ import { supabase } from "@/integrations/supabase/client";
  
    const createUser = async () => {
      if (!newUser.email || !newUser.full_name) return;
-     // In a real app, we'd use an edge function to create the auth user too.
-     // Here we'll just insert the profile or show a message.
-     const { error } = await supabase.from("profiles").insert({
-       ...newUser,
-       id: crypto.randomUUID() // Fallback if not linked to auth yet
-     });
      
-     if (error) {
-       toast({ variant: "destructive", title: "Erro", description: error.message });
-     } else {
-       toast({ title: "Sucesso", description: "Usuário cadastrado com sucesso." });
-       setOpen(false);
-       load();
+     const userId = crypto.randomUUID();
+     const { role, ...profileData } = newUser;
+ 
+     const { error: profileError } = await supabase.from("profiles").insert({
+       ...profileData,
+       id: userId,
+       organization_id: profileData.organization_id || null,
+       department_id: profileData.department_id || null,
+       position_id: profileData.position_id || null,
+     } as any);
+     
+     if (profileError) {
+       toast({ variant: "destructive", title: "Erro ao criar perfil", description: profileError.message });
+       return;
      }
+ 
+     if (newUser.organization_id && !newUser.is_master) {
+       await supabase.from("user_roles").insert({
+         user_id: userId,
+         organization_id: newUser.organization_id,
+         role: role
+       });
+     }
+     
+     toast({ title: "Sucesso", description: "Usuário cadastrado com sucesso." });
+     setOpen(false);
+     load();
    };
  
   const handleEdit = (user: any) => {

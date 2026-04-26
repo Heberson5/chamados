@@ -2,7 +2,7 @@
  import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
- import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
+  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
   import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon, Play, Pause, History } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay, eachHourOfInterval, isSameHour } from "date-fns";
@@ -22,17 +22,20 @@ import { supabase } from "@/integrations/supabase/client";
      dateRange: { from: subDays(new Date(), 7), to: new Date() }
    });
  
-    const [stats, setStats] = useState({
-      totalTickets: 0,
-      openTickets: 0,
-      resolvedTickets: 0,
-      slaViolations: 0,
-      activeUsers: 0,
-      avgAcceptanceTime: 0,
-      avgCompletionTime: 0,
-      totalPausedTime: 0,
-      totalWaitingTime: 0
-    });
+     const [stats, setStats] = useState({
+       totalTickets: 0,
+       openTickets: 0,
+       resolvedTickets: 0,
+       slaViolations: 0,
+       activeUsers: 0,
+       avgAcceptanceTime: 0,
+       avgCompletionTime: 0,
+       totalPausedTime: 0,
+       totalWaitingTime: 0,
+       byPriority: [] as any[],
+       byStatus: [] as any[],
+       byCategory: [] as any[]
+     });
  
    useEffect(() => {
      const checkRole = async () => {
@@ -115,44 +118,60 @@ import { supabase } from "@/integrations/supabase/client";
    }, [tickets, filters]);
  
     useEffect(() => {
-      const total = filteredTickets.length;
-      const open = filteredTickets.filter(t => t.status === 'ABERTO').length;
-      const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
-      const sla = filteredTickets.filter(t => t.sla_violado).length;
-
-      // Calculate averages
-      let acceptanceTimes: number[] = [];
-      let completionTimes: number[] = [];
-      let totalPaused = 0;
-      let totalWaiting = 0;
-
-      filteredTickets.forEach(t => {
-        if (t.atendido_em && t.gerado_em) {
-          const diff = (new Date(t.atendido_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
-          if (diff > 0) acceptanceTimes.push(diff);
-        }
-        if (t.encerrado_em && t.gerado_em) {
-          const diff = (new Date(t.encerrado_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
-          if (diff > 0) completionTimes.push(diff);
-        }
-        totalPaused += (t.tempo_total_pausado || 0);
-        totalWaiting += (t.tempo_total_aguardando_usuario || 0);
-      });
-
-      const avgAcceptance = acceptanceTimes.length > 0 ? acceptanceTimes.reduce((a, b) => a + b, 0) / acceptanceTimes.length : 0;
-      const avgCompletion = completionTimes.length > 0 ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length : 0;
+        const total = filteredTickets.length;
+        const open = filteredTickets.filter(t => t.status === 'ABERTO').length;
+        const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
+        const sla = filteredTickets.filter(t => t.sla_violado).length;
   
-      setStats(prev => ({
-        ...prev,
-        totalTickets: total,
-        openTickets: open,
-        resolvedTickets: resolved,
-        slaViolations: sla,
-        avgAcceptanceTime: Math.round(avgAcceptance),
-        avgCompletionTime: Math.round(avgCompletion),
-        totalPausedTime: Math.round(totalPaused / 60),
-        totalWaitingTime: Math.round(totalWaiting / 60)
-      }));
+        // By Priority
+        const priorityCounts = filteredTickets.reduce((acc: any, t) => {
+          acc[t.prioridade] = (acc[t.prioridade] || 0) + 1;
+          return acc;
+        }, {});
+        const byPriority = Object.keys(priorityCounts).map(p => ({ name: p, value: priorityCounts[p] }));
+  
+        // By Status
+        const statusCounts = filteredTickets.reduce((acc: any, t) => {
+          acc[t.status] = (acc[t.status] || 0) + 1;
+          return acc;
+        }, {});
+        const byStatus = Object.keys(statusCounts).map(s => ({ name: s, value: statusCounts[s] }));
+  
+        // Calculate averages
+        let acceptanceTimes: number[] = [];
+        let completionTimes: number[] = [];
+        let totalPaused = 0;
+        let totalWaiting = 0;
+  
+        filteredTickets.forEach(t => {
+          if (t.atendido_em && t.gerado_em) {
+            const diff = (new Date(t.atendido_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
+            if (diff > 0) acceptanceTimes.push(diff);
+          }
+          if (t.encerrado_em && t.gerado_em) {
+            const diff = (new Date(t.encerrado_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
+            if (diff > 0) completionTimes.push(diff);
+          }
+          totalPaused += (t.tempo_total_pausado || 0);
+          totalWaiting += (t.tempo_total_aguardando_usuario || 0);
+        });
+  
+        const avgAcceptance = acceptanceTimes.length > 0 ? acceptanceTimes.reduce((a, b) => a + b, 0) / acceptanceTimes.length : 0;
+        const avgCompletion = completionTimes.length > 0 ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length : 0;
+    
+        setStats(prev => ({
+          ...prev,
+          totalTickets: total,
+          openTickets: open,
+          resolvedTickets: resolved,
+          slaViolations: sla,
+          avgAcceptanceTime: Math.round(avgAcceptance),
+          avgCompletionTime: Math.round(avgCompletion),
+          totalPausedTime: Math.round(totalPaused / 60),
+          totalWaitingTime: Math.round(totalWaiting / 60),
+          byPriority,
+          byStatus
+        }));
     }, [filteredTickets]);
  
     const chartData = useMemo(() => {
@@ -307,72 +326,129 @@ import { supabase } from "@/integrations/supabase/client";
          ))}
        </div>
  
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tempos Médios (min)</CardTitle>
-              <CardDescription>Eficiência operacional em minutos</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[
-                  { name: 'Aceite', valor: stats.avgAcceptanceTime },
-                  { name: 'Conclusão', valor: stats.avgCompletionTime },
-                  { name: 'Pausa', valor: stats.totalPausedTime },
-                  { name: 'Espera', valor: stats.totalWaitingTime }
-                ]}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" fontSize={12} />
-                  <YAxis fontSize={12} />
-                  <Tooltip />
-                  <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-         <Card>
-           <CardHeader>
-             <CardTitle>Volume de Chamados</CardTitle>
-             <CardDescription>Quantidade de atendimentos no período selecionado</CardDescription>
-           </CardHeader>
-           <CardContent className="h-[300px]">
-             <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={chartData}>
-                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                 <Tooltip 
-                   contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                   itemStyle={{ color: 'hsl(var(--primary))' }}
-                 />
-                 <Bar dataKey="chamados" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-               </BarChart>
-             </ResponsiveContainer>
-           </CardContent>
-         </Card>
+         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+           <Card>
+             <CardHeader>
+               <CardTitle>Tempos Médios (min)</CardTitle>
+               <CardDescription>Eficiência operacional em minutos</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[300px]">
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={[
+                   { name: 'Aceite', valor: stats.avgAcceptanceTime },
+                   { name: 'Conclusão', valor: stats.avgCompletionTime },
+                   { name: 'Pausa', valor: stats.totalPausedTime },
+                   { name: 'Espera', valor: stats.totalWaitingTime }
+                 ]}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                   <XAxis dataKey="name" fontSize={12} stroke="currentColor" />
+                   <YAxis fontSize={12} stroke="currentColor" />
+                   <Tooltip 
+                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                     itemStyle={{ color: 'hsl(var(--foreground))' }}
+                   />
+                   <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                 </BarChart>
+               </ResponsiveContainer>
+             </CardContent>
+           </Card>
  
-         <Card>
-           <CardHeader>
-             <CardTitle>Conformidade de SLA</CardTitle>
-             <CardDescription>Chamados atendidos dentro do prazo</CardDescription>
-           </CardHeader>
-           <CardContent className="h-[300px]">
-             <ResponsiveContainer width="100%" height="100%">
-               <LineChart data={chartData}>
-                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                 <Tooltip 
-                   contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                 />
-                 <Legend verticalAlign="top" height={36}/>
-                 <Line name="Chamados no Prazo" type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
-                 <Line name="Total Chamados" type="monotone" dataKey="chamados" stroke="hsl(var(--primary))" strokeWidth={1} strokeDasharray="5 5" dot={false} />
-               </LineChart>
-             </ResponsiveContainer>
-           </CardContent>
-         </Card>
-       </div>
+           <Card>
+             <CardHeader>
+               <CardTitle>Chamados por Status</CardTitle>
+               <CardDescription>Distribuição atual de chamados</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[300px]">
+               <ResponsiveContainer width="100%" height="100%">
+                 <PieChart>
+                   <Pie
+                     data={stats.byStatus}
+                     cx="50%"
+                     cy="50%"
+                     innerRadius={60}
+                     outerRadius={80}
+                     paddingAngle={5}
+                     dataKey="value"
+                   >
+                     {stats.byStatus.map((entry, index) => (
+                       <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--destructive))', 'hsl(var(--warning))'][index % 5]} />
+                     ))}
+                   </Pie>
+                   <Tooltip 
+                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                     itemStyle={{ color: 'hsl(var(--foreground))' }}
+                   />
+                   <Legend />
+                 </PieChart>
+               </ResponsiveContainer>
+             </CardContent>
+           </Card>
+ 
+           <Card>
+             <CardHeader>
+               <CardTitle>Volume de Chamados</CardTitle>
+               <CardDescription>Quantidade de atendimentos no período</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[300px]">
+               <ResponsiveContainer width="100%" height="100%">
+                 <AreaChart data={chartData}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                   <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
+                   <YAxis stroke="currentColor" fontSize={12} />
+                   <Tooltip 
+                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                     itemStyle={{ color: 'hsl(var(--foreground))' }}
+                   />
+                   <Area type="monotone" dataKey="chamados" name="Chamados" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.1} />
+                 </AreaChart>
+               </ResponsiveContainer>
+             </CardContent>
+           </Card>
+  
+           <Card>
+             <CardHeader>
+               <CardTitle>Conformidade de SLA</CardTitle>
+               <CardDescription>Chamados atendidos dentro do prazo</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[300px]">
+               <ResponsiveContainer width="100%" height="100%">
+                 <LineChart data={chartData}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                   <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
+                   <YAxis stroke="currentColor" fontSize={12} />
+                   <Tooltip 
+                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                     itemStyle={{ color: 'hsl(var(--foreground))' }}
+                   />
+                   <Legend verticalAlign="top" height={36}/>
+                   <Line name="No Prazo" type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+                   <Line name="Total" type="monotone" dataKey="chamados" stroke="hsl(var(--primary))" strokeWidth={1} strokeDasharray="5 5" dot={false} />
+                 </LineChart>
+               </ResponsiveContainer>
+             </CardContent>
+           </Card>
+ 
+           <Card>
+             <CardHeader>
+               <CardTitle>Distribuição por Prioridade</CardTitle>
+               <CardDescription>Volume de chamados por nível crítico</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[300px]">
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={stats.byPriority} layout="vertical">
+                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--muted))" />
+                   <XAxis type="number" stroke="currentColor" fontSize={12} />
+                   <YAxis dataKey="name" type="category" stroke="currentColor" fontSize={12} />
+                   <Tooltip 
+                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                     itemStyle={{ color: 'hsl(var(--foreground))' }}
+                   />
+                   <Bar dataKey="value" name="Quantidade" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                 </BarChart>
+               </ResponsiveContainer>
+             </CardContent>
+           </Card>
+         </div>
  
        <Card className="bg-primary/5 border-primary/20">
          <CardHeader>

@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText } from "lucide-react";
+import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
  import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChamadosKanbanProps {
@@ -21,6 +22,11 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
   const [closureNote, setClosureNote] = useState("");
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [isSendingComment, setIsSendingComment] = useState(false);
+  const [commentFiles, setCommentFiles] = useState<File[]>([]);
+  const [commentPreviews, setCommentPreviews] = useState<string[]>([]);
    const [userRole, setUserRole] = useState<string | null>(null);
    const [kanbanCols, setKanbanCols] = useState<any[]>([
      { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
@@ -96,6 +102,91 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
   const openDetails = (ticket: any) => {
     setSelectedTicket(ticket);
     setIsDetailsOpen(true);
+    fetchComments(ticket.id);
+  };
+
+  const fetchComments = async (ticketId: string) => {
+    const { data, error } = await supabase
+      .from("comentarios_chamado")
+      .select(`*, autor:profiles(nome, sobrenome)`)
+      .eq("chamado_id", ticketId)
+      .order("criado_em", { ascending: true });
+    
+    if (data) setComments(data);
+  };
+
+  const handleCommentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setCommentFiles(prev => [...prev, ...files]);
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setCommentPreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeCommentFile = (index: number) => {
+    setCommentFiles(prev => prev.filter((_, i) => i !== index));
+    setCommentPreviews(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() && commentFiles.length === 0) return;
+    setIsSendingComment(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const uploadedUrls = [];
+      for (const file of commentFiles) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `comments/${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("chamados_anexos")
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from("chamados_anexos")
+          .getPublicUrl(filePath);
+          
+        uploadedUrls.push(publicUrl);
+      }
+
+      const { error: commentError } = await supabase.from("comentarios_chamado").insert({
+        chamado_id: selectedTicket.id,
+        autor_id: user.id,
+        comentario: newComment,
+        anexos: uploadedUrls.length > 0 ? uploadedUrls : null
+      });
+
+      if (commentError) throw commentError;
+
+      const recipientId = user.id === selectedTicket.usuario_id ? selectedTicket.tecnico_id : selectedTicket.usuario_id;
+      if (recipientId) {
+        await supabase.from("notificacoes").insert({
+          usuario_id: recipientId,
+          titulo: `Nova interação no chamado ${selectedTicket.os}`,
+          mensagem: `${user.email} incluiu uma nova informação no chamado: ${selectedTicket.titulo}`,
+          link: `/chamados?id=${selectedTicket.id}`
+        });
+      }
+
+      setNewComment("");
+      setCommentFiles([]);
+      setCommentPreviews([]);
+      fetchComments(selectedTicket.id);
+      toast({ title: "Interação adicionada", description: "Sua mensagem foi enviada com sucesso." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erro ao adicionar comentário", description: error.message });
+    } finally {
+      setIsSendingComment(false);
+    }
   };
 
    const getPriorityColor = (priority: string) => {

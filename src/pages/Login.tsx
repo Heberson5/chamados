@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTheme } from "@/components/ThemeProvider";
+import { Sun, Moon, Monitor } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +28,27 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4 relative">
+      <div className="absolute top-4 right-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            if (theme === "system") setTheme("light");
+            else if (theme === "light") setTheme("dark");
+            else setTheme("system");
+          }}
+          title="Mudar tema"
+        >
+          {theme === "system" ? (
+            <Monitor size={20} />
+          ) : theme === "dark" ? (
+            <Sun size={20} />
+          ) : (
+            <Moon size={20} />
+          )}
+        </Button>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Entrar no Help-Me</CardTitle>

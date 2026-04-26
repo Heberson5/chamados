@@ -11,6 +11,17 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
  
+  function formatMinutes(min: number): string {
+    if (!min || min <= 0) return "0 min";
+    if (min < 60) return `${Math.round(min)} min`;
+    const hours = Math.floor(min / 60);
+    const mins = Math.round(min % 60);
+    if (hours < 24) return mins ? `${hours}h ${mins}min` : `${hours}h`;
+    const days = Math.floor(hours / 24);
+    const restH = hours % 24;
+    return restH ? `${days}d ${restH}h` : `${days}d`;
+  }
+
  export default function Dashboard() {
    const navigate = useNavigate();
    const [loading, setLoading] = useState(true);
@@ -238,10 +249,10 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
      const cards = [
        { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },
        { title: "Chamados Abertos", value: stats.openTickets, icon: Clock, color: "text-orange-600" },
-       { title: "Tempo Médio Aceite", value: `${stats.avgAcceptanceTime} min`, icon: Play, color: "text-amber-600" },
-       { title: "Tempo Médio Conclusão", value: `${stats.avgCompletionTime} min`, icon: CheckCircle2, color: "text-green-600" },
-       { title: "Tempo Total Pausado", value: `${stats.totalPausedTime} min`, icon: Pause, color: "text-slate-600" },
-       { title: "Aguardando Usuário", value: `${stats.totalWaitingTime} min`, icon: History, color: "text-indigo-600" },
+       { title: "Tempo Médio Aceite", value: formatMinutes(stats.avgAcceptanceTime), icon: Play, color: "text-amber-600" },
+       { title: "Tempo Médio Conclusão", value: formatMinutes(stats.avgCompletionTime), icon: CheckCircle2, color: "text-green-600" },
+       { title: "Tempo Total Pausado", value: formatMinutes(stats.totalPausedTime), icon: Pause, color: "text-slate-600" },
+       { title: "Aguardando Usuário", value: formatMinutes(stats.totalWaitingTime), icon: History, color: "text-indigo-600" },
      ];
 
    return (
@@ -280,7 +291,13 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                    type="date" 
                    className="h-9 w-40" 
                    value={format(filters.dateRange.from, "yyyy-MM-dd")} 
-                   onChange={(e) => setFilters({ ...filters, dateRange: { ...filters.dateRange, from: new Date(e.target.value) } })}
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const [y, m, d] = e.target.value.split("-").map(Number);
+                      const next = new Date(y, m - 1, d);
+                      const to = filters.dateRange.to < next ? next : filters.dateRange.to;
+                      setFilters({ ...filters, dateRange: { from: next, to } });
+                    }}
                  />
                </div>
                <div className="space-y-2">
@@ -288,8 +305,14 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                  <Input 
                    type="date" 
                    className="h-9 w-40" 
+                    min={format(filters.dateRange.from, "yyyy-MM-dd")}
                    value={format(filters.dateRange.to, "yyyy-MM-dd")} 
-                   onChange={(e) => setFilters({ ...filters, dateRange: { ...filters.dateRange, to: new Date(e.target.value) } })}
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const [y, m, d] = e.target.value.split("-").map(Number);
+                      const next = new Date(y, m - 1, d);
+                      setFilters({ ...filters, dateRange: { ...filters.dateRange, to: next } });
+                    }}
                  />
                </div>
              </>

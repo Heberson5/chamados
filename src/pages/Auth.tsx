@@ -44,12 +44,11 @@ const Auth = () => {
           return;
         }
 
-        // Se não for nenhum dos dois, vai para onboarding
-        navigate("/onboarding", { replace: true });
+        // Sempre redireciona para o app, removendo a tela de onboarding obrigatória
+        navigate("/app", { replace: true });
       } else {
-        // Se o carregamento terminou, temos usuário mas não temos perfil,
-        // redirecionamos para o onboarding onde o perfil pode ser tratado.
-        navigate("/onboarding", { replace: true });
+        // Mesmo sem perfil, vai para o app
+        navigate("/app", { replace: true });
       }
     }
   }, [user, profile, authLoading, navigate]);

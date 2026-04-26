@@ -15,16 +15,5 @@ export const RequireAuth = ({ children }: { children: ReactNode }) => {
   }
   if (!user) return <Navigate to="/auth" state={{ from: location }} replace />;
   
-  if (location.pathname !== "/onboarding") {
-    // Se não temos perfil mas terminou de carregar, redirecionamos para onboarding
-    if (!profile) {
-      return <Navigate to="/onboarding" replace />;
-    }
-    
-    // Se temos perfil mas não é master e não tem empresa, redirecionamos para onboarding
-    if (!profile.is_master && !profile.organization_id) {
-      return <Navigate to="/onboarding" replace />;
-    }
-  }
   return <>{children}</>;
 };

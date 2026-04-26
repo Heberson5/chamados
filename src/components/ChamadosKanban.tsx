@@ -261,5 +261,6 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

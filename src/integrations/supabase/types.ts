@@ -175,6 +175,7 @@ export type Database = {
       }
       chamados: {
         Row: {
+          anexos: string[] | null
           atualizado_em: string | null
           chamado_pai_id: string | null
           deletado_em: string | null
@@ -192,11 +193,13 @@ export type Database = {
           sla_violado_em: string | null
           status: Database["public"]["Enums"]["chamado_status"] | null
           tecnico_id: string | null
+          titulo: string | null
           usuario_id: string
           vinculado_em: string | null
           vinculado_por: string | null
         }
         Insert: {
+          anexos?: string[] | null
           atualizado_em?: string | null
           chamado_pai_id?: string | null
           deletado_em?: string | null
@@ -214,11 +217,13 @@ export type Database = {
           sla_violado_em?: string | null
           status?: Database["public"]["Enums"]["chamado_status"] | null
           tecnico_id?: string | null
+          titulo?: string | null
           usuario_id: string
           vinculado_em?: string | null
           vinculado_por?: string | null
         }
         Update: {
+          anexos?: string[] | null
           atualizado_em?: string | null
           chamado_pai_id?: string | null
           deletado_em?: string | null
@@ -236,6 +241,7 @@ export type Database = {
           sla_violado_em?: string | null
           status?: Database["public"]["Enums"]["chamado_status"] | null
           tecnico_id?: string | null
+          titulo?: string | null
           usuario_id?: string
           vinculado_em?: string | null
           vinculado_por?: string | null

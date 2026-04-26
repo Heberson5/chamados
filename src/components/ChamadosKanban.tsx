@@ -486,17 +486,6 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      }
    }, [isDetailsOpen, selectedTicket, fetchComments]);
  
-   const getPriorityLabel = (priority: string) => {
-     const labels: Record<string, string> = {
-       P1: "Crítica",
-       P2: "Alta",
-       P3: "Média",
-       P4: "Baixa",
-       P5: "Muito Baixa"
-     };
-     return labels[priority] || priority;
-   };
-
      return (
        <>
          <DndContext 

@@ -327,21 +327,30 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
     </Dialog>
 
     <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {selectedTicket?.titulo}
-            <Badge variant="outline">{selectedTicket?.os}</Badge>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2 shrink-0 border-b">
+          <DialogTitle className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="truncate">{selectedTicket?.titulo}</span>
+              <Badge variant="outline" className="font-mono text-[10px]">{selectedTicket?.os}</Badge>
+            </div>
+            <Badge variant={
+              selectedTicket?.status === 'ABERTO' ? 'default' : 
+              selectedTicket?.status === 'EM_ATENDIMENTO' ? 'secondary' : 'outline'
+            }>
+              {selectedTicket?.status}
+            </Badge>
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-6 py-4">
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-muted-foreground text-xs">Solicitante</Label>
+              <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Solicitante</Label>
               <p className="text-sm font-medium">{selectedTicket?.usuario?.nome} {selectedTicket?.usuario?.sobrenome}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground text-xs">Aberto em</Label>
+              <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Aberto em</Label>
               <p className="text-sm font-medium">
                 {selectedTicket?.gerado_em && format(new Date(selectedTicket.gerado_em), "dd/MM/yyyy HH:mm", { locale: ptBR })}
               </p>
@@ -349,44 +358,99 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           </div>
 
           <div className="space-y-2">
-            <Label className="text-muted-foreground text-xs">Descrição do Problema</Label>
-            <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
+            <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Descrição Inicial</Label>
+            <div className="p-3 bg-muted/50 rounded-lg text-sm whitespace-pre-wrap border border-slate-100 dark:border-slate-800">
               {selectedTicket?.descricao}
             </div>
           </div>
 
           {selectedTicket?.anexos && selectedTicket.anexos.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-muted-foreground text-xs">Anexos</Label>
+              <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Anexos Iniciais</Label>
               <div className="flex flex-wrap gap-2">
                 {selectedTicket.anexos.map((url: string, idx: number) => (
-                  <a 
-                    key={idx} 
-                    href={url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 border rounded-md hover:bg-muted transition-colors text-xs"
+                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 border rounded-md hover:bg-muted transition-colors text-xs bg-card"
                   >
-                    <FileText size={14} className="text-blue-500" />
-                    Anexo {idx + 1}
+                    <FileText size={14} className="text-primary" />
+                    <span className="max-w-[100px] truncate">Anexo {idx + 1}</span>
                   </a>
                 ))}
               </div>
             </div>
           )}
 
-          {selectedTicket?.status === "ENCERRADO" && selectedTicket?.descricao_encerramento && (
-            <div className="space-y-2">
-              <Label className="text-muted-foreground text-xs">Resolução</Label>
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-md text-sm whitespace-pre-wrap">
-                {selectedTicket.descricao_encerramento}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+              <MessageSquare size={14} /> Interações
+            </h4>
+            
+            <div className="space-y-4">
+              {comments.map((comment) => (
+                <div key={comment.id} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] font-bold text-primary">{comment.autor?.nome} {comment.autor?.sobrenome}</span>
+                    <span className="text-[10px] text-muted-foreground">{format(new Date(comment.criado_em), "dd/MM HH:mm", { locale: ptBR })}</span>
+                  </div>
+                  <div className="p-3 bg-card rounded-lg border text-sm shadow-sm">
+                    {comment.comentario}
+                    {comment.anexos && comment.anexos.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {comment.anexos.map((url: string, idx: number) => (
+                          <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block border rounded-md overflow-hidden hover:opacity-80 transition-opacity">
+                            <img src={url} alt="Anexo" className="w-16 h-16 object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {comments.length === 0 && (
+                <p className="text-center py-4 text-xs text-muted-foreground italic">Nenhuma interação registrada ainda.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 pt-2 border-t bg-muted/20 shrink-0">
+          <div className="space-y-3">
+            <div className="flex flex-col gap-2">
+              <div className="relative">
+                <textarea
+                  placeholder="Escreva uma nova interação..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none pr-10"
+                />
+                <div className="absolute right-2 bottom-2 flex gap-1">
+                   <Label htmlFor="comment-files" className="cursor-pointer p-1.5 hover:bg-muted rounded-full transition-colors text-muted-foreground">
+                     <Paperclip size={18} />
+                     <input id="comment-files" type="file" multiple className="hidden" onChange={handleCommentFileChange} accept="image/*" />
+                   </Label>
+                </div>
+              </div>
+
+              {commentPreviews.length > 0 && (
+                <div className="flex flex-wrap gap-2 py-2">
+                  {commentPreviews.map((url, idx) => (
+                    <div key={idx} className="relative w-12 h-12 rounded border overflow-hidden">
+                      <img src={url} alt="Preview" className="w-full h-full object-cover" />
+                      <button onClick={() => removeCommentFile(idx)} className="absolute top-0.5 right-0.5 bg-destructive text-white rounded-full p-0.5"><X size={8} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button size="sm" onClick={handleAddComment} disabled={isSendingComment || (!newComment.trim() && commentFiles.length === 0)} className="gap-2">
+                  {isSendingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  Enviar Interação
+                </Button>
               </div>
             </div>
-          )}
+          </div>
         </div>
-        <DialogFooter>
-          <Button onClick={() => setIsDetailsOpen(false)}>Fechar</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
     </>

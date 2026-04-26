@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User as UserIcon, Mail, Phone, Hash } from "lucide-react";
+import { Loader2, User as UserIcon, Mail, Phone, Hash, MapPin, KeyRound, Camera } from "lucide-react";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
  import { Badge } from "@/components/ui/badge";
+ import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [pwdOpen, setPwdOpen] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const { toast } = useToast();
 
@@ -52,6 +55,7 @@ export default function Profile() {
           sobrenome: profile.sobrenome,
           telefone: profile.telefone,
           ramal: profile.ramal,
+          cidade: profile.cidade,
         })
         .eq("id", user.id);
 
@@ -61,6 +65,35 @@ export default function Profile() {
       toast({ variant: "destructive", title: "Erro ao atualizar perfil", description: error.message });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("ticket-attachments")
+        .upload(path, file, { upsert: true, cacheControl: "3600" });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("ticket-attachments").getPublicUrl(path);
+      const url = `${pub.publicUrl}?t=${Date.now()}`;
+      const { error: updErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("id", user.id);
+      if (updErr) throw updErr;
+      setProfile({ ...profile, avatar_url: url });
+      toast({ title: "Foto atualizada" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro ao enviar foto", description: err.message });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -90,8 +123,29 @@ export default function Profile() {
         <Card>
           <CardHeader>
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background shadow-lg">
-                <UserIcon size={48} />
+              <div className="relative">
+                <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background shadow-lg overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    <UserIcon size={48} />
+                  )}
+                </div>
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-md hover:opacity-90"
+                  title="Alterar foto"
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera size={14} />}
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
+                />
               </div>
               <div>
                 <CardTitle className="text-xl">{profile?.nome} {profile?.sobrenome}</CardTitle>
@@ -126,6 +180,17 @@ export default function Profile() {
                 <span>Ramal: {profile.ramal}</span>
               </div>
             )}
+            {profile?.cidade && (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <MapPin size={16} />
+                <span>{profile.cidade}</span>
+              </div>
+            )}
+            <div className="pt-2">
+              <Button variant="outline" className="w-full gap-2" onClick={() => setPwdOpen(true)}>
+                <KeyRound size={16} /> Trocar Senha
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -181,6 +246,16 @@ export default function Profile() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input
+                  id="cidade"
+                  value={profile?.cidade || ""}
+                  onChange={(e) => setProfile({ ...profile, cidade: e.target.value })}
+                  placeholder="Sua cidade"
+                />
+              </div>
+
               <div className="pt-4">
                 <Button type="submit" className="w-full" disabled={saving}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -191,6 +266,8 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      <ChangePasswordDialog open={pwdOpen} onOpenChange={setPwdOpen} />
     </div>
   );
 }

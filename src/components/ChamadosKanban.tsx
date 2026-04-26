@@ -71,7 +71,13 @@ import { Label } from "@/components/ui/label";
      };
  
    const getPriorityLabel = (priority: string) => {
-     const labels: Record<string, string> = { P1: "Crítica", P2: "Alta", P3: "Média", P4: "Baixa", P5: "Muito Baixa" };
+     const labels: Record<string, string> = { 
+       P1: "Crítico", 
+       P2: "Alto", 
+       P3: "Médio", 
+       P4: "Baixo", 
+       P5: "Muito Baixo" 
+     };
      return labels[priority] || priority;
    };
  

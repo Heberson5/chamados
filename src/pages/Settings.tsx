@@ -269,7 +269,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <LayoutGrid className="h-5 w-5 text-primary" />
                         <CardTitle>Colunas do Kanban</CardTitle>
                       </div>
-                      <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color: "bg-slate-500/10 border-slate-500/20", color_hex: "#94a3b8" }])}>
+                       <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color_hex: "#94a3b8" }])}>
                         <Plus size={14} className="mr-1" /> Adicionar Status
                       </Button>
                     </div>
@@ -284,17 +284,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <div className="space-y-2">
                           <Label className="text-[10px] uppercase">Cor</Label>
                           <div className="flex items-center gap-2">
-                            <Input 
-                              type="color" 
-                              className="w-10 h-10 p-1" 
-                              value={col.color_hex || "#94a3b8"} 
-                              onChange={e => { 
-                                const nc = [...kanbanConfig]; 
-                                nc[idx].color_hex = e.target.value; 
-                                nc[idx].color = `bg-[${e.target.value}]/10 border-[${e.target.value}]/20`;
-                                setKanbanConfig(nc); 
-                              }} 
-                            />
+                             <Input 
+                               type="color" 
+                               className="w-10 h-10 p-1" 
+                               value={col.color_hex || "#94a3b8"} 
+                               onChange={e => { 
+                                 const nc = [...kanbanConfig]; 
+                                 nc[idx].color_hex = e.target.value; 
+                                 setKanbanConfig(nc); 
+                               }} 
+                             />
                           </div>
                         </div>
                         <div className="flex items-center gap-1 pt-6">

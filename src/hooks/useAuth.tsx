@@ -146,8 +146,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (s?.user) {
         if (event === "SIGNED_IN" || event === "USER_UPDATED") {
           setLoading(true);
-          await loadProfile(s.user.id);
-          if (mounted) setLoading(false);
+          try {
+            await loadProfile(s.user.id);
+          } catch (err) {
+            console.error("Failed to load profile on auth change:", err);
+            if (mounted) setError(err instanceof Error ? err : new Error(String(err)));
+          } finally {
+            if (mounted) setLoading(false);
+          }
         }
       } else {
         setProfile(null);

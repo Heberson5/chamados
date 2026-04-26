@@ -52,9 +52,28 @@ export default function Chamados() {
      if (data) setTickets(data);
    }, [toast]);
 
-  useEffect(() => {
-    fetchTickets();
-  }, [fetchTickets]);
+   useEffect(() => {
+     fetchTickets();
+     
+     const channel = supabase
+       .channel('schema-db-changes')
+       .on(
+         'postgres_changes',
+         {
+           event: '*',
+           schema: 'public',
+           table: 'chamados'
+         },
+         () => {
+           fetchTickets();
+         }
+       )
+       .subscribe();
+ 
+     return () => {
+       supabase.removeChannel(channel);
+     };
+   }, [fetchTickets]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

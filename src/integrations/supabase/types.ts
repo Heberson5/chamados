@@ -191,6 +191,7 @@ export type Database = {
           prioridade: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada: string | null
           prioridade_alterada_por: string | null
+          reaberto: boolean | null
           sla_deadline: string | null
           sla_violado: boolean | null
           sla_violado_em: string | null
@@ -215,6 +216,7 @@ export type Database = {
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
+          reaberto?: boolean | null
           sla_deadline?: string | null
           sla_violado?: boolean | null
           sla_violado_em?: string | null
@@ -239,6 +241,7 @@ export type Database = {
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
+          reaberto?: boolean | null
           sla_deadline?: string | null
           sla_violado?: boolean | null
           sla_violado_em?: string | null

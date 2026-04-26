@@ -18,7 +18,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
     const [kanbanConfig, setKanbanConfig] = useState<any[]>([]);
      const [reportLayout, setReportLayout] = useState<any>({ headerColor: "#000000", footerText: "", showLogo: true });
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
-     const [layoutConfig, setLayoutConfig] = useState({ companyLogo: "", companyName: "Help-Me System", sidebarColor: "bg-slate-900", accentColor: "#3b82f6", menuOrder: [] });
+   const [layoutConfig, setLayoutConfig] = useState({ 
+     companyLogo: "", 
+     companyName: "Help-Me System", 
+     sidebarColor: "bg-slate-900", 
+     accentColor: "#3b82f6", 
+     menuOrder: [
+       { id: '1', label: "Dashboard", path: "/dashboard", visible: true },
+       { id: '2', label: "Chamados", path: "/chamados", visible: true },
+       { id: '3', label: "Usuários", path: "/usuarios", visible: true },
+       { id: '4', label: "Permissões", path: "/permissions", visible: true },
+       { id: '5', label: "Auditoria", path: "/audit", visible: true },
+       { id: '6', label: "Relatórios", path: "/reports", visible: true },
+       { id: '7', label: "Perfil", path: "/perfil", visible: true },
+       { id: '8', label: "Configurações", path: "/settings", visible: true },
+     ] 
+   });
     const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
    const [isAdmin, setIsAdmin] = useState(false);
  
@@ -461,21 +476,63 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                       </div>
                     </div>
  
-                    <div className="space-y-4 border-t pt-6">
-                      <h3 className="text-sm font-bold flex items-center gap-2"><Menu size={16} /> Organizar Menus</h3>
-                      <p className="text-xs text-muted-foreground italic">Arraste para reordenar ou altere os nomes de exibição.</p>
-                      <div className="space-y-2 max-w-md">
-                        {["Dashboard", "Chamados", "Inventário", "Financeiro", "Relatórios"].map((menu, i) => (
-                          <div key={i} className="flex items-center gap-2 border p-2 rounded bg-muted/10 cursor-move">
-                            <Menu size={14} className="text-muted-foreground" />
-                            <Input defaultValue={menu} className="h-8 text-sm" />
-                            <div className="flex gap-1 ml-auto">
-                              <Button variant="ghost" size="icon" className="h-6 w-6"><Plus size={12} className="rotate-45" /></Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                     <div className="space-y-4 border-t pt-6">
+                       <h3 className="text-sm font-bold flex items-center gap-2"><Menu size={16} /> Organizar Menus</h3>
+                       <p className="text-xs text-muted-foreground italic">Reordene os menus ou altere os nomes de exibição.</p>
+                       <div className="space-y-2 max-w-md">
+                         {layoutConfig.menuOrder?.map((menu: any, i: number) => (
+                           <div key={menu.id || i} className="flex items-center gap-2 border p-2 rounded bg-muted/10">
+                             <div className="flex flex-col gap-1">
+                               <Button 
+                                 variant="ghost" 
+                                 size="icon" 
+                                 className="h-4 w-4" 
+                                 disabled={i === 0}
+                                 onClick={() => {
+                                   const newOrder = [...layoutConfig.menuOrder];
+                                   [newOrder[i-1], newOrder[i]] = [newOrder[i], newOrder[i-1]];
+                                   setLayoutConfig({...layoutConfig, menuOrder: newOrder});
+                                 }}
+                               >
+                                 <Plus size={10} className="-rotate-180" />
+                               </Button>
+                               <Button 
+                                 variant="ghost" 
+                                 size="icon" 
+                                 className="h-4 w-4" 
+                                 disabled={i === layoutConfig.menuOrder.length - 1}
+                                 onClick={() => {
+                                   const newOrder = [...layoutConfig.menuOrder];
+                                   [newOrder[i], newOrder[i+1]] = [newOrder[i+1], newOrder[i]];
+                                   setLayoutConfig({...layoutConfig, menuOrder: newOrder});
+                                 }}
+                               >
+                                 <Plus size={10} />
+                               </Button>
+                             </div>
+                             <Input 
+                               value={menu.label} 
+                               onChange={(e) => {
+                                 const newOrder = [...layoutConfig.menuOrder];
+                                 newOrder[i].label = e.target.value;
+                                 setLayoutConfig({...layoutConfig, menuOrder: newOrder});
+                               }}
+                               className="h-8 text-sm" 
+                             />
+                             <div className="flex gap-1 ml-auto">
+                               <Switch 
+                                 checked={menu.visible !== false} 
+                                 onCheckedChange={(checked) => {
+                                   const newOrder = [...layoutConfig.menuOrder];
+                                   newOrder[i].visible = checked;
+                                   setLayoutConfig({...layoutConfig, menuOrder: newOrder});
+                                 }}
+                               />
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
                   </CardContent>
                 </Card>
                </TabsContent>

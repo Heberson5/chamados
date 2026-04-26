@@ -194,8 +194,8 @@ const Auth = () => {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? (
+           <Button type="submit" className="w-full" disabled={isSubmitting || authLoading}>
+             {isSubmitting || (authLoading && user) ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Aguarde...

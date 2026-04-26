@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Ticket, Shield, Clock, Package } from "lucide-react";
+import { Ticket, Shield, Clock, Package, Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function Index() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -13,7 +15,27 @@ export default function Index() {
           <Ticket className="text-blue-600" size={24} />
           <span className="font-bold text-xl">Help-Me</span>
         </div>
-        <Button variant="ghost" onClick={() => navigate("/login")} className="hover:bg-accent hover:text-accent-foreground">Entrar</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              if (theme === "system") setTheme("light");
+              else if (theme === "light") setTheme("dark");
+              else setTheme("system");
+            }}
+            title="Mudar tema"
+          >
+            {theme === "system" ? (
+              <Monitor size={20} />
+            ) : theme === "dark" ? (
+              <Sun size={20} />
+            ) : (
+              <Moon size={20} />
+            )}
+          </Button>
+          <Button variant="ghost" onClick={() => navigate("/login")} className="hover:bg-accent hover:text-accent-foreground">Entrar</Button>
+        </div>
       </header>
 
       <main>

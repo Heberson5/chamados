@@ -35,9 +35,9 @@ export default function Chamados() {
 
   const fetchTickets = useCallback(async () => {
     const { data, error } = await supabase
-      .from("chamados")
-      .select(`*, tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome), usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome), chamado_pai:chamado_pai_id(os)`)
-      .order("gerado_em", { ascending: false });
+       .from("chamados")
+       .select(`*, tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome), usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome), chamado_pai:chamado_pai_id(os)`)
+       .order("os", { ascending: true });
     
     if (error) {
       toast({ variant: "destructive", title: "Erro ao buscar chamados", description: error.message });
@@ -157,16 +157,16 @@ export default function Chamados() {
     return matchesSearch && matchesStatus;
   });
 
-  const getPriorityLabel = (priority: string) => {
-    const labels: Record<string, string> = {
-      P1: "Crítica",
-      P2: "Alta",
-      P3: "Média",
-      P4: "Baixa",
-      P5: "Muito Baixa"
-    };
-    return labels[priority] || priority;
-  };
+   const getPriorityLabel = (priority: string) => {
+     const labels: Record<string, string> = {
+       P1: "Crítica",
+       P2: "Alta",
+       P3: "Média",
+       P4: "Baixa",
+       P5: "Muito Baixa"
+     };
+     return labels[priority] || priority;
+   };
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -322,8 +322,8 @@ export default function Chamados() {
                     <TableRow key={ticket.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
-                          <span className="font-bold">{ticket.titulo || "Sem título"}</span>
-                          <span className="text-xs text-muted-foreground font-mono">{ticket.os}</span>
+                           <span className="font-bold">{ticket.titulo || "Sem título"}</span>
+                           <span className="text-[10px] text-muted-foreground font-mono leading-none">{ticket.os}</span>
                           {ticket.chamado_pai && (
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <ArrowRight size={10} /> {ticket.chamado_pai.os}

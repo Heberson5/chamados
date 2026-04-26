@@ -13,8 +13,9 @@ import {
   User,
   BarChart3,
   Package,
-  History,
-  Users
+   History,
+   Users,
+   Lock
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
@@ -53,7 +54,10 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Ticket, label: "Chamados", path: "/chamados" },
-    ...(role === 'ADMIN' || role === 'MASTER' ? [{ icon: Users, label: "Usuários", path: "/usuarios" }] : []),
+     ...(role === 'ADMIN' || role === 'MASTER' ? [
+       { icon: Users, label: "Usuários", path: "/usuarios" },
+       { icon: Lock, label: "Permissões", path: "/permissions" }
+     ] : []),
     { icon: BarChart3, label: "Relatórios", path: "/reports" },
     { icon: User, label: "Perfil", path: "/perfil" },
     { icon: Settings, label: "Configurações", path: "/settings" },

@@ -9,8 +9,9 @@ import Login from "./pages/Login";
 import Chamados from "./pages/Chamados";
 import Settings from "./pages/Settings";
  import Profile from "./pages/Profile";
- import Users from "./pages/Users";
- import Reports from "./pages/Reports";
+  import Users from "./pages/Users";
+  import Reports from "./pages/Reports";
+  import Permissions from "./pages/Permissions";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,9 +34,10 @@ const App = () => {
             <Route element={<Layout />}>
                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/chamados" element={<Chamados />} />
-                <Route path="/reports" element={<Reports />} />
-               <Route path="/usuarios" element={<Users />} />
-              <Route path="/perfil" element={<Profile />} />
+                 <Route path="/reports" element={<Reports />} />
+                <Route path="/usuarios" element={<Users />} />
+                <Route path="/permissions" element={<Permissions />} />
+               <Route path="/perfil" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
 

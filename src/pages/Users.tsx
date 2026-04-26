@@ -4,8 +4,11 @@
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { useToast } from "@/hooks/use-toast";
- import { Loader2, Shield, User as UserIcon, MoreHorizontal } from "lucide-react";
+ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+ import { Input } from "@/components/ui/input";
+ import { Label } from "@/components/ui/label";
+ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
  import { Database } from "@/integrations/supabase/types";
  
@@ -16,6 +19,84 @@
    const [loading, setLoading] = useState(true);
    const { toast } = useToast();
    const [selectedUser, setSelectedUser] = useState<any>(null);
+   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+   const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
+   const [reassignToId, setReassignToId] = useState("");
+   const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra });
+   const handleAddUser = async () => {
+     setLoading(true);
+     try {
+       const { error } = await supabase.from("profiles").insert([{
+         id: crypto.randomUUID(),
+         nome: newUser.nome,
+         sobrenome: newUser.sobrenome,
+         email: newUser.email,
+         regra: newUser.regra,
+         ativo: true
+       }]);
+       if (error) throw error;
+       toast({ title: "Sucesso", description: "Perfil de usuário criado." });
+       setIsAddDialogOpen(false);
+       fetchUsers();
+     } catch (error: any) {
+       toast({ variant: "destructive", title: "Erro", description: error.message });
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   const toggleStatus = async (user: any) => {
+     const { error } = await supabase
+       .from("profiles")
+       .update({ ativo: !user.ativo })
+       .eq("id", user.id);
+ 
+     if (error) {
+       toast({ variant: "destructive", title: "Erro", description: error.message });
+     } else {
+       toast({ title: "Sucesso", description: `Usuário ${user.ativo ? 'desativado' : 'ativado'} com sucesso!` });
+       fetchUsers();
+     }
+   };
+ 
+   const handleDeleteRequest = async (user: any) => {
+     setSelectedUser(user);
+     const { data: openTickets } = await supabase
+       .from("chamados")
+       .select("id")
+       .eq("usuario_id", user.id)
+       .in("status", ["ABERTO", "EM_ATENDIMENTO"]);
+ 
+     if (openTickets && openTickets.length > 0) {
+       setIsReassignDialogOpen(true);
+     } else {
+       if (confirm(`Deseja realmente excluir o usuário ${user.nome}?`)) {
+         const { error } = await supabase.from("profiles").update({ deletado_em: new Date().toISOString(), ativo: false }).eq("id", user.id);
+         if (error) toast({ variant: "destructive", title: "Erro", description: error.message });
+         else {
+           toast({ title: "Sucesso", description: "Usuário removido." });
+           fetchUsers();
+         }
+       }
+     }
+   };
+ 
+   const handleReassignAndDelete = async () => {
+     if (!reassignToId) return;
+     setLoading(true);
+     try {
+       await supabase.from("chamados").update({ usuario_id: reassignToId }).eq("usuario_id", selectedUser.id);
+       await supabase.from("profiles").update({ deletado_em: new Date().toISOString(), ativo: false }).eq("id", selectedUser.id);
+       toast({ title: "Sucesso", description: "Chamados remanejados e usuário removido." });
+       setIsReassignDialogOpen(false);
+       fetchUsers();
+     } catch (error: any) {
+       toast({ variant: "destructive", title: "Erro", description: error.message });
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
  
    const fetchUsers = async () => {
      setLoading(true);
@@ -57,22 +138,25 @@
      return "Usuário";
    };
  
-   if (loading && users.length === 0) {
-     return (
-       <div className="flex h-[50vh] items-center justify-center">
-         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-       </div>
-     );
-   }
+    if (loading && users.length === 0) {
+      return (
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
  
    return (
      <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
-       <div className="flex justify-between items-center">
-         <div>
-           <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
-           <p className="text-muted-foreground">Gerencie as permissões e perfis dos usuários do sistema.</p>
-         </div>
-       </div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
+            <p className="text-muted-foreground">Gerencie as permissões e perfis dos usuários do sistema.</p>
+          </div>
+          <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
+            <Plus size={18} /> Novo Usuário
+          </Button>
+        </div>
  
        <div className="bg-card rounded-md border shadow-sm">
          <Table>
@@ -112,27 +196,121 @@
                      {user.ativo ? "Ativo" : "Inativo"}
                    </Badge>
                  </TableCell>
-                 <TableCell className="text-right">
-                   <Select 
-                     defaultValue={user.is_master ? 'MASTER' : user.regra} 
-                     onValueChange={(value) => updateRole(user.id, value)}
-                   >
-                     <SelectTrigger className="w-[140px] ml-auto">
-                       <SelectValue placeholder="Mudar Permissão" />
-                     </SelectTrigger>
-                     <SelectContent>
-                       <SelectItem value="MASTER">Master</SelectItem>
-                       <SelectItem value="ADMIN">Administrador</SelectItem>
-                       <SelectItem value="TECNICO">Técnico</SelectItem>
-                       <SelectItem value="USUARIO">Usuário</SelectItem>
-                     </SelectContent>
-                   </Select>
-                 </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Select 
+                        defaultValue={user.is_master ? 'MASTER' : user.regra} 
+                        onValueChange={(value) => updateRole(user.id, value)}
+                      >
+                        <SelectTrigger className="w-[130px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MASTER">Master</SelectItem>
+                          <SelectItem value="ADMIN">Admin</SelectItem>
+                          <SelectItem value="TECNICO">Técnico</SelectItem>
+                          <SelectItem value="USUARIO">Usuário</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal size={18} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => toggleStatus(user)} className="gap-2">
+                            {user.ativo ? <PowerOff size={14} /> : <Power size={14} />}
+                            {user.ativo ? 'Desativar' : 'Ativar'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteRequest(user)} className="gap-2 text-destructive">
+                            <Trash2 size={14} /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
                </TableRow>
              ))}
            </TableBody>
          </Table>
-       </div>
-     </div>
-   );
- }
+        </div>
+ 
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input value={newUser.nome} onChange={e => setNewUser({...newUser, nome: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Sobrenome</Label>
+                  <Input value={newUser.sobrenome} onChange={e => setNewUser({...newUser, sobrenome: e.target.value})} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail</Label>
+                <Input type="email" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Permissão</Label>
+                <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MASTER">Master</SelectItem>
+                    <SelectItem value="ADMIN">Administrador</SelectItem>
+                    <SelectItem value="TECNICO">Técnico</SelectItem>
+                    <SelectItem value="USUARIO">Usuário</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleAddUser} disabled={loading}>Salvar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+ 
+        <Dialog open={isReassignDialogOpen} onOpenChange={setIsReassignDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remanejar Chamados em Aberto</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                O usuário <strong>{selectedUser?.nome}</strong> possui chamados em aberto. 
+                Selecione um novo responsável antes de removê-lo.
+              </p>
+              <div className="space-y-2">
+                <Label>Novo Responsável</Label>
+                <Select value={reassignToId} onValueChange={setReassignToId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.filter(u => u.id !== selectedUser?.id && u.ativo).map(u => (
+                      <SelectItem key={u.id} value={u.id}>{u.nome} {u.sobrenome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsReassignDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleReassignAndDelete} disabled={!reassignToId || loading} variant="destructive">
+                Remanejar e Excluir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }

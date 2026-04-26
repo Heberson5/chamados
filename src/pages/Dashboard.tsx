@@ -3,7 +3,7 @@
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
- import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon } from "lucide-react";
+  import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon, Play, Pause, History } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay, eachHourOfInterval, isSameHour } from "date-fns";
  import { ptBR } from "date-fns/locale";

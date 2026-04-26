@@ -99,30 +99,40 @@ export const NewTicketDialog = ({
        uploadedUrls.push(publicUrl);
      }
  
-     const { error } = await supabase.from("tickets").insert({
-       subject: parsed.data.subject,
-       description: parsed.data.description ?? null,
-       priority: parsed.data.priority,
-       category: parsed.data.category,
-       attachment_urls: uploadedUrls,
-       organization_id: targetOrgId,
-       requester_id: user.id,
-     });
-   useEffect(() => {
-     if (profile?.is_master) {
-       supabase.from("organizations").select("id, name").order("name").then(({ data }) => {
-         setAllOrgs(data || []);
-       });
-     }
-   }, [profile?.is_master]);
- 
+    const { error } = await supabase.from("tickets").insert({
+      subject: parsed.data.subject,
+      description: parsed.data.description ?? null,
+      priority: parsed.data.priority,
+      category: parsed.data.category,
+      attachment_urls: uploadedUrls,
+      organization_id: targetOrgId,
+      requester_id: user.id,
+    });
+
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Chamado criado");
-     setSubject(""); setDescription(""); setPriority("medium"); setCategory("");
-     setFiles([]); setPreviews([]);
+    setSubject("");
+    setDescription("");
+    setPriority("medium");
+    setCategory("");
+    setFiles([]);
+    setPreviews([]);
     onOpenChange(false);
     onCreated?.();
+  };
+
+  useEffect(() => {
+    if (profile?.is_master) {
+      supabase
+        .from("organizations")
+        .select("id, name")
+        .order("name")
+        .then(({ data }) => {
+          setAllOrgs(data || []);
+        });
+    }
+  }, [profile?.is_master]);
   };
 
   return (

@@ -18,11 +18,18 @@
    const [statusFilter, setStatusFilter] = useState<string>("todos");
    const [isDialogOpen, setIsDialogOpen] = useState(false);
    const [isLoading, setIsLoading] = useState(false);
-   const [newTicket, setNewTicket] = useState<{ os: string; descricao: string; prioridade: "P1" | "P2" | "P3" | "P4" | "P5" }>({ 
-     os: "", 
-     descricao: "", 
-     prioridade: "P3" 
-   });
+    const [files, setFiles] = useState<File[]>([]);
+    const [newTicket, setNewTicket] = useState<{ 
+      titulo: string; 
+      os: string; 
+      descricao: string; 
+      prioridade: "P1" | "P2" | "P3" | "P4" | "P5" 
+    }>({ 
+      titulo: "",
+      os: "", 
+      descricao: "", 
+      prioridade: "P3" 
+    });
    const { toast } = useToast();
  
    const fetchTickets = useCallback(async () => {
@@ -47,33 +54,75 @@
      fetchTickets();
    }, [fetchTickets]);
  
-   const handleCreateTicket = async (e: React.FormEvent) => {
-     e.preventDefault();
-     setIsLoading(true);
-     try {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (!user) throw new Error("Usuário não autenticado");
- 
-       const { error } = await supabase.from("chamados").insert({ 
-         os: newTicket.os,
-         descricao: newTicket.descricao,
-         prioridade: newTicket.prioridade,
-         usuario_id: user.id,
-         status: "ABERTO" as any
-       });
- 
-       if (error) throw error;
- 
-       toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
-       setIsDialogOpen(false);
-       setNewTicket({ os: "", descricao: "", prioridade: "P3" });
-       fetchTickets();
-     } catch (error: any) {
-       toast({ variant: "destructive", title: "Erro ao criar chamado", description: error.message });
-     } finally {
-       setIsLoading(false);
-     }
-   };
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) {
+        const selectedFiles = Array.from(e.target.files);
+        const invalidFiles = selectedFiles.filter(file => {
+          const type = file.type;
+          return type.startsWith("video/") || type.startsWith("audio/");
+        });
+
+        if (invalidFiles.length > 0) {
+          toast({
+            variant: "destructive",
+            title: "Arquivo não permitido",
+            description: "Não é permitido anexar vídeos ou áudios.",
+          });
+          return;
+        }
+        setFiles(selectedFiles);
+      }
+    };
+
+    const handleCreateTicket = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Usuário não autenticado");
+
+        const uploadedUrls = [];
+        for (const file of files) {
+          const fileExt = file.name.split(".").pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${user.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("chamados_anexos")
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from("chamados_anexos")
+            .getPublicUrl(filePath);
+            
+          uploadedUrls.push(publicUrl);
+        }
+  
+        const { error } = await supabase.from("chamados").insert({ 
+          titulo: newTicket.titulo,
+          os: newTicket.os || `OS-${Date.now()}`,
+          descricao: newTicket.descricao,
+          prioridade: newTicket.prioridade,
+          usuario_id: user.id,
+          status: "ABERTO" as any,
+          anexos: uploadedUrls
+        });
+  
+        if (error) throw error;
+  
+        toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
+        setIsDialogOpen(false);
+        setNewTicket({ titulo: "", os: "", descricao: "", prioridade: "P3" });
+        setFiles([]);
+        fetchTickets();
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Erro ao criar chamado", description: error.message });
+      } finally {
+        setIsLoading(false);
+      }
+    };
  
    const getSLAStatus = (ticket: any) => {
      if (ticket.sla_violado) return { label: "VENCIDO", color: "bg-red-500" };
@@ -88,12 +137,25 @@
      return { label: "NO PRAZO", color: "bg-green-500" };
    };
  
-   const filteredTickets = tickets.filter(t => {
-     const matchesSearch = t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
-     const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
-     return matchesSearch && matchesStatus;
-   });
+    const filteredTickets = tickets.filter(t => {
+      const matchesSearch = 
+        (t.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+    const getPriorityLabel = (priority: string) => {
+      const labels: Record<string, string> = {
+        P1: "Crítica",
+        P2: "Alta",
+        P3: "Média",
+        P4: "Baixa",
+        P5: "Muito Baixa"
+      };
+      return labels[priority] || priority;
+    };
  
    return (
      <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
@@ -127,44 +189,64 @@
                <DialogHeader>
                  <DialogTitle>Criar Novo Chamado</DialogTitle>
                </DialogHeader>
-               <form onSubmit={handleCreateTicket} className="space-y-4">
-                 <div className="space-y-2">
-                   <Label htmlFor="os">Número da OS</Label>
-                   <Input 
-                     id="os" 
-                     required 
-                     value={newTicket.os}
-                     onChange={e => setNewTicket({...newTicket, os: e.target.value})}
-                     placeholder="Ex: OS-2024-001"
-                   />
-                 </div>
-                 <div className="space-y-2">
-                   <Label htmlFor="descricao">Descrição</Label>
-                   <Input 
-                     id="descricao" 
-                     required 
-                     value={newTicket.descricao}
-                     onChange={e => setNewTicket({...newTicket, descricao: e.target.value})}
-                     placeholder="Descreva o problema"
-                   />
-                 </div>
-                 <div className="space-y-2">
-                   <Label htmlFor="prioridade">Prioridade</Label>
-                   <Select 
-                     value={newTicket.prioridade} 
-                     onValueChange={v => setNewTicket({...newTicket, prioridade: v as any})}
-                   >
-                     <SelectTrigger>
-                       <SelectValue />
-                     </SelectTrigger>
-                     <SelectContent>
-                       <SelectItem value="P1">P1 - Crítica</SelectItem>
-                       <SelectItem value="P2">P2 - Alta</SelectItem>
-                       <SelectItem value="P3">P3 - Média</SelectItem>
-                       <SelectItem value="P4">P4 - Baixa</SelectItem>
-                     </SelectContent>
-                   </Select>
-                 </div>
+                <form onSubmit={handleCreateTicket} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="titulo">Título</Label>
+                    <Input 
+                      id="titulo" 
+                      required 
+                      value={newTicket.titulo}
+                      onChange={e => setNewTicket({...newTicket, titulo: e.target.value})}
+                      placeholder="Ex: Problema no servidor"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="os">Número da OS (Opcional)</Label>
+                    <Input 
+                      id="os" 
+                      value={newTicket.os}
+                      onChange={e => setNewTicket({...newTicket, os: e.target.value})}
+                      placeholder="Ex: OS-2024-001"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="descricao">Descrição</Label>
+                    <Input 
+                      id="descricao" 
+                      required 
+                      value={newTicket.descricao}
+                      onChange={e => setNewTicket({...newTicket, descricao: e.target.value})}
+                      placeholder="Descreva o problema"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prioridade">Prioridade</Label>
+                    <Select 
+                      value={newTicket.prioridade} 
+                      onValueChange={v => setNewTicket({...newTicket, prioridade: v as any})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="P1">Crítica</SelectItem>
+                        <SelectItem value="P2">Alta</SelectItem>
+                        <SelectItem value="P3">Média</SelectItem>
+                        <SelectItem value="P4">Baixa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="anexos">Anexos (Texto, PDF, Imagens)</Label>
+                    <Input 
+                      id="anexos" 
+                      type="file"
+                      multiple
+                      accept=".txt,.pdf,image/*"
+                      onChange={handleFileChange}
+                    />
+                    <p className="text-[10px] text-muted-foreground">Vídeos e áudios não são permitidos.</p>
+                  </div>
                  <DialogFooter>
                    <Button type="submit" disabled={isLoading}>
                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -189,38 +271,40 @@
  
        <div className="bg-card rounded-md border shadow-sm overflow-x-auto">
          <Table>
-           <TableHeader>
-             <TableRow>
-               <TableHead className="w-[100px]">OS</TableHead>
-               <TableHead>Descrição</TableHead>
-               <TableHead>SLA Status</TableHead>
-               <TableHead>Status</TableHead>
-               <TableHead>Prioridade</TableHead>
-               <TableHead>Técnico</TableHead>
-               <TableHead>Data</TableHead>
-             </TableRow>
-           </TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Chamado</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>SLA Status</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Prioridade</TableHead>
+                <TableHead>Técnico</TableHead>
+                <TableHead>Anexos</TableHead>
+                <TableHead>Data</TableHead>
+              </TableRow>
+            </TableHeader>
            <TableBody>
              {filteredTickets.map((ticket) => {
                const sla = getSLAStatus(ticket);
                return (
                  <TableRow key={ticket.id} className="hover:bg-muted/50 transition-colors">
-                   <TableCell className="font-mono font-medium">
-                     <div className="flex flex-col">
-                       <span>{ticket.os}</span>
-                       {ticket.chamado_pai && (
-                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                           <ArrowRight size={10} /> {ticket.chamado_pai.os}
-                         </span>
-                       )}
-                     </div>
-                   </TableCell>
-                   <TableCell className="max-w-xs md:max-w-md truncate">
-                     <div className="flex flex-col">
-                       <span className="truncate">{ticket.descricao}</span>
-                       <span className="text-[11px] text-muted-foreground">Solicitante: {ticket.usuario?.nome}</span>
-                     </div>
-                   </TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span className="font-bold">{ticket.titulo || "Sem título"}</span>
+                        <span className="text-xs text-muted-foreground font-mono">{ticket.os}</span>
+                        {ticket.chamado_pai && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <ArrowRight size={10} /> {ticket.chamado_pai.os}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-xs md:max-w-md truncate">
+                      <div className="flex flex-col">
+                        <span className="truncate">{ticket.descricao}</span>
+                        <span className="text-[11px] text-muted-foreground">Solicitante: {ticket.usuario?.nome}</span>
+                      </div>
+                    </TableCell>
                    <TableCell>
                      <div className="flex items-center gap-2">
                        <div className={`w-2 h-2 rounded-full ${sla.color}`} />
@@ -236,18 +320,31 @@
                        {ticket.status}
                      </Badge>
                    </TableCell>
-                   <TableCell>
-                     <Badge variant="outline" className={
-                       ticket.prioridade === 'P1' ? 'border-red-500 text-red-500 bg-red-50' :
-                       ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-500 bg-orange-50' :
-                       'border-gray-500'
-                     }>
-                       {ticket.prioridade}
-                     </Badge>
-                   </TableCell>
-                   <TableCell className="text-sm">
-                     {ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome ? ticket.tecnico.sobrenome.charAt(0) + '.' : ''}` : 'Não atribuído'}
-                   </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        ticket.prioridade === 'P1' ? 'border-red-500 text-red-500 bg-red-50' :
+                        ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-500 bg-orange-50' :
+                        'border-gray-500'
+                      }>
+                        {getPriorityLabel(ticket.prioridade)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome ? ticket.tecnico.sobrenome.charAt(0) + '.' : ''}` : 'Não atribuído'}
+                    </TableCell>
+                    <TableCell>
+                      {ticket.anexos && ticket.anexos.length > 0 ? (
+                        <div className="flex gap-1">
+                          {ticket.anexos.map((url: string, idx: number) => (
+                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs">
+                              [{idx + 1}]
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                    <TableCell className="text-sm whitespace-nowrap">
                      {format(new Date(ticket.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR })}
                    </TableCell>

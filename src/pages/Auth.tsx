@@ -32,11 +32,20 @@ const Auth = () => {
       console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
       
       if (profile) {
-        if (profile.organization_id || profile.is_master) {
+        // Se for master, vai direto para o app, independente de ter empresa vinculada
+        if (profile.is_master) {
           navigate("/app", { replace: true });
-        } else {
-          navigate("/onboarding", { replace: true });
+          return;
         }
+        
+        // Se tiver empresa, vai para o app
+        if (profile.organization_id) {
+          navigate("/app", { replace: true });
+          return;
+        }
+
+        // Se não for nenhum dos dois, vai para onboarding
+        navigate("/onboarding", { replace: true });
       } else {
         // Se o carregamento terminou, temos usuário mas não temos perfil,
         // redirecionamos para o onboarding onde o perfil pode ser tratado.

@@ -6,7 +6,6 @@ import { ptBR } from "date-fns/locale";
 import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -177,11 +176,11 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Resumo do Atendimento</Label>
-            <Textarea 
+            <textarea 
               placeholder="Descreva o que foi feito para resolver este chamado..."
               value={closureNote}
               onChange={(e) => setClosureNote(e.target.value)}
-              className="min-h-[100px]"
+              className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
             />
           </div>
         </div>

@@ -48,7 +48,9 @@ const App = () => (
                 <Route path="admin/structure" element={<AdminStructure />} />
                 <Route path="admin/system" element={<AdminSystem />} />
                 <Route path="admin/permissions" element={<AdminPermissions />} />
-                <Route path="admin/audit-logs" element={<AdminAuditLogs />} />
+                 <Route path="admin/audit-logs" element={<AdminAuditLogs />} />
+                 <Route path="reports" element={<div className="p-8 text-muted-foreground italic">Módulo de Relatórios (Em breve)</div>} />
+                 <Route path="knowledge" element={<div className="p-8 text-muted-foreground italic">Base de Conhecimento (Em breve)</div>} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

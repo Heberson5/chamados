@@ -31,16 +31,13 @@ const Auth = () => {
     if (user && !authLoading) {
       console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
       
-      // Give it a tiny bit of time to make sure profile is synced if it's a new login
-      const redirect = () => {
-        if (profile?.organization_id || profile?.is_master) {
-          navigate("/app", { replace: true });
-        } else {
-          navigate("/onboarding", { replace: true });
-        }
-      };
-
-      redirect();
+       if (profile) {
+         if (profile.organization_id || profile.is_master) {
+           navigate("/app", { replace: true });
+         } else {
+           navigate("/onboarding", { replace: true });
+         }
+       }
     }
   }, [user, profile, authLoading, navigate]);
 

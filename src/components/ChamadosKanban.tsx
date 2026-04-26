@@ -311,8 +311,8 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       .eq("chamado_id", ticketId)
       .order("criado_em", { ascending: true });
     
-    if (data) setComments(data);
-  };
+     if (data) setComments(data);
+    }, []);
 
   const handleCommentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -388,14 +388,7 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
     }
   };
 
-   const getPriorityColor = (priority: string) => {
-     switch (priority) {
-       case "P1": return "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400";
-       case "P2": return "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400";
-       case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
-       default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
-     }
-   }, []);
+   // getPriorityColor removed here as it is already defined above
  
    useEffect(() => {
      if (isDetailsOpen && selectedTicket) {

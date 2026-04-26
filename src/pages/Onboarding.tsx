@@ -24,11 +24,12 @@ const Onboarding = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user !== undefined) {
-      if (!user) navigate("/auth", { replace: true });
-       else if (profile && (profile.organization_id || profile.is_master === true)) {
+    if (!loading && user) {
+      if (profile?.is_master || profile?.organization_id) {
         navigate("/app", { replace: true });
       }
+    } else if (!loading && !user) {
+      navigate("/auth", { replace: true });
     }
   }, [user, profile, loading, navigate]);
 

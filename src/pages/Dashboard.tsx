@@ -160,17 +160,10 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
             const diff = (new Date(t.atendido_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
             if (diff > 0) acceptanceTimes.push(diff);
           }
-          // Completion time = (encerrado - atendido) - paused - waiting (effective working time)
-          // Falls back to (encerrado - gerado) when atendido_em is missing.
-          if (t.encerrado_em) {
-            const start = t.atendido_em ?? t.gerado_em;
-            if (start) {
-              const grossMin = (new Date(t.encerrado_em).getTime() - new Date(start).getTime()) / (1000 * 60);
-              const pausedMin = (t.tempo_total_pausado || 0) / 60;
-              const waitingMin = (t.tempo_total_aguardando_usuario || 0) / 60;
-              const effective = grossMin - pausedMin - waitingMin;
-              if (effective > 0) completionTimes.push(effective);
-            }
+          // Completion time = total elapsed from ticket open to closure (encerrado - gerado), in minutes.
+          if (t.encerrado_em && t.gerado_em && t.status === 'ENCERRADO') {
+            const diff = (new Date(t.encerrado_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
+            if (diff > 0) completionTimes.push(diff);
           }
           totalPaused += (t.tempo_total_pausado || 0);
           totalWaiting += (t.tempo_total_aguardando_usuario || 0);
@@ -178,6 +171,18 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
   
         const avgAcceptance = acceptanceTimes.length > 0 ? acceptanceTimes.reduce((a, b) => a + b, 0) / acceptanceTimes.length : 0;
         const avgCompletion = completionTimes.length > 0 ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length : 0;
+
+        // By User (count of tickets each user opened)
+        const userCounts = filteredTickets.reduce((acc: any, t) => {
+          const profile = profiles.find(p => p.id === t.usuario_id);
+          const name = profile ? `${profile.nome ?? ''} ${profile.sobrenome ?? ''}`.trim() || profile.email : 'Desconhecido';
+          acc[name] = (acc[name] || 0) + 1;
+          return acc;
+        }, {});
+        const byUser = Object.keys(userCounts)
+          .map(name => ({ name, value: userCounts[name] }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10);
     
         setStats(prev => ({
           ...prev,
@@ -191,8 +196,9 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
           totalWaitingTime: Math.round(totalWaiting / 60),
           byPriority,
            byStatus,
+           byUser,
         }));
-    }, [filteredTickets]);
+    }, [filteredTickets, profiles, kanbanConfig]);
  
     const chartData = useMemo(() => {
       let startDate = filters.dateRange.from;

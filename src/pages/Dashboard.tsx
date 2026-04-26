@@ -302,29 +302,47 @@ import { supabase } from "@/integrations/supabase/client";
              </Select>
            </div>
  
-           <div className="space-y-2">
-             <label className="text-xs font-medium flex items-center gap-1"><Users size={12} /> Usuário</label>
-             <Select value={filters.user} onValueChange={(v) => setFilters({ ...filters, user: v })}>
-               <SelectTrigger className="w-[200px] h-9 bg-background">
-                 <SelectValue placeholder="Todos os usuários" />
-               </SelectTrigger>
-               <SelectContent>
-                 <SelectItem value="all">Todos os usuários</SelectItem>
-                 {profiles.map(p => (
-                   <SelectItem key={p.id} value={p.id}>{p.nome} {p.sobrenome}</SelectItem>
-                 ))}
-               </SelectContent>
-             </Select>
-           </div>
- 
-           <Button variant="ghost" className="h-9 text-xs" onClick={() => {
-             setFilters({
-               period: "7d",
-               technician: "all",
-               user: "all",
-               dateRange: { from: subDays(new Date(), 7), to: new Date() }
-             });
-           }}>Limpar Filtros</Button>
+          <div className="space-y-2">
+            <label className="text-xs font-medium flex items-center gap-1"><Users size={12} /> Usuário</label>
+            <Select value={filters.user} onValueChange={(v) => setFilters({ ...filters, user: v })}>
+              <SelectTrigger className="w-[200px] h-9 bg-background">
+                <SelectValue placeholder="Todos os usuários" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os usuários</SelectItem>
+                {profiles.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.nome} {p.sobrenome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium flex items-center gap-1"><LayoutGrid size={12} /> Tipo de Status</label>
+            <Select value={filters.statusType} onValueChange={(v) => setFilters({ ...filters, statusType: v })}>
+              <SelectTrigger className="w-[200px] h-9 bg-background">
+                <SelectValue placeholder="Todos os tipos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="waiting">Aguardando</SelectItem>
+                <SelectItem value="in_progress">Andamento</SelectItem>
+                <SelectItem value="paused">Pausado</SelectItem>
+                <SelectItem value="waiting_user">Aguardando o Usuário</SelectItem>
+                <SelectItem value="completed">Encerrado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button variant="ghost" className="h-9 text-xs" onClick={() => {
+            setFilters({
+              period: "7d",
+              technician: "all",
+              user: "all",
+              statusType: "all",
+              dateRange: { from: subDays(new Date(), 7), to: new Date() }
+            });
+          }}>Limpar Filtros</Button>
          </div>
        </Card>
        

@@ -178,7 +178,9 @@ export type Database = {
       }
       chamados: {
         Row: {
+          aguardando_usuario_em: string | null
           anexos: string[] | null
+          atendido_em: string | null
           atualizado_em: string | null
           chamado_pai_id: string | null
           deletado_em: string | null
@@ -188,6 +190,7 @@ export type Database = {
           gerado_em: string | null
           id: string
           os: string
+          pausado_em: string | null
           prioridade: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada: string | null
           prioridade_alterada_por: string | null
@@ -197,13 +200,17 @@ export type Database = {
           sla_violado_em: string | null
           status: Database["public"]["Enums"]["chamado_status"] | null
           tecnico_id: string | null
+          tempo_total_aguardando_usuario: number | null
+          tempo_total_pausado: number | null
           titulo: string | null
           usuario_id: string
           vinculado_em: string | null
           vinculado_por: string | null
         }
         Insert: {
+          aguardando_usuario_em?: string | null
           anexos?: string[] | null
+          atendido_em?: string | null
           atualizado_em?: string | null
           chamado_pai_id?: string | null
           deletado_em?: string | null
@@ -213,6 +220,7 @@ export type Database = {
           gerado_em?: string | null
           id?: string
           os: string
+          pausado_em?: string | null
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
@@ -222,13 +230,17 @@ export type Database = {
           sla_violado_em?: string | null
           status?: Database["public"]["Enums"]["chamado_status"] | null
           tecnico_id?: string | null
+          tempo_total_aguardando_usuario?: number | null
+          tempo_total_pausado?: number | null
           titulo?: string | null
           usuario_id: string
           vinculado_em?: string | null
           vinculado_por?: string | null
         }
         Update: {
+          aguardando_usuario_em?: string | null
           anexos?: string[] | null
+          atendido_em?: string | null
           atualizado_em?: string | null
           chamado_pai_id?: string | null
           deletado_em?: string | null
@@ -238,6 +250,7 @@ export type Database = {
           gerado_em?: string | null
           id?: string
           os?: string
+          pausado_em?: string | null
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
@@ -247,6 +260,8 @@ export type Database = {
           sla_violado_em?: string | null
           status?: Database["public"]["Enums"]["chamado_status"] | null
           tecnico_id?: string | null
+          tempo_total_aguardando_usuario?: number | null
+          tempo_total_pausado?: number | null
           titulo?: string | null
           usuario_id?: string
           vinculado_em?: string | null
@@ -1274,6 +1289,8 @@ export type Database = {
         | "ENCERRADO"
         | "CANCELADO"
         | "REABERTO"
+        | "PAUSADO"
+        | "AGUARDANDO_USUARIO"
       nivel_tecnico: "N1" | "N2" | "N3"
       prioridade_chamado: "P1" | "P2" | "P3" | "P4" | "P5"
       reembolso_status:
@@ -1446,6 +1463,8 @@ export const Constants = {
         "ENCERRADO",
         "CANCELADO",
         "REABERTO",
+        "PAUSADO",
+        "AGUARDANDO_USUARIO",
       ],
       nivel_tecnico: ["N1", "N2", "N3"],
       prioridade_chamado: ["P1", "P2", "P3", "P4", "P5"],

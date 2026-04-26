@@ -358,9 +358,16 @@ export default function Chamados() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${sla.color}`} />
-                          <span className="text-xs font-bold tracking-wider">{sla.label}</span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${sla.color}`} />
+                            <span className="text-xs font-bold tracking-wider">{sla.label}</span>
+                          </div>
+                          {ticket.sla_deadline && (
+                            <span className="text-[10px] text-muted-foreground mt-1 font-mono">
+                              {format(new Date(ticket.sla_deadline), "dd/MM HH:mm", { locale: ptBR })}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

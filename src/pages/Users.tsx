@@ -142,6 +142,82 @@
      return (
        <div className="flex h-[50vh] items-center justify-center">
          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+         </div>
+ 
+         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+           <DialogContent>
+             <DialogHeader>
+               <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
+             </DialogHeader>
+             <div className="space-y-4 py-4">
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <Label>Nome</Label>
+                   <Input value={newUser.nome} onChange={e => setNewUser({...newUser, nome: e.target.value})} />
+                 </div>
+                 <div className="space-y-2">
+                   <Label>Sobrenome</Label>
+                   <Input value={newUser.sobrenome} onChange={e => setNewUser({...newUser, sobrenome: e.target.value})} />
+                 </div>
+               </div>
+               <div className="space-y-2">
+                 <Label>E-mail</Label>
+                 <Input type="email" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+               </div>
+               <div className="space-y-2">
+                 <Label>Permissão</Label>
+                 <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
+                   <SelectTrigger>
+                     <SelectValue />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="MASTER">Master</SelectItem>
+                     <SelectItem value="ADMIN">Administrador</SelectItem>
+                     <SelectItem value="TECNICO">Técnico</SelectItem>
+                     <SelectItem value="USUARIO">Usuário</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+             </div>
+             <DialogFooter>
+               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
+               <Button onClick={handleAddUser} disabled={loading}>Salvar</Button>
+             </DialogFooter>
+           </DialogContent>
+         </Dialog>
+ 
+         <Dialog open={isReassignDialogOpen} onOpenChange={setIsReassignDialogOpen}>
+           <DialogContent>
+             <DialogHeader>
+               <DialogTitle>Remanejar Chamados em Aberto</DialogTitle>
+             </DialogHeader>
+             <div className="space-y-4 py-4">
+               <p className="text-sm text-muted-foreground">
+                 O usuário <strong>{selectedUser?.nome}</strong> possui chamados em aberto. 
+                 Selecione um novo responsável antes de removê-lo.
+               </p>
+               <div className="space-y-2">
+                 <Label>Novo Responsável</Label>
+                 <Select value={reassignToId} onValueChange={setReassignToId}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="Selecione um usuário" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {users.filter(u => u.id !== selectedUser?.id && u.ativo).map(u => (
+                       <SelectItem key={u.id} value={u.id}>{u.nome} {u.sobrenome}</SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+             </div>
+             <DialogFooter>
+               <Button variant="outline" onClick={() => setIsReassignDialogOpen(false)}>Cancelar</Button>
+               <Button onClick={handleReassignAndDelete} disabled={!reassignToId || loading} variant="destructive">
+                 Remanejar e Excluir
+               </Button>
+             </DialogFooter>
+           </DialogContent>
+         </Dialog>
        </div>
      );
    }

@@ -14,187 +14,238 @@ export type Database = {
   }
   public: {
     Tables: {
-      audit_logs: {
+      chamados: {
         Row: {
-          action: string
+          atualizado_em: string | null
+          chamado_pai_id: string | null
+          deletado_em: string | null
+          descricao: string
+          descricao_encerramento: string | null
+          encerrado_em: string | null
+          gerado_em: string | null
           id: string
-          new_data: Json | null
-          old_data: Json | null
-          record_id: string | null
-          table_name: string | null
-          timestamp: string | null
-          user_email: string | null
-          user_id: string | null
+          os: string
+          prioridade: Database["public"]["Enums"]["prioridade_chamado"] | null
+          prioridade_alterada: string | null
+          prioridade_alterada_por: string | null
+          sla_deadline: string | null
+          sla_violado: boolean | null
+          sla_violado_em: string | null
+          status: Database["public"]["Enums"]["chamado_status"] | null
+          tecnico_id: string | null
+          usuario_id: string
+          vinculado_em: string | null
+          vinculado_por: string | null
         }
         Insert: {
-          action: string
+          atualizado_em?: string | null
+          chamado_pai_id?: string | null
+          deletado_em?: string | null
+          descricao: string
+          descricao_encerramento?: string | null
+          encerrado_em?: string | null
+          gerado_em?: string | null
           id?: string
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          table_name?: string | null
-          timestamp?: string | null
-          user_email?: string | null
-          user_id?: string | null
+          os: string
+          prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
+          prioridade_alterada?: string | null
+          prioridade_alterada_por?: string | null
+          sla_deadline?: string | null
+          sla_violado?: boolean | null
+          sla_violado_em?: string | null
+          status?: Database["public"]["Enums"]["chamado_status"] | null
+          tecnico_id?: string | null
+          usuario_id: string
+          vinculado_em?: string | null
+          vinculado_por?: string | null
         }
         Update: {
-          action?: string
+          atualizado_em?: string | null
+          chamado_pai_id?: string | null
+          deletado_em?: string | null
+          descricao?: string
+          descricao_encerramento?: string | null
+          encerrado_em?: string | null
+          gerado_em?: string | null
           id?: string
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          table_name?: string | null
-          timestamp?: string | null
-          user_email?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      department_permissions: {
-        Row: {
-          can_create: boolean | null
-          can_delete: boolean | null
-          can_edit: boolean | null
-          can_view: boolean | null
-          created_at: string | null
-          department_id: string
-          id: string
-          module_name: string
-          updated_at: string | null
-        }
-        Insert: {
-          can_create?: boolean | null
-          can_delete?: boolean | null
-          can_edit?: boolean | null
-          can_view?: boolean | null
-          created_at?: string | null
-          department_id: string
-          id?: string
-          module_name: string
-          updated_at?: string | null
-        }
-        Update: {
-          can_create?: boolean | null
-          can_delete?: boolean | null
-          can_edit?: boolean | null
-          can_view?: boolean | null
-          created_at?: string | null
-          department_id?: string
-          id?: string
-          module_name?: string
-          updated_at?: string | null
+          os?: string
+          prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
+          prioridade_alterada?: string | null
+          prioridade_alterada_por?: string | null
+          sla_deadline?: string | null
+          sla_violado?: boolean | null
+          sla_violado_em?: string | null
+          status?: Database["public"]["Enums"]["chamado_status"] | null
+          tecnico_id?: string | null
+          usuario_id?: string
+          vinculado_em?: string | null
+          vinculado_por?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "department_permissions_department_id_fkey"
-            columns: ["department_id"]
+            foreignKeyName: "chamados_chamado_pai_id_fkey"
+            columns: ["chamado_pai_id"]
             isOneToOne: false
-            referencedRelation: "departments"
+            referencedRelation: "chamados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamados_prioridade_alterada_por_fkey"
+            columns: ["prioridade_alterada_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamados_tecnico_id_fkey"
+            columns: ["tecnico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamados_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamados_vinculado_por_fkey"
+            columns: ["vinculado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      departments: {
+      comentarios_chamado: {
         Row: {
-          created_at: string | null
+          atualizado_em: string | null
+          autor_id: string
+          chamado_id: string
+          comentario: string
+          criado_em: string | null
+          deletado_em: string | null
           id: string
-          name: string
-          organization_id: string | null
+          visibilidade_interna: boolean | null
         }
         Insert: {
-          created_at?: string | null
+          atualizado_em?: string | null
+          autor_id: string
+          chamado_id: string
+          comentario: string
+          criado_em?: string | null
+          deletado_em?: string | null
           id?: string
-          name: string
-          organization_id?: string | null
+          visibilidade_interna?: boolean | null
         }
         Update: {
-          created_at?: string | null
+          atualizado_em?: string | null
+          autor_id?: string
+          chamado_id?: string
+          comentario?: string
+          criado_em?: string | null
+          deletado_em?: string | null
           id?: string
-          name?: string
-          organization_id?: string | null
+          visibilidade_interna?: boolean | null
         }
         Relationships: [
           {
-            foreignKeyName: "departments_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "comentarios_chamado_autor_id_fkey"
+            columns: ["autor_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comentarios_chamado_chamado_id_fkey"
+            columns: ["chamado_id"]
+            isOneToOne: false
+            referencedRelation: "chamados"
             referencedColumns: ["id"]
           },
         ]
       }
-      kanban_settings: {
+      expedientes: {
         Row: {
-          config: Json
-          created_at: string | null
+          ativo: boolean | null
+          atualizado_em: string | null
+          deletado_em: string | null
+          entrada: string
+          gerado_em: string | null
           id: string
-          organization_id: string | null
-          updated_at: string | null
-          user_id: string | null
+          saida: string
+          usuario_id: string
         }
         Insert: {
-          config?: Json
-          created_at?: string | null
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          deletado_em?: string | null
+          entrada: string
+          gerado_em?: string | null
           id?: string
-          organization_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          saida: string
+          usuario_id: string
         }
         Update: {
-          config?: Json
-          created_at?: string | null
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          deletado_em?: string | null
+          entrada?: string
+          gerado_em?: string | null
           id?: string
-          organization_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          saida?: string
+          usuario_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "kanban_settings_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "expedientes_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      notifications: {
+      ordens_de_servico: {
         Row: {
-          content: string
-          created_at: string | null
+          atualizado_em: string | null
+          chamado_id: string
+          deletado_em: string | null
+          gerado_em: string | null
           id: string
-          metadata: Json | null
-          organization_id: string | null
-          recipient_email: string
-          status: string | null
-          subject: string
+          servico_id: string
         }
         Insert: {
-          content: string
-          created_at?: string | null
+          atualizado_em?: string | null
+          chamado_id: string
+          deletado_em?: string | null
+          gerado_em?: string | null
           id?: string
-          metadata?: Json | null
-          organization_id?: string | null
-          recipient_email: string
-          status?: string | null
-          subject: string
+          servico_id: string
         }
         Update: {
-          content?: string
-          created_at?: string | null
+          atualizado_em?: string | null
+          chamado_id?: string
+          deletado_em?: string | null
+          gerado_em?: string | null
           id?: string
-          metadata?: Json | null
-          organization_id?: string | null
-          recipient_email?: string
-          status?: string | null
-          subject?: string
+          servico_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "notifications_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "ordens_de_servico_chamado_id_fkey"
+            columns: ["chamado_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "chamados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_de_servico_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
             referencedColumns: ["id"]
           },
         ]
@@ -223,80 +274,74 @@ export type Database = {
         }
         Relationships: []
       }
-      positions: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          organization_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-          organization_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-          organization_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "positions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
+          ativo: boolean | null
+          atualizado_em: string | null
           avatar_url: string | null
           created_at: string
+          deletado_em: string | null
           department_id: string | null
           email: string
-          full_name: string | null
+          gerado_em: string | null
           id: string
           is_master: boolean | null
+          nivel: Database["public"]["Enums"]["nivel_tecnico"] | null
+          nome: string | null
           organization_id: string | null
           position_id: string | null
+          ramal: string | null
+          regra: Database["public"]["Enums"]["regra"]
+          setor: Database["public"]["Enums"]["setor"] | null
+          sobrenome: string | null
+          telefone: string | null
           updated_at: string
         }
         Insert: {
+          ativo?: boolean | null
+          atualizado_em?: string | null
           avatar_url?: string | null
           created_at?: string
+          deletado_em?: string | null
           department_id?: string | null
           email: string
-          full_name?: string | null
+          gerado_em?: string | null
           id: string
           is_master?: boolean | null
+          nivel?: Database["public"]["Enums"]["nivel_tecnico"] | null
+          nome?: string | null
           organization_id?: string | null
           position_id?: string | null
+          ramal?: string | null
+          regra?: Database["public"]["Enums"]["regra"]
+          setor?: Database["public"]["Enums"]["setor"] | null
+          sobrenome?: string | null
+          telefone?: string | null
           updated_at?: string
         }
         Update: {
+          ativo?: boolean | null
+          atualizado_em?: string | null
           avatar_url?: string | null
           created_at?: string
+          deletado_em?: string | null
           department_id?: string | null
           email?: string
-          full_name?: string | null
+          gerado_em?: string | null
           id?: string
           is_master?: boolean | null
+          nivel?: Database["public"]["Enums"]["nivel_tecnico"] | null
+          nome?: string | null
           organization_id?: string | null
           position_id?: string | null
+          ramal?: string | null
+          regra?: Database["public"]["Enums"]["regra"]
+          setor?: Database["public"]["Enums"]["setor"] | null
+          sobrenome?: string | null
+          telefone?: string | null
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "profiles_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "profiles_organization_id_fkey"
             columns: ["organization_id"]
@@ -304,144 +349,175 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      reembolsos: {
+        Row: {
+          aprovado_em: string | null
+          aprovador_id: string | null
+          atualizado_em: string | null
+          categoria: Database["public"]["Enums"]["categoria_reembolso"]
+          comprovante_pagamento_url: string | null
+          deletado_em: string | null
+          descricao: string
+          gerado_em: string | null
+          id: string
+          motivo_rejeicao: string | null
+          numero: string
+          pagador_id: string | null
+          pago_em: string | null
+          setor: Database["public"]["Enums"]["setor"] | null
+          solicitante_id: string
+          status: Database["public"]["Enums"]["reembolso_status"] | null
+          valor: number
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovador_id?: string | null
+          atualizado_em?: string | null
+          categoria: Database["public"]["Enums"]["categoria_reembolso"]
+          comprovante_pagamento_url?: string | null
+          deletado_em?: string | null
+          descricao: string
+          gerado_em?: string | null
+          id?: string
+          motivo_rejeicao?: string | null
+          numero: string
+          pagador_id?: string | null
+          pago_em?: string | null
+          setor?: Database["public"]["Enums"]["setor"] | null
+          solicitante_id: string
+          status?: Database["public"]["Enums"]["reembolso_status"] | null
+          valor: number
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovador_id?: string | null
+          atualizado_em?: string | null
+          categoria?: Database["public"]["Enums"]["categoria_reembolso"]
+          comprovante_pagamento_url?: string | null
+          deletado_em?: string | null
+          descricao?: string
+          gerado_em?: string | null
+          id?: string
+          motivo_rejeicao?: string | null
+          numero?: string
+          pagador_id?: string | null
+          pago_em?: string | null
+          setor?: Database["public"]["Enums"]["setor"] | null
+          solicitante_id?: string
+          status?: Database["public"]["Enums"]["reembolso_status"] | null
+          valor?: number
+        }
+        Relationships: [
           {
-            foreignKeyName: "profiles_position_id_fkey"
-            columns: ["position_id"]
+            foreignKeyName: "reembolsos_aprovador_id_fkey"
+            columns: ["aprovador_id"]
             isOneToOne: false
-            referencedRelation: "positions"
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reembolsos_pagador_id_fkey"
+            columns: ["pagador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reembolsos_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      system_settings: {
+      servicos: {
         Row: {
-          favicon_url: string | null
+          ativo: boolean | null
+          atualizado_em: string | null
+          deletado_em: string | null
+          descricao: string | null
+          gerado_em: string | null
           id: string
-          landing_page_config: Json | null
-          logo_url: string | null
-          menu_config: Json | null
-          primary_color: string | null
-          system_name: string | null
-          ticket_categories: string[] | null
-          updated_at: string | null
+          nome: string
         }
         Insert: {
-          favicon_url?: string | null
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          deletado_em?: string | null
+          descricao?: string | null
+          gerado_em?: string | null
           id?: string
-          landing_page_config?: Json | null
-          logo_url?: string | null
-          menu_config?: Json | null
-          primary_color?: string | null
-          system_name?: string | null
-          ticket_categories?: string[] | null
-          updated_at?: string | null
+          nome: string
         }
         Update: {
-          favicon_url?: string | null
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          deletado_em?: string | null
+          descricao?: string | null
+          gerado_em?: string | null
           id?: string
-          landing_page_config?: Json | null
-          logo_url?: string | null
-          menu_config?: Json | null
-          primary_color?: string | null
-          system_name?: string | null
-          ticket_categories?: string[] | null
-          updated_at?: string | null
+          nome?: string
         }
         Relationships: []
       }
-      ticket_comments: {
+      transferencias_chamado: {
         Row: {
-          author_id: string | null
-          body: string
-          created_at: string
+          chamado_id: string
           id: string
-          is_internal: boolean
-          ticket_id: string
+          motivo: string
+          tecnico_anterior_id: string | null
+          tecnico_novo_id: string
+          transferido_em: string | null
+          transferido_por: string
         }
         Insert: {
-          author_id?: string | null
-          body: string
-          created_at?: string
+          chamado_id: string
           id?: string
-          is_internal?: boolean
-          ticket_id: string
+          motivo: string
+          tecnico_anterior_id?: string | null
+          tecnico_novo_id: string
+          transferido_em?: string | null
+          transferido_por: string
         }
         Update: {
-          author_id?: string | null
-          body?: string
-          created_at?: string
+          chamado_id?: string
           id?: string
-          is_internal?: boolean
-          ticket_id?: string
+          motivo?: string
+          tecnico_anterior_id?: string | null
+          tecnico_novo_id?: string
+          transferido_em?: string | null
+          transferido_por?: string
         }
         Relationships: [
           {
-            foreignKeyName: "ticket_comments_ticket_id_fkey"
-            columns: ["ticket_id"]
+            foreignKeyName: "transferencias_chamado_chamado_id_fkey"
+            columns: ["chamado_id"]
             isOneToOne: false
-            referencedRelation: "tickets"
+            referencedRelation: "chamados"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      tickets: {
-        Row: {
-          assignee_id: string | null
-          attachment_urls: string[] | null
-          category: string | null
-          created_at: string
-          description: string | null
-          first_response_at: string | null
-          id: string
-          number: number
-          organization_id: string
-          priority: Database["public"]["Enums"]["ticket_priority"]
-          requester_id: string | null
-          resolved_at: string | null
-          status: string
-          subject: string
-          updated_at: string
-        }
-        Insert: {
-          assignee_id?: string | null
-          attachment_urls?: string[] | null
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          first_response_at?: string | null
-          id?: string
-          number?: number
-          organization_id: string
-          priority?: Database["public"]["Enums"]["ticket_priority"]
-          requester_id?: string | null
-          resolved_at?: string | null
-          status?: string
-          subject: string
-          updated_at?: string
-        }
-        Update: {
-          assignee_id?: string | null
-          attachment_urls?: string[] | null
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          first_response_at?: string | null
-          id?: string
-          number?: number
-          organization_id?: string
-          priority?: Database["public"]["Enums"]["ticket_priority"]
-          requester_id?: string | null
-          resolved_at?: string | null
-          status?: string
-          subject?: string
-          updated_at?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "tickets_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "transferencias_chamado_tecnico_anterior_id_fkey"
+            columns: ["tecnico_anterior_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_chamado_tecnico_novo_id_fkey"
+            columns: ["tecnico_novo_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_chamado_transferido_por_fkey"
+            columns: ["transferido_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -506,6 +582,46 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "agent" | "customer"
+      categoria_reembolso:
+        | "TRANSPORTE"
+        | "ALIMENTACAO"
+        | "HOSPEDAGEM"
+        | "MATERIAL"
+        | "OUTRO"
+      chamado_status:
+        | "ABERTO"
+        | "EM_ATENDIMENTO"
+        | "ENCERRADO"
+        | "CANCELADO"
+        | "REABERTO"
+      nivel_tecnico: "N1" | "N2" | "N3"
+      prioridade_chamado: "P1" | "P2" | "P3" | "P4" | "P5"
+      reembolso_status:
+        | "PENDENTE"
+        | "APROVADO"
+        | "REJEITADO"
+        | "PAGO"
+        | "CANCELADO"
+      regra:
+        | "ADMIN"
+        | "COMPRADOR"
+        | "GESTOR"
+        | "INVENTARIANTE"
+        | "TECNICO"
+        | "USUARIO"
+      setor:
+        | "ADMINISTRACAO"
+        | "ALMOXARIFADO"
+        | "CALL_CENTER"
+        | "COMERCIAL"
+        | "DEPARTAMENTO_PESSOAL"
+        | "FINANCEIRO"
+        | "JURIDICO"
+        | "LOGISTICA"
+        | "MARKETING"
+        | "QUALIDADE"
+        | "RECURSOS_HUMANOS"
+        | "TECNOLOGIA_INFORMACAO"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "waiting" | "resolved" | "closed"
     }
@@ -636,6 +752,51 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "agent", "customer"],
+      categoria_reembolso: [
+        "TRANSPORTE",
+        "ALIMENTACAO",
+        "HOSPEDAGEM",
+        "MATERIAL",
+        "OUTRO",
+      ],
+      chamado_status: [
+        "ABERTO",
+        "EM_ATENDIMENTO",
+        "ENCERRADO",
+        "CANCELADO",
+        "REABERTO",
+      ],
+      nivel_tecnico: ["N1", "N2", "N3"],
+      prioridade_chamado: ["P1", "P2", "P3", "P4", "P5"],
+      reembolso_status: [
+        "PENDENTE",
+        "APROVADO",
+        "REJEITADO",
+        "PAGO",
+        "CANCELADO",
+      ],
+      regra: [
+        "ADMIN",
+        "COMPRADOR",
+        "GESTOR",
+        "INVENTARIANTE",
+        "TECNICO",
+        "USUARIO",
+      ],
+      setor: [
+        "ADMINISTRACAO",
+        "ALMOXARIFADO",
+        "CALL_CENTER",
+        "COMERCIAL",
+        "DEPARTAMENTO_PESSOAL",
+        "FINANCEIRO",
+        "JURIDICO",
+        "LOGISTICA",
+        "MARKETING",
+        "QUALIDADE",
+        "RECURSOS_HUMANOS",
+        "TECNOLOGIA_INFORMACAO",
+      ],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "waiting", "resolved", "closed"],
     },

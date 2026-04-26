@@ -57,6 +57,8 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
      ...(role === 'ADMIN' || role === 'MASTER' ? [
        { icon: Users, label: "Usuários", path: "/usuarios" },
        { icon: Lock, label: "Permissões", path: "/permissions" }
+       { icon: Lock, label: "Permissões", path: "/permissions" },
+       { icon: History, label: "Auditoria", path: "/audit" }
      ] : []),
     { icon: BarChart3, label: "Relatórios", path: "/reports" },
     { icon: User, label: "Perfil", path: "/perfil" },

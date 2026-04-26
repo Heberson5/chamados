@@ -204,8 +204,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <Input type="password" value={emailSettings.smtp_pass} onChange={e => setEmailSettings({ ...emailSettings, smtp_pass: e.target.value })} />
                       </div>
                     </div>
-                    <div className="border-t pt-6 space-y-4">
-                    <div className="border-t pt-6 space-y-4">
+                     <div className="border-t pt-6 space-y-4">
                       <div className="flex justify-between items-center">
                         <Label className="text-lg font-bold">Modelos de E-mail (Templates)</Label>
                         <Button variant="outline" size="sm" onClick={() => setEmailTemplates([...emailTemplates, { id: Math.random().toString(), name: "Novo Modelo", subject: "", body: "" }])}>

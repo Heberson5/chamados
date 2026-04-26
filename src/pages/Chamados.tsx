@@ -87,8 +87,20 @@
       e.preventDefault();
       setIsLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Usuário não autenticado");
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) throw new Error("Usuário não autenticado. Por favor, faça login novamente.");
+
+        // Verificar se o perfil existe
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error("Perfil não encontrado para o usuário:", user.id, profileError);
+          throw new Error("Seu perfil de usuário não foi encontrado. Entre em contato com o administrador.");
+        }
 
         const uploadedUrls = [];
         for (const file of files) {

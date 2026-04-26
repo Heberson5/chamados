@@ -25,7 +25,7 @@ export default function Chamados() {
   const [newTicket, setNewTicket] = useState<{
     titulo: string;
     descricao: string;
-    prioridade: "P1" | "P2" | "P3" | "P4" | "P5"
+      prioridade: "Crítico" | "Alto" | "Médio" | "Baixo" | "Planejado"
   }>({
     titulo: "",
     descricao: "",
@@ -134,7 +134,10 @@ export default function Chamados() {
       const { error: insertError } = await supabase.from("chamados").insert({
         titulo: newTicket.titulo || "Sem título",
         descricao: newTicket.descricao,
-        prioridade: newTicket.prioridade,
+        prioridade: newTicket.prioridade === "Crítico" ? "P1" : 
+                   newTicket.prioridade === "Alto" ? "P2" : 
+                   newTicket.prioridade === "Médio" ? "P3" : 
+                   newTicket.prioridade === "Baixo" ? "P4" : "P5",
         usuario_id: user.id,
         status: "ABERTO",
         anexos: uploadedUrls.length > 0 ? uploadedUrls : null
@@ -179,11 +182,11 @@ export default function Chamados() {
 
    const getPriorityLabel = (priority: string) => {
      const labels: Record<string, string> = {
-       P1: "Crítica",
-       P2: "Alta",
-       P3: "Média",
-       P4: "Baixa",
-       P5: "Muito Baixa"
+        P1: "Crítico",
+        P2: "Alto",
+        P3: "Médio",
+        P4: "Baixo",
+        P5: "Muito Baixo"
      };
      return labels[priority] || priority;
    };
@@ -252,10 +255,10 @@ export default function Chamados() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="P1">Crítica</SelectItem>
-                      <SelectItem value="P2">Alta</SelectItem>
-                      <SelectItem value="P3">Média</SelectItem>
-                      <SelectItem value="P4">Baixa</SelectItem>
+                      <SelectItem value="P1">Crítico</SelectItem>
+                      <SelectItem value="P2">Alto</SelectItem>
+                      <SelectItem value="P3">Médio</SelectItem>
+                      <SelectItem value="P4">Baixo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

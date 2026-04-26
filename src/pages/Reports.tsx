@@ -1,7 +1,24 @@
+ import { useEffect } from "react";
+ import { useNavigate } from "react-router-dom";
+ import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
  
  export default function Reports() {
+   const navigate = useNavigate();
+
+   useEffect(() => {
+     const checkRole = async () => {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) return;
+       const { data } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
+       if (data && data.regra !== 'ADMIN' && data.regra !== 'MASTER' && !data.is_master) {
+         navigate("/chamados");
+       }
+     };
+     checkRole();
+   }, [navigate]);
+
    const data = [
      { name: 'Hardware', value: 45 },
      { name: 'Software', value: 25 },

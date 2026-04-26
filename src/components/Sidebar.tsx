@@ -1,4 +1,4 @@
- import { useState } from "react";
+ import { useState, useEffect } from "react";
  import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard,
@@ -13,7 +13,8 @@ import {
   User,
   BarChart3,
   Package,
-  History
+  History,
+  Users
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
@@ -26,13 +27,33 @@ interface SidebarProps {
 
 export default function Sidebar({ onMobileClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
    const { theme, setTheme } = useTheme();
    const navigate = useNavigate();
    const location = useLocation();
  
+
+  useEffect(() => {
+    const getProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("regra, is_master")
+          .eq("id", user.id)
+          .single();
+        if (data) {
+          setRole(data.is_master ? 'MASTER' : data.regra);
+        }
+      }
+    };
+    getProfile();
+  }, []);
+
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Ticket, label: "Chamados", path: "/chamados" },
+    ...(role === 'ADMIN' || role === 'MASTER' ? [{ icon: Users, label: "Usuários", path: "/usuarios" }] : []),
     { icon: BarChart3, label: "Relatórios", path: "/reports" },
     { icon: User, label: "Perfil", path: "/perfil" },
     { icon: Settings, label: "Configurações", path: "/settings" },

@@ -1131,6 +1131,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_master_user: { Args: never; Returns: boolean }
       is_member_of_same_org: {
         Args: { _profile_org_id: string }
         Returns: boolean
@@ -1139,6 +1140,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      is_tecnico: { Args: never; Returns: boolean }
       log_user_action: { Args: { p_action: string }; Returns: undefined }
     }
     Enums: {
@@ -1170,6 +1172,7 @@ export type Database = {
         | "INVENTARIANTE"
         | "TECNICO"
         | "USUARIO"
+        | "MASTER"
       setor:
         | "ADMINISTRACAO"
         | "ALMOXARIFADO"
@@ -1343,6 +1346,7 @@ export const Constants = {
         "INVENTARIANTE",
         "TECNICO",
         "USUARIO",
+        "MASTER",
       ],
       setor: [
         "ADMINISTRACAO",

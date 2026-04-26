@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState } from "react";
+ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
+   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalTickets: 0,
     openTickets: 0,
@@ -20,34 +22,43 @@ export default function Dashboard() {
     activeUsers: 0
   });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      const fetchStats = async () => {
-        const [
-          { count: total },
-          { count: open },
-          { count: resolved },
-          { count: sla },
-          { count: users }
-        ] = await Promise.all([
-          supabase.from("chamados").select("*", { count: 'exact', head: true }),
-          supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ABERTO'),
-          supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ENCERRADO'),
-          supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('sla_violado', true),
-          supabase.from("profiles").select("*", { count: 'exact', head: true }).eq('ativo', true)
-        ]);
+   useEffect(() => {
+     const checkRoleAndFetchStats = async () => {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) return;
+       
+       const { data: profile } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
+       
+       if (profile && profile.regra !== 'ADMIN' && profile.regra !== 'MASTER' && !profile.is_master) {
+         navigate("/chamados");
+         return;
+       }
 
-        setStats({
-          totalTickets: total || 0,
-          openTickets: open || 0,
-          resolvedTickets: resolved || 0,
-          slaViolations: sla || 0,
-          activeUsers: users || 0
-        });
-      };
-    };
-    fetchStats();
-  }, []);
+       const [
+         { count: total },
+         { count: open },
+         { count: resolved },
+         { count: sla },
+         { count: users }
+       ] = await Promise.all([
+         supabase.from("chamados").select("*", { count: 'exact', head: true }),
+         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ABERTO'),
+         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ENCERRADO'),
+         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('sla_violado', true),
+         supabase.from("profiles").select("*", { count: 'exact', head: true }).eq('ativo', true)
+       ]);
+
+       setStats({
+         totalTickets: total || 0,
+         openTickets: open || 0,
+         resolvedTickets: resolved || 0,
+         slaViolations: sla || 0,
+         activeUsers: users || 0
+       });
+     };
+
+     checkRoleAndFetchStats();
+   }, [navigate]);
 
   const cards = [
     { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },

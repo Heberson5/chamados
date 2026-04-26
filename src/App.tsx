@@ -8,7 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Chamados from "./pages/Chamados";
 import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
+ import Profile from "./pages/Profile";
+ import Users from "./pages/Users";
  import Reports from "./pages/Reports";
 
 const queryClient = new QueryClient({
@@ -33,6 +34,7 @@ const App = () => {
                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/chamados" element={<Chamados />} />
                 <Route path="/reports" element={<Reports />} />
+               <Route path="/usuarios" element={<Users />} />
               <Route path="/perfil" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

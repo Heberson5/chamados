@@ -6,7 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +21,24 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
   const [closureNote, setClosureNote] = useState("");
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("regra, is_master")
+          .eq("id", user.id)
+          .single();
+        if (data) {
+          setUserRole(data.is_master ? 'MASTER' : data.regra);
+        }
+      }
+    };
+    getRole();
+  }, []);
 
   const columns = [
     { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
@@ -134,7 +152,7 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
                     >
                       <Eye size={12} /> Detalhes
                     </Button>
-                    {column.id === "ABERTO" && (
+                    {column.id === "ABERTO" && userRole !== "USUARIO" && (
                       <Button 
                         size="sm" 
                         className="flex-1 gap-2 text-[10px] h-8"
@@ -143,7 +161,7 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
                         <Play size={12} /> Atender
                       </Button>
                     )}
-                    {column.id === "EM_ATENDIMENTO" && (
+                    {column.id === "EM_ATENDIMENTO" && userRole !== "USUARIO" && (
                       <Button 
                         size="sm" 
                         variant="outline"

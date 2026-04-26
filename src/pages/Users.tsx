@@ -431,7 +431,11 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                  </div>
                  <div className="space-y-2">
                    <Label>E-mail</Label>
-                   <Input type="email" value={editUser.email} disabled className="bg-muted" />
+                  <Input
+                    type="email"
+                    value={editUser.email}
+                    onChange={e => setEditUser({ ...editUser, email: e.target.value })}
+                  />
                  </div>
                  <div className="space-y-2">
                    <Label>Permissão</Label>

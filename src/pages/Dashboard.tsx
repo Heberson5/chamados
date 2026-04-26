@@ -3,7 +3,7 @@
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
   import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-  import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon, Play, Pause, History } from "lucide-react";
+import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon, Play, Pause, History, LayoutGrid } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay, eachHourOfInterval, isSameHour } from "date-fns";
   import { ptBR } from "date-fns/locale";
@@ -14,14 +14,16 @@ import { supabase } from "@/integrations/supabase/client";
  export default function Dashboard() {
    const navigate = useNavigate();
    const [loading, setLoading] = useState(true);
-   const [tickets, setTickets] = useState<any[]>([]);
-   const [profiles, setProfiles] = useState<any[]>([]);
-   const [filters, setFilters] = useState({
-     period: "7d",
-     technician: "all",
-     user: "all",
-     dateRange: { from: subDays(new Date(), 7), to: new Date() }
-   });
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [kanbanConfig, setKanbanConfig] = useState<any[]>([]);
+  const [filters, setFilters] = useState({
+    period: "7d",
+    technician: "all",
+    user: "all",
+    statusType: "all",
+    dateRange: { from: subDays(new Date(), 7), to: new Date() }
+  });
  
      const [stats, setStats] = useState({
        totalTickets: 0,
@@ -34,8 +36,9 @@ import { supabase } from "@/integrations/supabase/client";
        totalPausedTime: 0,
        totalWaitingTime: 0,
        byPriority: [] as any[],
-       byStatus: [] as any[],
-       byCategory: [] as any[]
+        byStatus: [] as any[],
+        byStatusType: [] as any[],
+        byCategory: [] as any[]
      });
  
    useEffect(() => {
@@ -50,24 +53,26 @@ import { supabase } from "@/integrations/supabase/client";
      checkRole();
    }, [navigate]);
  
-   const fetchData = async () => {
-     try {
-       const [ticketsRes, profilesRes] = await Promise.all([
-         supabase.from("chamados").select("*").order('gerado_em', { ascending: false }),
-         supabase.from("profiles").select("*").eq('ativo', true)
-       ]);
- 
-       if (ticketsRes.data) setTickets(ticketsRes.data);
-       if (profilesRes.data) setProfiles(profilesRes.data);
- 
-       const activeUsersCount = profilesRes.data?.length || 0;
-       setStats(prev => ({ ...prev, activeUsers: activeUsersCount }));
-     } catch (error) {
-       console.error("Error fetching dashboard data:", error);
-     } finally {
-       setLoading(false);
-     }
-   };
+  const fetchData = async () => {
+    try {
+      const [ticketsRes, profilesRes, settingsRes] = await Promise.all([
+        supabase.from("chamados").select("*").order('gerado_em', { ascending: false }),
+        supabase.from("profiles").select("*").eq('ativo', true),
+        supabase.from("system_settings").select("*").eq('key', 'kanban_config').single()
+      ]);
+
+      if (ticketsRes.data) setTickets(ticketsRes.data);
+      if (profilesRes.data) setProfiles(profilesRes.data);
+      if (settingsRes.data) setKanbanConfig(settingsRes.data.value as any[]);
+
+      const activeUsersCount = profilesRes.data?.length || 0;
+      setStats(prev => ({ ...prev, activeUsers: activeUsersCount }));
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
  
     useEffect(() => {
       fetchData();
@@ -107,22 +112,34 @@ import { supabase } from "@/integrations/supabase/client";
        else if (filters.period === "1y") startDate = subDays(new Date(), 365);
      }
  
-     result = result.filter(t => {
-       const date = new Date(t.gerado_em);
-       const withinInterval = isWithinInterval(date, { start: startOfDay(startDate), end: endOfDay(endDate) });
-       const technicianMatch = filters.technician === "all" || t.tecnico_id === filters.technician;
-       const userMatch = filters.user === "all" || t.usuario_id === filters.user;
-       return withinInterval && technicianMatch && userMatch;
-     });
+    result = result.filter(t => {
+      const date = new Date(t.gerado_em);
+      const withinInterval = isWithinInterval(date, { start: startOfDay(startDate), end: endOfDay(endDate) });
+      const technicianMatch = filters.technician === "all" || t.tecnico_id === filters.technician;
+      const userMatch = filters.user === "all" || t.usuario_id === filters.user;
+      
+      let statusMatch = true;
+      if (filters.statusType !== "all") {
+        const statusDef = kanbanConfig.find(c => c.id === t.status);
+        statusMatch = statusDef?.type === filters.statusType;
+      }
+
+      return withinInterval && technicianMatch && userMatch && statusMatch;
+    });
+
+    return result;
+  }, [tickets, filters, kanbanConfig]);
  
-     return result;
-   }, [tickets, filters]);
- 
-    useEffect(() => {
-        const total = filteredTickets.length;
-        const open = filteredTickets.filter(t => t.status === 'ABERTO').length;
-        const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
-        const sla = filteredTickets.filter(t => t.sla_violado).length;
+  useEffect(() => {
+    const total = filteredTickets.length;
+    
+    // Get IDs of statuses that represent "open" and "resolved"
+    const openStatusIds = kanbanConfig.filter(c => c.type !== 'completed').map(c => c.id);
+    const resolvedStatusIds = kanbanConfig.filter(c => c.type === 'completed').map(c => c.id);
+    
+    const open = filteredTickets.filter(t => openStatusIds.includes(t.status) || (!kanbanConfig.length && t.status !== 'ENCERRADO')).length;
+    const resolved = filteredTickets.filter(t => resolvedStatusIds.includes(t.status) || (!kanbanConfig.length && t.status === 'ENCERRADO')).length;
+    const sla = filteredTickets.filter(t => t.sla_violado).length;
   
          // By Priority
          const priorityCounts = filteredTickets.reduce((acc: any, t) => {
@@ -132,12 +149,32 @@ import { supabase } from "@/integrations/supabase/client";
          }, {});
          const byPriority = Object.keys(priorityCounts).map(name => ({ name, value: priorityCounts[name] }));
   
-        // By Status
+        // By Status (using titles from config)
         const statusCounts = filteredTickets.reduce((acc: any, t) => {
-          acc[t.status] = (acc[t.status] || 0) + 1;
+          const statusDef = kanbanConfig.find(c => c.id === t.status);
+          const label = statusDef ? statusDef.title : t.status;
+          acc[label] = (acc[label] || 0) + 1;
           return acc;
         }, {});
         const byStatus = Object.keys(statusCounts).map(s => ({ name: s, value: statusCounts[s] }));
+
+        // By Status Type
+        const typeLabels: any = {
+          waiting: "Aguardando",
+          in_progress: "Andamento",
+          paused: "Pausado",
+          waiting_user: "Aguardando Usuário",
+          completed: "Encerrado"
+        };
+
+        const typeCounts = filteredTickets.reduce((acc: any, t) => {
+          const statusDef = kanbanConfig.find(c => c.id === t.status);
+          const type = statusDef?.type || (t.status === 'ENCERRADO' ? 'completed' : 'waiting');
+          const label = typeLabels[type] || type;
+          acc[label] = (acc[label] || 0) + 1;
+          return acc;
+        }, {});
+        const byStatusType = Object.keys(typeCounts).map(name => ({ name, value: typeCounts[name] }));
   
         // Calculate averages
         let acceptanceTimes: number[] = [];
@@ -172,7 +209,8 @@ import { supabase } from "@/integrations/supabase/client";
           totalPausedTime: Math.round(totalPaused / 60),
           totalWaitingTime: Math.round(totalWaiting / 60),
           byPriority,
-          byStatus
+           byStatus,
+           byStatusType
         }));
     }, [filteredTickets]);
  
@@ -286,29 +324,47 @@ import { supabase } from "@/integrations/supabase/client";
              </Select>
            </div>
  
-           <div className="space-y-2">
-             <label className="text-xs font-medium flex items-center gap-1"><Users size={12} /> Usuário</label>
-             <Select value={filters.user} onValueChange={(v) => setFilters({ ...filters, user: v })}>
-               <SelectTrigger className="w-[200px] h-9 bg-background">
-                 <SelectValue placeholder="Todos os usuários" />
-               </SelectTrigger>
-               <SelectContent>
-                 <SelectItem value="all">Todos os usuários</SelectItem>
-                 {profiles.map(p => (
-                   <SelectItem key={p.id} value={p.id}>{p.nome} {p.sobrenome}</SelectItem>
-                 ))}
-               </SelectContent>
-             </Select>
-           </div>
- 
-           <Button variant="ghost" className="h-9 text-xs" onClick={() => {
-             setFilters({
-               period: "7d",
-               technician: "all",
-               user: "all",
-               dateRange: { from: subDays(new Date(), 7), to: new Date() }
-             });
-           }}>Limpar Filtros</Button>
+          <div className="space-y-2">
+            <label className="text-xs font-medium flex items-center gap-1"><Users size={12} /> Usuário</label>
+            <Select value={filters.user} onValueChange={(v) => setFilters({ ...filters, user: v })}>
+              <SelectTrigger className="w-[200px] h-9 bg-background">
+                <SelectValue placeholder="Todos os usuários" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os usuários</SelectItem>
+                {profiles.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.nome} {p.sobrenome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium flex items-center gap-1"><LayoutGrid size={12} /> Tipo de Status</label>
+            <Select value={filters.statusType} onValueChange={(v) => setFilters({ ...filters, statusType: v })}>
+              <SelectTrigger className="w-[200px] h-9 bg-background">
+                <SelectValue placeholder="Todos os tipos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="waiting">Aguardando</SelectItem>
+                <SelectItem value="in_progress">Andamento</SelectItem>
+                <SelectItem value="paused">Pausado</SelectItem>
+                <SelectItem value="waiting_user">Aguardando o Usuário</SelectItem>
+                <SelectItem value="completed">Encerrado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button variant="ghost" className="h-9 text-xs" onClick={() => {
+            setFilters({
+              period: "7d",
+              technician: "all",
+              user: "all",
+              statusType: "all",
+              dateRange: { from: subDays(new Date(), 7), to: new Date() }
+            });
+          }}>Limpar Filtros</Button>
          </div>
        </Card>
        
@@ -329,6 +385,44 @@ import { supabase } from "@/integrations/supabase/client";
        </div>
  
          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Chamados por Tipo de Status</CardTitle>
+                <CardDescription>Agrupamento por categoria de status</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.byStatusType}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                       {stats.byStatusType.map((entry, index) => {
+                         const colors = [
+                           '#3b82f6', // waiting
+                           '#f59e0b', // in_progress
+                           '#94a3b8', // paused
+                           '#6366f1', // waiting_user
+                           '#10b981', // completed
+                         ];
+                         return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />;
+                       })}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
            <Card>
              <CardHeader>
                <CardTitle>Tempos Médios (min)</CardTitle>

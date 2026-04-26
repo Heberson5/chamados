@@ -242,10 +242,11 @@ export default function Chamados() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="P1">Crítico</SelectItem>
-                      <SelectItem value="P2">Alto</SelectItem>
-                      <SelectItem value="P3">Médio</SelectItem>
-                      <SelectItem value="P4">Baixo</SelectItem>
+                       <SelectItem value="P1">{getPriorityLabel("P1")}</SelectItem>
+                       <SelectItem value="P2">{getPriorityLabel("P2")}</SelectItem>
+                       <SelectItem value="P3">{getPriorityLabel("P3")}</SelectItem>
+                       <SelectItem value="P4">{getPriorityLabel("P4")}</SelectItem>
+                       <SelectItem value="P5">{getPriorityLabel("P5")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

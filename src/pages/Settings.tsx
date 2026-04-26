@@ -35,13 +35,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       { id: '8', label: "Configurações", path: "/settings", visible: true },
     ];
 
-    const [layoutConfig, setLayoutConfig] = useState({ 
-      companyLogo: "", 
-      companyName: "Help-Me System", 
-      sidebarColor: "bg-slate-900", 
-      accentColor: "#3b82f6", 
-      menuOrder: defaultMenuOrder
-    });
+     const [layoutConfig, setLayoutConfig] = useState({ 
+       companyLogo: "", 
+       companyFavicon: "",
+       companyName: "Help-Me System", 
+       sidebarColor: "bg-slate-900", 
+       accentColor: "#3b82f6", 
+       menuOrder: defaultMenuOrder
+     });
     const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
    const [isAdmin, setIsAdmin] = useState(false);
  
@@ -443,42 +444,82 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                   </CardHeader>
                   <CardContent className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-bold flex items-center gap-2"><ImageIcon size={16} /> Logo da Empresa</h3>
-                        <div className="flex items-center gap-4 border p-4 rounded-lg bg-muted/30">
-                          <div className="w-20 h-20 rounded border bg-background flex items-center justify-center overflow-hidden">
-                            {layoutConfig.companyLogo ? (
-                              <img src={layoutConfig.companyLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
-                            ) : (
-                              <ImageIcon size={32} className="text-muted-foreground opacity-20" />
-                            )}
-                          </div>
-                          <div className="flex-1 space-y-2">
-                            <Label htmlFor="logo-upload" className="cursor-pointer">
-                              <div className="flex items-center gap-2 text-xs bg-primary text-primary-foreground px-3 py-2 rounded-md hover:bg-primary/90 transition-colors w-fit">
-                                <Upload size={14} /> Selecionar Logo
-                              </div>
-                            </Label>
-                            <Input 
-                              id="logo-upload" 
-                              type="file" 
-                              className="hidden" 
-                              accept="image/*" 
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = (re) => {
-                                    setLayoutConfig({...layoutConfig, companyLogo: re.target?.result as string});
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                            />
-                            <p className="text-[10px] text-muted-foreground">Formatos sugeridos: PNG ou SVG transparente.</p>
-                          </div>
-                        </div>
-                      </div>
+                       <div className="space-y-4">
+                         <h3 className="text-sm font-bold flex items-center gap-2"><ImageIcon size={16} /> Identidade Visual</h3>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                           <div className="flex flex-col gap-2">
+                             <Label className="text-[10px] uppercase">Logo da Empresa</Label>
+                             <div className="flex items-center gap-4 border p-4 rounded-lg bg-muted/30 h-[100px]">
+                               <div className="w-12 h-12 rounded border bg-background flex items-center justify-center overflow-hidden shrink-0">
+                                 {layoutConfig.companyLogo ? (
+                                   <img src={layoutConfig.companyLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                                 ) : (
+                                   <ImageIcon size={24} className="text-muted-foreground opacity-20" />
+                                 )}
+                               </div>
+                               <div className="flex-1 space-y-2">
+                                 <Label htmlFor="logo-upload" className="cursor-pointer">
+                                   <div className="flex items-center gap-2 text-[10px] bg-primary text-primary-foreground px-2 py-1.5 rounded-md hover:bg-primary/90 transition-colors w-fit">
+                                     <Upload size={12} /> Selecionar Logo
+                                   </div>
+                                 </Label>
+                                 <Input 
+                                   id="logo-upload" 
+                                   type="file" 
+                                   className="hidden" 
+                                   accept="image/*" 
+                                   onChange={async (e) => {
+                                     const file = e.target.files?.[0];
+                                     if (file) {
+                                       const reader = new FileReader();
+                                       reader.onload = (re) => {
+                                         setLayoutConfig({...layoutConfig, companyLogo: re.target?.result as string});
+                                       };
+                                       reader.readAsDataURL(file);
+                                     }
+                                   }}
+                                 />
+                               </div>
+                             </div>
+                           </div>
+
+                           <div className="flex flex-col gap-2">
+                             <Label className="text-[10px] uppercase">Favicon (Guia do Navegador)</Label>
+                             <div className="flex items-center gap-4 border p-4 rounded-lg bg-muted/30 h-[100px]">
+                               <div className="w-12 h-12 rounded border bg-background flex items-center justify-center overflow-hidden shrink-0">
+                                 {layoutConfig.companyFavicon ? (
+                                   <img src={layoutConfig.companyFavicon} alt="Favicon" className="w-8 h-8 object-contain" />
+                                 ) : (
+                                   <ImageIcon size={24} className="text-muted-foreground opacity-20" />
+                                 )}
+                               </div>
+                               <div className="flex-1 space-y-2">
+                                 <Label htmlFor="favicon-upload" className="cursor-pointer">
+                                   <div className="flex items-center gap-2 text-[10px] bg-primary text-primary-foreground px-2 py-1.5 rounded-md hover:bg-primary/90 transition-colors w-fit">
+                                     <Upload size={12} /> Selecionar Ícone
+                                   </div>
+                                 </Label>
+                                 <Input 
+                                   id="favicon-upload" 
+                                   type="file" 
+                                   className="hidden" 
+                                   accept="image/*" 
+                                   onChange={async (e) => {
+                                     const file = e.target.files?.[0];
+                                     if (file) {
+                                       const reader = new FileReader();
+                                       reader.onload = (re) => {
+                                         setLayoutConfig({...layoutConfig, companyFavicon: re.target?.result as string});
+                                       };
+                                       reader.readAsDataURL(file);
+                                     }
+                                   }}
+                                 />
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
  
                       <div className="space-y-4">
                         <h3 className="text-sm font-bold flex items-center gap-2"><Type size={16} /> Identificação</h3>

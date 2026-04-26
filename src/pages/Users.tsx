@@ -12,8 +12,6 @@
  type Regra = Database["public"]["Enums"]["regra"];
  
  export default function Users() {
- 
- export default function Users() {
    const [users, setUsers] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const { toast } = useToast();

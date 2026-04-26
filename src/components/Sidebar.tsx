@@ -1,20 +1,21 @@
  import { useState } from "react";
  import { useNavigate, useLocation } from "react-router-dom";
- import { 
-    LayoutDashboard,
-    Ticket,
-    Settings,
-    ChevronLeft,
-    ChevronRight,
-    LogOut,
-    Moon,
-    Sun,
-    User,
-    Users,
-    Package,
-    Banknote,
-    BarChart3
- } from "lucide-react";
+import { 
+   LayoutDashboard,
+   Ticket,
+   Settings,
+   ChevronLeft,
+   ChevronRight,
+   LogOut,
+   Moon,
+   Sun,
+   Monitor,
+   User,
+   Users,
+   Package,
+   Banknote,
+   BarChart3
+} from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
  import { useTheme } from "@/components/ThemeProvider";
@@ -101,15 +102,25 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
                 "w-full justify-start h-10 transition-all",
                 collapsed ? "px-0 justify-center" : "px-4"
               )}
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              title={`Mudar para tema ${theme === "dark" ? "claro" : "escuro"}`}
+              onClick={() => {
+                if (theme === "system") setTheme("light");
+                else if (theme === "light") setTheme("dark");
+                else setTheme("system");
+              }}
+              title={`Tema: ${theme === "system" ? "Automático" : theme === "dark" ? "Escuro" : "Claro"}`}
             >
-              {theme === "dark" ? (
+              {theme === "system" ? (
+                <Monitor size={20} className={cn(!collapsed && "mr-2")} />
+              ) : theme === "dark" ? (
                 <Sun size={20} className={cn(!collapsed && "mr-2")} />
               ) : (
                 <Moon size={20} className={cn(!collapsed && "mr-2")} />
               )}
-              {!collapsed && <span>Tema {theme === "dark" ? "Claro" : "Escuro"}</span>}
+              {!collapsed && (
+                <span>
+                  Tema: {theme === "system" ? "Automático" : theme === "dark" ? "Claro" : "Escuro"}
+                </span>
+              )}
             </Button>
           </div>
  

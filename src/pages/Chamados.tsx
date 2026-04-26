@@ -8,7 +8,7 @@
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
  import { Label } from "@/components/ui/label";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
- import { useToast } from "@/components/ui/use-toast";
+ import { useToast } from "@/hooks/use-toast";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  
@@ -18,7 +18,11 @@
    const [statusFilter, setStatusFilter] = useState<string>("todos");
    const [isDialogOpen, setIsDialogOpen] = useState(false);
    const [isLoading, setIsLoading] = useState(false);
-   const [newTicket, setNewTicket] = useState({ os: "", descricao: "", prioridade: "P3" });
+   const [newTicket, setNewTicket] = useState<{ os: string; descricao: string; prioridade: "P1" | "P2" | "P3" | "P4" | "P5" }>({ 
+     os: "", 
+     descricao: "", 
+     prioridade: "P3" 
+   });
    const { toast } = useToast();
  
    const fetchTickets = useCallback(async () => {
@@ -50,13 +54,13 @@
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) throw new Error("Usuário não autenticado");
  
-       const { error } = await supabase.from("chamados").insert([
-         { 
-           ...newTicket, 
-           usuario_id: user.id,
-           status: "ABERTO"
-         }
-       ]);
+       const { error } = await supabase.from("chamados").insert({ 
+         os: newTicket.os,
+         descricao: newTicket.descricao,
+         prioridade: newTicket.prioridade,
+         usuario_id: user.id,
+         status: "ABERTO" as any
+       });
  
        if (error) throw error;
  

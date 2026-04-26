@@ -109,17 +109,20 @@
           uploadedUrls.push(publicUrl);
         }
   
-        const { error } = await supabase.from("chamados").insert({
+        const { error: insertError } = await supabase.from("chamados").insert({
           titulo: newTicket.titulo,
-          os: `OS-${new Date().getFullYear()}${String(Date.now()).slice(-6)}`,
+          os: `OS-${new Date().getFullYear()}${Math.floor(Math.random() * 1000)}${String(Date.now()).slice(-4)}`,
           descricao: newTicket.descricao,
           prioridade: newTicket.prioridade,
           usuario_id: user.id,
-          status: "ABERTO" as any,
-          anexos: uploadedUrls
+          status: "ABERTO",
+          anexos: uploadedUrls.length > 0 ? uploadedUrls : null
         });
-  
-        if (error) throw error;
+
+        if (insertError) {
+          console.error("Erro na inserção do chamado:", insertError);
+          throw insertError;
+        }
   
         toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
         setIsDialogOpen(false);

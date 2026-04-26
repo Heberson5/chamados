@@ -1,0 +1,374 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== ENUMS ====================
+
+enum Regra {
+  ADMIN
+  COMPRADOR
+  GESTOR
+  INVENTARIANTE
+  TECNICO
+  USUARIO
+}
+
+enum ChamadoStatus {
+  ABERTO
+  EM_ATENDIMENTO
+  ENCERRADO
+  CANCELADO
+  REABERTO
+}
+
+enum PrioridadeChamado {
+  P1
+  P2
+  P3
+  P4
+  P5
+}
+
+enum NivelTecnico {
+  N1
+  N2
+  N3
+}
+
+enum Setor {
+  ADMINISTRACAO
+  ALMOXARIFADO
+  CALL_CENTER
+  COMERCIAL
+  DEPARTAMENTO_PESSOAL
+  FINANCEIRO
+  JURIDICO
+  LOGISTICA
+  MARKETING
+  QUALIDADE
+  RECURSOS_HUMANOS
+  TECNOLOGIA_INFORMACAO
+}
+
+enum ReembolsoStatus {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  PAGO
+  CANCELADO
+}
+
+enum CategoriaReembolso {
+  TRANSPORTE
+  ALIMENTACAO
+  HOSPEDAGEM
+  MATERIAL
+  OUTRO
+}
+
+// ==================== MODELS ====================
+
+model Usuario {
+  id           String        @id  // mesmo id gerado pelo auth-service
+  nome         String        @db.VarChar(100)
+  sobrenome    String        @db.VarChar(100)
+  email        String        @unique @db.VarChar(255)
+  regra        Regra
+  nivel        NivelTecnico? @default(N1)
+  setor        Setor?
+  telefone     String?
+  ramal        String?
+  avatarUrl    String?
+  ativo        Boolean       @default(true)
+
+  geradoEm     DateTime      @default(now()) @map("gerado_em") @db.Timestamptz(3)
+  atualizadoEm DateTime      @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  deletadoEm   DateTime?     @map("deletado_em") @db.Timestamptz(3)
+
+  chamadoOS                Chamado[]              @relation("UsuarioChamado")
+  tecnicoChamados          Chamado[]              @relation("TecnicoResponsavel")
+  tecnicoDisponibilidade   Expediente[]
+  transferenciasRealizadas TransferenciaChamado[] @relation("TransferenciasRealizadas")
+  transferenciasRecebidas  TransferenciaChamado[] @relation("TransferenciasPara")
+  transferenciasEnviadas   TransferenciaChamado[] @relation("TransferenciasDe")
+  alteracoesPrioridade     Chamado[]              @relation("AlteracoesPrioridade")
+  comentarios              ComentarioChamado[]
+  anexos                   AnexoChamado[]
+  vinculosChamado          Chamado[]              @relation("VinculosChamado")
+
+  reembolsosSolicitados    Reembolso[]            @relation("ReembolsosSolicitados")
+  reembolsosAprovados      Reembolso[]            @relation("ReembolsosAprovados")
+  reembolsosPagos          Reembolso[]            @relation("ReembolsosPagos")
+  anexosReembolso          AnexoReembolso[]
+
+  @@index([email])
+  @@index([regra])
+  @@index([nivel])
+  @@index([ativo])
+  @@index([setor])
+  @@index([deletadoEm])
+  @@index([regra, nivel])
+  @@map("usuarios")
+}
+
+model Expediente {
+  id           String   @id @default(cuid())
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId    String
+  entrada      DateTime @db.Timestamptz(3)
+  saida        DateTime @db.Timestamptz(3)
+
+  geradoEm     DateTime  @default(now()) @map("gerado_em") @db.Timestamptz(3)
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  deletadoEm   DateTime? @map("deletado_em") @db.Timestamptz(3)
+  ativo        Boolean   @default(true)
+
+  @@index([usuarioId])
+  @@map("expedientes")
+}
+
+model Servico {
+  id           String   @id @default(cuid())
+  nome         String   @unique
+  descricao    String?
+
+  geradoEm     DateTime  @default(now()) @map("gerado_em") @db.Timestamptz(3)
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  deletadoEm   DateTime? @map("deletado_em") @db.Timestamptz(3)
+  ativo        Boolean   @default(true)
+
+  chamados     OrdemDeServico[]
+
+  @@index([nome])
+  @@index([ativo])
+  @@index([deletadoEm])
+  @@map("servicos")
+}
+
+model Chamado {
+  id                    String            @id @default(cuid())
+  OS                    String            @unique @db.VarChar(50)
+  descricao             String            @db.Text
+  status                ChamadoStatus     @default(ABERTO)
+  descricaoEncerramento String?           @map("descricao_encerramento") @db.Text
+
+  geradoEm     DateTime  @default(now()) @map("gerado_em") @db.Timestamptz(3)
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  encerradoEm  DateTime? @map("encerrado_em") @db.Timestamptz(3)
+  deletadoEm   DateTime? @map("deletado_em") @db.Timestamptz(3)
+
+  usuario      Usuario  @relation("UsuarioChamado", fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId    String   @map("usuario_id")
+
+  tecnico      Usuario? @relation("TecnicoResponsavel", fields: [tecnicoId], references: [id], onDelete: SetNull)
+  tecnicoId    String?  @map("tecnico_id")
+
+  servicos     OrdemDeServico[]
+
+  prioridade            PrioridadeChamado @default(P4)
+  prioridadeAlterada    DateTime?         @map("prioridade_alterada") @db.Timestamptz(3)
+  prioridadeAlteradaPor String?           @map("prioridade_alterada_por")
+
+  alteradorPrioridade   Usuario?          @relation("AlteracoesPrioridade", fields: [prioridadeAlteradaPor], references: [id], onDelete: SetNull)
+
+  transferencias        TransferenciaChamado[]
+  comentarios           ComentarioChamado[]
+  anexos                AnexoChamado[]
+
+  // ==================== SLA ====================
+
+  slaDeadline   DateTime?  @map("sla_deadline")   @db.Timestamptz(3)
+  slaViolado    Boolean    @default(false)         @map("sla_violado")
+  slaVioladoEm  DateTime?  @map("sla_violado_em")  @db.Timestamptz(3)
+
+  // ==================== HIERARQUIA ====================
+
+  chamadoPaiId   String?   @map("chamado_pai_id")
+  chamadoPai     Chamado?  @relation("ChamadoHierarquia", fields: [chamadoPaiId], references: [id], onDelete: SetNull)
+  chamadosFilhos Chamado[] @relation("ChamadoHierarquia")
+
+  vinculadoEm    DateTime? @map("vinculado_em") @db.Timestamptz(3)
+  vinculadoPor   String?   @map("vinculado_por")
+  vinculador     Usuario?  @relation("VinculosChamado", fields: [vinculadoPor], references: [id], onDelete: SetNull)
+
+  // ==================== INDEX ====================
+
+  @@index([usuarioId])
+  @@index([tecnicoId])
+  @@index([status])
+  @@index([geradoEm])
+  @@index([OS])
+  @@index([deletadoEm])
+  @@index([status, geradoEm])
+  @@index([tecnicoId, status])
+  @@index([usuarioId, status])
+  @@index([prioridade])
+  @@index([prioridade, status])
+  @@index([status, prioridade, geradoEm])
+  @@index([prioridadeAlteradaPor])
+  @@index([slaDeadline])
+  @@index([slaViolado])
+  @@index([slaViolado, status])
+  @@index([chamadoPaiId])
+  @@index([vinculadoPor])
+  @@map("chamados")
+}
+
+model OrdemDeServico {
+  id         String   @id @default(cuid())
+  chamado    Chamado  @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  chamadoId  String   @map("chamado_id")
+
+  servico    Servico  @relation(fields: [servicoId], references: [id], onDelete: Cascade)
+  servicoId  String   @map("servico_id")
+
+  geradoEm     DateTime  @default(now()) @map("gerado_em") @db.Timestamptz(3)
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  deletadoEm   DateTime? @map("deletado_em") @db.Timestamptz(3)
+
+  @@unique([chamadoId, servicoId], name: "unique_chamado_servico")
+  @@index([chamadoId])
+  @@index([servicoId])
+  @@index([deletadoEm])
+  @@map("ordens_de_servico")
+}
+
+model TransferenciaChamado {
+  id                String   @id @default(cuid())
+  chamadoId         String   @map("chamado_id")
+  tecnicoAnteriorId String?  @map("tecnico_anterior_id")
+  tecnicoNovoId     String   @map("tecnico_novo_id")
+  motivo            String   @db.Text
+  transferidoPor    String   @map("transferido_por")
+  transferidoEm     DateTime @default(now()) @map("transferido_em") @db.Timestamptz(3)
+
+  chamado           Chamado  @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  tecnicoAnterior   Usuario? @relation("TransferenciasDe", fields: [tecnicoAnteriorId], references: [id], onDelete: SetNull)
+  tecnicoNovo       Usuario  @relation("TransferenciasPara", fields: [tecnicoNovoId], references: [id], onDelete: Cascade)
+  transferidor      Usuario  @relation("TransferenciasRealizadas", fields: [transferidoPor], references: [id], onDelete: Cascade)
+
+  @@index([chamadoId])
+  @@index([tecnicoAnteriorId])
+  @@index([tecnicoNovoId])
+  @@index([transferidoPor])
+  @@index([transferidoEm])
+  @@map("transferencias_chamado")
+}
+
+model ComentarioChamado {
+  id                  String    @id @default(cuid())
+  chamadoId           String    @map("chamado_id")
+  autorId             String    @map("autor_id")
+  comentario          String    @db.Text
+  visibilidadeInterna Boolean   @default(false) @map("visibilidade_interna")
+
+  criadoEm            DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm        DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  deletadoEm          DateTime? @map("deletado_em") @db.Timestamptz(3)
+
+  chamado             Chamado  @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  autor               Usuario  @relation(fields: [autorId], references: [id], onDelete: Cascade)
+
+  @@index([chamadoId])
+  @@index([autorId])
+  @@index([criadoEm])
+  @@index([deletadoEm])
+  @@index([chamadoId, deletadoEm])
+  @@index([visibilidadeInterna])
+  @@map("comentarios_chamado")
+}
+
+model AnexoChamado {
+  id           String    @id @default(cuid())
+  chamadoId    String    @map("chamado_id")
+  autorId      String    @map("autor_id")
+  nomeArquivo  String    @map("nome_arquivo") @db.VarChar(255)
+  nomeOriginal String    @map("nome_original") @db.VarChar(255)
+  mimetype     String    @db.VarChar(100)
+  tamanho      Int
+  bucketMinio  String    @map("bucket_minio") @db.VarChar(100)
+  objetoMinio  String    @map("objeto_minio") @db.VarChar(255)
+
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+  deletadoEm   DateTime? @map("deletado_em") @db.Timestamptz(3)
+
+  chamado      Chamado  @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  autor        Usuario  @relation(fields: [autorId], references: [id], onDelete: Cascade)
+
+  @@index([chamadoId])
+  @@index([autorId])
+  @@index([criadoEm])
+  @@index([deletadoEm])
+  @@index([chamadoId, deletadoEm])
+  @@map("anexos_chamado")
+}
+
+model Reembolso {
+  id        String             @id @default(cuid())
+  numero    String             @unique @db.VarChar(20)
+  descricao String             @db.Text
+  categoria CategoriaReembolso
+  valor     Decimal            @db.Decimal(10, 2)
+  status    ReembolsoStatus    @default(PENDENTE)
+  setor     Setor?             // copiado do solicitante no momento da criação
+
+  solicitanteId String   @map("solicitante_id")
+  solicitante   Usuario  @relation("ReembolsosSolicitados", fields: [solicitanteId], references: [id])
+
+  aprovadorId    String?   @map("aprovador_id")
+  aprovador      Usuario?  @relation("ReembolsosAprovados", fields: [aprovadorId], references: [id])
+  aprovadoEm     DateTime? @map("aprovado_em") @db.Timestamptz(3)
+  motivoRejeicao String?   @map("motivo_rejeicao") @db.Text
+
+  pagadorId               String?   @map("pagador_id")
+  pagador                 Usuario?  @relation("ReembolsosPagos", fields: [pagadorId], references: [id])
+  pagoEm                  DateTime? @map("pago_em") @db.Timestamptz(3)
+  comprovantePagamentoUrl String?   @map("comprovante_pagamento_url") @db.VarChar(500)
+
+  geradoEm     DateTime  @default(now()) @map("gerado_em") @db.Timestamptz(3)
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  deletadoEm   DateTime? @map("deletado_em") @db.Timestamptz(3)
+
+  comprovantes AnexoReembolso[]
+
+  @@index([solicitanteId])
+  @@index([aprovadorId])
+  @@index([pagadorId])
+  @@index([status])
+  @@index([categoria])
+  @@index([setor])
+  @@index([geradoEm])
+  @@index([deletadoEm])
+  @@index([status, geradoEm])
+  @@index([solicitanteId, status])
+  @@index([setor, status])
+  @@map("reembolsos")
+}
+
+model AnexoReembolso {
+  id          String    @id @default(cuid())
+  reembolsoId String    @map("reembolso_id")
+  autorId     String    @map("autor_id")
+  nomeArquivo String    @map("nome_arquivo") @db.VarChar(255)
+  nomeOriginal String   @map("nome_original") @db.VarChar(255)
+  mimetype    String    @db.VarChar(100)
+  tamanho     Int
+  bucketMinio String    @map("bucket_minio") @db.VarChar(100)
+  objetoMinio String    @map("objeto_minio") @db.VarChar(255)
+
+  criadoEm   DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+  deletadoEm DateTime? @map("deletado_em") @db.Timestamptz(3)
+
+  reembolso Reembolso @relation(fields: [reembolsoId], references: [id], onDelete: Cascade)
+  autor     Usuario   @relation(fields: [autorId], references: [id])
+
+  @@index([reembolsoId])
+  @@index([autorId])
+  @@index([criadoEm])
+  @@index([deletadoEm])
+  @@map("anexos_reembolso")
+}

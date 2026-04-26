@@ -1,0 +1,199 @@
+.
+├── LICENSE
+├── README.md
+├── api
+│   ├── Dockerfile
+│   ├── api
+│   │   └── database
+│   │       ├── init-db.sql
+│   │       └── init-mongo.js
+│   ├── docker-compose.yaml
+│   ├── k8s
+│   │   ├── application
+│   │   │   ├── api-configmap.yaml
+│   │   │   ├── api-cronjob-backup.yaml
+│   │   │   ├── api-deployment.yaml
+│   │   │   ├── api-hpa.yaml
+│   │   │   ├── api-job-seed.yaml
+│   │   │   ├── api-network-policy.yaml
+│   │   │   ├── api-pdb.yaml
+│   │   │   ├── api-priority-class.yaml
+│   │   │   ├── api-resource-quota.yaml
+│   │   │   ├── api-secret.yaml
+│   │   │   ├── api-service-monitor.yaml
+│   │   │   └── api-service.yaml
+│   │   ├── databases
+│   │   │   ├── mongodb
+│   │   │   │   ├── mongodb-deployment.yaml
+│   │   │   │   ├── mongodb-pvc.yaml
+│   │   │   │   ├── mongodb-secret.yaml
+│   │   │   │   └── mongodb-service.yaml
+│   │   │   ├── postgres
+│   │   │   │   ├── postgres-deployment.yaml
+│   │   │   │   ├── postgres-pvc.yaml
+│   │   │   │   ├── postgres-secret.yaml
+│   │   │   │   └── postgres-service.yaml
+│   │   │   └── redis
+│   │   │       ├── redis-configmap.yaml
+│   │   │       ├── redis-deployment.yaml
+│   │   │       ├── redis-pvc.yaml
+│   │   │       ├── redis-secret.yaml
+│   │   │       └── redis-service.yaml
+│   │   ├── ingress
+│   │   │   ├── basic-auth-secret.yaml
+│   │   │   ├── cert-manager-issuer.yaml
+│   │   │   ├── certificate-secret.yaml
+│   │   │   ├── ingress-admin.yaml
+│   │   │   ├── ingress-auth.yaml
+│   │   │   ├── ingress-configmap.yaml
+│   │   │   ├── ingress-monitoring.yaml
+│   │   │   ├── ingress-nginx-controller.yaml
+│   │   │   ├── ingress.yaml
+│   │   │   ├── network-policy.yaml
+│   │   │   └── rate-limit-configmap.yaml
+│   │   ├── messaging
+│   │   │   ├── kafka
+│   │   │   │   ├── kafka-configmap.yaml
+│   │   │   │   ├── kafka-deployment.yaml
+│   │   │   │   ├── kafka-init-job.yaml
+│   │   │   │   ├── kafka-pvc.yaml
+│   │   │   │   ├── kafka-secret.yaml
+│   │   │   │   └── kafka-service.yaml
+│   │   │   └── zookeeper
+│   │   │       ├── zookeeper-deployment.yaml
+│   │   │       ├── zookeeper-pvc.yaml
+│   │   │       ├── zookeeper-secret.yaml
+│   │   │       └── zookeeper-service.yaml
+│   │   ├── monitoring
+│   │   │   ├── exporters
+│   │   │   │   ├── kafka-exporter.yaml
+│   │   │   │   ├── mongodb-exporter.yaml
+│   │   │   │   ├── postgres-exporter.yaml
+│   │   │   │   └── redis-exporter.yaml
+│   │   │   ├── grafana
+│   │   │   │   ├── grafana-configmap.yaml
+│   │   │   │   ├── grafana-dashboards-configmap.yaml
+│   │   │   │   ├── grafana-deployment.yaml
+│   │   │   │   ├── grafana-pvc.yaml
+│   │   │   │   ├── grafana-secret.yaml
+│   │   │   │   └── grafana-service.yaml
+│   │   │   ├── influxdb
+│   │   │   │   ├── influxdb-configmap.yaml
+│   │   │   │   ├── influxdb-deployment.yaml
+│   │   │   │   ├── influxdb-pvc.yaml
+│   │   │   │   ├── influxdb-secret.yaml
+│   │   │   │   └── influxdb-service.yaml
+│   │   │   └── prometheus
+│   │   │       ├── prometheus-configmap.yaml
+│   │   │       ├── prometheus-deployment.yaml
+│   │   │       ├── prometheus-pvc.yaml
+│   │   │       ├── prometheus-rbac.yaml
+│   │   │       └── prometheus-service.yaml
+│   │   └── namespaces
+│   │       └── helpme-namespace.yaml
+│   ├── package.json
+│   ├── painel-analitico
+│   │   ├── grafana
+│   │   │   ├── dashboards
+│   │   │   │   ├── chamados
+│   │   │   │   ├── infraestrutura
+│   │   │   │   └── logs-api
+│   │   │   └── provisioning
+│   │   │       ├── dashboards
+│   │   │       └── datasources
+│   │   └── monitoring
+│   │       ├── loki-config.yml
+│   │       ├── prometheus.yml
+│   │       └── promtail-config.yml
+│   ├── pnpm-lock.yaml
+│   ├── prisma
+│   │   ├── optimizations
+│   │   │   └── performance-indexes.sql
+│   │   ├── schema.prisma
+│   │   ├── seed-big.ts
+│   │   ├── seed-medium.ts
+│   │   └── seed.ts
+│   ├── prisma.config.ts
+│   ├── scripts
+│   │   ├── extracao-de-rotas.cjs
+│   │   ├── k6-routes.json
+│   │   └── reset-db.sh
+│   ├── src
+│   │   ├── __tests__
+│   │   │   ├── e2e
+│   │   │   │   ├── admin
+│   │   │   │   ├── auth
+│   │   │   │   ├── chamados
+│   │   │   │   ├── fila
+│   │   │   │   ├── notificacao
+│   │   │   │   ├── servicos
+│   │   │   │   ├── setup
+│   │   │   │   ├── tecnicos
+│   │   │   │   └── usuarios
+│   │   │   ├── performance
+│   │   │   │   ├── carga
+│   │   │   │   ├── helpers
+│   │   │   │   ├── results
+│   │   │   │   ├── scripts
+│   │   │   │   ├── soak
+│   │   │   │   ├── spike
+│   │   │   │   └── stress
+│   │   │   └── unit
+│   │   │       ├── application
+│   │   │       ├── domain
+│   │   │       ├── infrastructure
+│   │   │       ├── setup
+│   │   │       └── shared
+│   │   ├── app.ts
+│   │   ├── application
+│   │   │   └── use-cases
+│   │   │       └── chamado
+│   │   ├── infrastructure
+│   │   │   ├── database
+│   │   │   │   ├── mongodb
+│   │   │   │   ├── prisma
+│   │   │   │   └── redis
+│   │   │   ├── email
+│   │   │   │   └── email.service.ts
+│   │   │   ├── http
+│   │   │   │   └── middlewares
+│   │   │   ├── jobs
+│   │   │   │   └── sla.job.ts
+│   │   │   ├── messaging
+│   │   │   │   └── kafka
+│   │   │   ├── repositories
+│   │   │   │   └── atualizacao.chamado.repository.ts
+│   │   │   ├── storage
+│   │   │   │   └── minio.client.ts
+│   │   │   └── websocket
+│   │   │       └── socket.ts
+│   │   ├── presentation
+│   │   │   └── http
+│   │   │       └── routes
+│   │   ├── server.ts
+│   │   ├── shared
+│   │   │   ├── @types
+│   │   │   │   ├── express.d.ts
+│   │   │   │   └── historicoChamado.d.ts
+│   │   │   ├── config
+│   │   │   │   ├── jwt.ts
+│   │   │   │   ├── logger.ts
+│   │   │   │   ├── password.ts
+│   │   │   │   └── swagger.ts
+│   │   │   └── utils
+│   │   │       └── request-params.ts
+│   │   └── templates
+│   │       ├── chamado-aberto.hbs
+│   │       ├── chamado-encerrado.hbs
+│   │       ├── chamado-reaberto.hbs
+│   │       ├── chamado-transferido.hbs
+│   │       ├── prioridade-alterada.hbs
+│   │       └── sla-vencendo.hbs
+│   ├── tsconfig.json
+│   ├── tsup.config.ts
+│   ├── vitest.config.e2e.ts
+│   ├── vitest.config.ts
+│   └── vitest.setup.ts
+└── scan-estrutura-projeto.txt
+
+85 directories, 111 files

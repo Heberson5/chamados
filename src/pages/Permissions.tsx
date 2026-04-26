@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2, Loader2, Save } from "lucide-react";
+ import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2, Loader2, Save, LayoutDashboard, Ticket, Box, DollarSign, Users, Key, FileText, Settings, History, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -73,11 +73,38 @@ export default function Permissions() {
     }
   };
 
-  const getIcon = (iconName: string) => {
-    const icons: Record<string, any> = { Crown, Shield, Hammer, User };
-    const IconComp = icons[iconName] || User;
-    return <IconComp className="w-6 h-6" />;
-  };
+   const availableIcons = [
+     { name: "User", icon: User },
+     { name: "Shield", icon: Shield },
+     { name: "Hammer", icon: Hammer },
+     { name: "Crown", icon: Crown },
+     { name: "LayoutDashboard", icon: LayoutDashboard },
+     { name: "Ticket", icon: Ticket },
+     { name: "Box", icon: Box },
+     { name: "DollarSign", icon: DollarSign },
+     { name: "Users", icon: Users },
+     { name: "Key", icon: Key },
+     { name: "FileText", icon: FileText },
+     { name: "Settings", icon: Settings },
+     { name: "History", icon: History },
+   ];
+ 
+   const availableMenus = [
+     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+     { id: "chamados", label: "Chamados", icon: Ticket },
+     { id: "inventario", label: "Inventário", icon: Box },
+     { id: "financeiro", label: "Financeiro", icon: DollarSign },
+     { id: "usuarios", label: "Usuários", icon: Users },
+     { id: "permissoes", label: "Permissões", icon: Key },
+     { id: "relatorios", label: "Relatórios", icon: FileText },
+     { id: "configuracoes", label: "Configurações", icon: Settings },
+     { id: "audit", label: "Auditoria", icon: History },
+   ];
+ 
+   const getIcon = (iconName: string) => {
+     const IconComp = availableIcons.find(i => i.name === iconName)?.icon || User;
+     return <IconComp className="w-6 h-6" />;
+   };
 
   if (isLoading && roles.length === 0) {
     return (
@@ -176,51 +203,147 @@ export default function Permissions() {
           <DialogHeader>
             <DialogTitle>{selectedRole?.id ? "Editar Permissão" : "Nova Permissão"}</DialogTitle>
           </DialogHeader>
-          {selectedRole && (
-            <div className="grid grid-cols-2 gap-6 py-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Nome da Permissão</Label>
-                  <Input value={selectedRole.name} onChange={e => setSelectedRole({...selectedRole, name: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Descrição</Label>
-                  <Input value={selectedRole.description} onChange={e => setSelectedRole({...selectedRole, description: e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <Label>Cor (Texto)</Label>
-                    <Input value={selectedRole.color} onChange={e => setSelectedRole({...selectedRole, color: e.target.value})} placeholder="text-blue-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Cor (Fundo)</Label>
-                    <Input value={selectedRole.bg_color} onChange={e => setSelectedRole({...selectedRole, bg_color: e.target.value})} placeholder="bg-blue-500/10" />
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <Label className="block mb-2 font-bold">Ações Granulares</Label>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Pode Criar</Label>
-                    <Switch checked={selectedRole.can_create} onCheckedChange={v => setSelectedRole({...selectedRole, can_create: v})} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Pode Editar</Label>
-                    <Switch checked={selectedRole.can_edit} onCheckedChange={v => setSelectedRole({...selectedRole, can_edit: v})} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Pode Excluir</Label>
-                    <Switch checked={selectedRole.can_delete} onCheckedChange={v => setSelectedRole({...selectedRole, can_delete: v})} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Pode Inativar</Label>
-                    <Switch checked={selectedRole.can_inactivate} onCheckedChange={v => setSelectedRole({...selectedRole, can_inactivate: v})} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+           {selectedRole && (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-4 overflow-y-auto max-h-[70vh] px-2">
+               <div className="space-y-6">
+                 <div className="space-y-4">
+                   <h3 className="font-bold border-b pb-2">Informações Básicas</h3>
+                   <div className="space-y-2">
+                     <Label>Nome da Permissão</Label>
+                     <Input value={selectedRole.name} onChange={e => setSelectedRole({...selectedRole, name: e.target.value})} placeholder="Ex: Técnico Nível 1" />
+                   </div>
+                   <div className="space-y-2">
+                     <Label>Descrição</Label>
+                     <Input value={selectedRole.description} onChange={e => setSelectedRole({...selectedRole, description: e.target.value})} placeholder="O que este nível pode fazer?" />
+                   </div>
+                   <div className="space-y-3">
+                     <Label>Ícone</Label>
+                     <div className="grid grid-cols-6 gap-2">
+                       {availableIcons.map((item) => (
+                         <button
+                           key={item.name}
+                           onClick={() => setSelectedRole({...selectedRole, icon: item.name})}
+                           className={`p-2 rounded-md border flex items-center justify-center transition-all ${selectedRole.icon === item.name ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                         >
+                           <item.icon size={20} />
+                         </button>
+                       ))}
+                     </div>
+                   </div>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                       <Label>Cor do Tema</Label>
+                       <div className="flex items-center gap-2">
+                         <Input 
+                           type="color" 
+                           className="w-12 h-10 p-1 cursor-pointer"
+                           value={selectedRole.color_hex || "#3b82f6"} 
+                           onChange={e => {
+                             const hex = e.target.value;
+                             setSelectedRole({
+                               ...selectedRole, 
+                               color_hex: hex,
+                               color: `text-[${hex}]`,
+                               bg_color: `bg-[${hex}]/10`
+                             });
+                           }} 
+                         />
+                         <span className="text-xs font-mono">{selectedRole.color_hex || "#3b82f6"}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+ 
+                 <div className="space-y-4">
+                   <h3 className="font-bold border-b pb-2">Ações Globais</h3>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div className="flex items-center justify-between border p-3 rounded-lg">
+                       <div className="flex flex-col">
+                         <Label className="text-sm">Pode Criar</Label>
+                         <span className="text-[10px] text-muted-foreground">Novos registros</span>
+                       </div>
+                       <Switch checked={selectedRole.can_create} onCheckedChange={v => setSelectedRole({...selectedRole, can_create: v})} />
+                     </div>
+                     <div className="flex items-center justify-between border p-3 rounded-lg">
+                       <div className="flex flex-col">
+                         <Label className="text-sm">Pode Editar</Label>
+                         <span className="text-[10px] text-muted-foreground">Alterar dados</span>
+                       </div>
+                       <Switch checked={selectedRole.can_edit} onCheckedChange={v => setSelectedRole({...selectedRole, can_edit: v})} />
+                     </div>
+                     <div className="flex items-center justify-between border p-3 rounded-lg">
+                       <div className="flex flex-col">
+                         <Label className="text-sm text-destructive">Pode Excluir</Label>
+                         <span className="text-[10px] text-muted-foreground">Remover do sistema</span>
+                       </div>
+                       <Switch checked={selectedRole.can_delete} onCheckedChange={v => setSelectedRole({...selectedRole, can_delete: v})} />
+                     </div>
+                     <div className="flex items-center justify-between border p-3 rounded-lg">
+                       <div className="flex flex-col">
+                         <Label className="text-sm text-orange-600">Pode Inativar</Label>
+                         <span className="text-[10px] text-muted-foreground">Desativar temporário</span>
+                       </div>
+                       <Switch checked={selectedRole.can_inactivate} onCheckedChange={v => setSelectedRole({...selectedRole, can_inactivate: v})} />
+                     </div>
+                   </div>
+                 </div>
+               </div>
+ 
+               <div className="space-y-4">
+                 <h3 className="font-bold border-b pb-2">Acesso aos Menus e Funções</h3>
+                 <div className="space-y-3">
+                   {availableMenus.map((menu) => (
+                     <div key={menu.id} className="border rounded-lg p-3 space-y-3">
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-2">
+                           <menu.icon size={16} className="text-muted-foreground" />
+                           <Label className="font-semibold">{menu.label}</Label>
+                         </div>
+                         <Switch 
+                           checked={(selectedRole.permissions || []).includes(menu.id)} 
+                           onCheckedChange={(checked) => {
+                             const currentPerms = selectedRole.permissions || [];
+                             let nextPerms = [];
+                             if (checked) {
+                               nextPerms = [...currentPerms, menu.id];
+                             } else {
+                               nextPerms = currentPerms.filter((p: string) => p !== menu.id && !p.startsWith(`${menu.id}:`));
+                             }
+                             setSelectedRole({...selectedRole, permissions: nextPerms});
+                           }} 
+                         />
+                       </div>
+                       
+                       {(selectedRole.permissions || []).includes(menu.id) && (
+                         <div className="pl-6 grid grid-cols-2 gap-2 border-t pt-2">
+                           {["Visualizar", "Exportar", "Ações Especiais"].map(func => {
+                             const funcKey = `${menu.id}:${func.toLowerCase().replace(" ", "_")}`;
+                             return (
+                               <div key={funcKey} className="flex items-center gap-2">
+                                 <Switch 
+                                   className="scale-75"
+                                   checked={(selectedRole.permissions || []).includes(funcKey)}
+                                   onCheckedChange={(checked) => {
+                                     const currentPerms = selectedRole.permissions || [];
+                                     if (checked) {
+                                       setSelectedRole({...selectedRole, permissions: [...currentPerms, funcKey]});
+                                     } else {
+                                       setSelectedRole({...selectedRole, permissions: currentPerms.filter((p: string) => p !== funcKey)});
+                                     }
+                                   }}
+                                 />
+                                 <span className="text-xs">{func}</span>
+                               </div>
+                             );
+                           })}
+                         </div>
+                       )}
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             </div>
+           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSaveRole} disabled={isLoading} className="gap-2">

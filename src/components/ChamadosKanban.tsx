@@ -21,10 +21,15 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
   const [closureNote, setClosureNote] = useState("");
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+   const [userRole, setUserRole] = useState<string | null>(null);
+   const [kanbanCols, setKanbanCols] = useState<any[]>([
+     { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
+     { id: "EM_ATENDIMENTO", title: "Em Atendimento", color: "bg-amber-500/10 border-amber-500/20" },
+     { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
+   ]);
 
-  useEffect(() => {
-    const getRole = async () => {
+   useEffect(() => {
+     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
@@ -32,21 +37,25 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           .select("regra, is_master")
           .eq("id", user.id)
           .single();
-        if (data) {
-          setUserRole(data.is_master ? 'MASTER' : data.regra);
-        }
-      }
-    };
-    getRole();
-  }, []);
+         if (data) {
+           setUserRole(data.is_master ? 'MASTER' : data.regra);
+         }
+       }
+ 
+       const { data: settings } = await supabase
+         .from("system_settings")
+         .select("value")
+         .eq("key", "kanban_config")
+         .single();
+       
+       if (settings) {
+         setKanbanCols(settings.value as any[]);
+       }
+     };
+     loadData();
+   }, []);
 
-  const columns = [
-    { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
-    { id: "EM_ATENDIMENTO", title: "Em Atendimento", color: "bg-amber-500/10 border-amber-500/20" },
-    { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
-  ];
-
-  const handleAction = async (ticketId: string, action: "atender" | "encerrar") => {
+   const handleAction = async (ticketId: string, action: "atender" | "encerrar") => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -111,8 +120,8 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-[600px]">
-      {columns.map((column) => (
+       <div className={`grid grid-cols-1 md:grid-cols-${kanbanCols.length} gap-6 h-full min-h-[600px]`}>
+       {kanbanCols.map((column) => (
         <div key={column.id} className={`flex flex-col rounded-xl border ${column.color} p-4`}>
           <div className="flex items-center justify-between mb-4 px-2">
             <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">

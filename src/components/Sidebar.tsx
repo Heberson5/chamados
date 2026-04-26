@@ -1,17 +1,19 @@
  import { useState } from "react";
  import { useNavigate, useLocation } from "react-router-dom";
 import { 
-   LayoutDashboard,
-   Ticket,
-   Settings,
-   ChevronLeft,
-   ChevronRight,
-   LogOut,
-   Moon,
-   Sun,
-   Monitor,
-    User,
-    BarChart3
+  LayoutDashboard,
+  Ticket,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Moon,
+  Sun,
+  Monitor,
+  User,
+  BarChart3,
+  Package,
+  History
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
@@ -28,13 +30,15 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
    const navigate = useNavigate();
    const location = useLocation();
  
-    const menuItems = [
-      { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-      { icon: Ticket, label: "Chamados", path: "/chamados" },
-      { icon: BarChart3, label: "Relatórios", path: "/reports" },
-      { icon: User, label: "Perfil", path: "/perfil" },
-      { icon: Settings, label: "Configurações", path: "/settings" },
-    ];
+  const menuItems = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { icon: Ticket, label: "Chamados", path: "/chamados" },
+    { icon: Package, label: "Inventário", path: "/inventario" },
+    { icon: History, label: "Baixas", path: "/baixas" },
+    { icon: BarChart3, label: "Relatórios", path: "/reports" },
+    { icon: User, label: "Perfil", path: "/perfil" },
+    { icon: Settings, label: "Configurações", path: "/settings" },
+  ];
  
    const handleLogout = async () => {
      await supabase.auth.signOut();

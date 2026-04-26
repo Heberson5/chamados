@@ -215,7 +215,22 @@ import { supabase } from "@/integrations/supabase/client";
                   </Select>
                 </div>
               </div>
-                 <div className="flex items-center space-x-2">
+                  <div className="space-y-2">
+                    <Label>Nível de Acesso</Label>
+                    <Select 
+                      value={newUser.role} 
+                      onValueChange={(v) => setNewUser({ ...newUser, role: v as any })}
+                      disabled={newUser.is_master}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione o nível" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="agent">Agente / Suporte</SelectItem>
+                        <SelectItem value="customer">Usuário (Solicitante)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
                    <Checkbox 
                      id="is_master" 
                      checked={newUser.is_master} 

@@ -28,7 +28,7 @@ type T = {
 const Board = () => {
   const { org, profile } = useAuth();
   const { columns, updateSettings } = useKanbanSettings();
-  const isCustomer = profile?.role === 'customer';
+   const isCustomer = profile?.role === 'customer' && !profile?.is_master;
   const [localCols, setLocalCols] = useState<any[]>([]);
   
   useEffect(() => {

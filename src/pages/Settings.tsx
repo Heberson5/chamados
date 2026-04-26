@@ -15,7 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
    const { theme, setTheme } = useTheme();
    const { toast } = useToast();
    const [loading, setLoading] = useState(false);
-    const [kanbanConfig, setKanbanConfig] = useState<any[]>([]);
+     const [kanbanConfig, setKanbanConfig] = useState<any[]>([
+       { id: "ABERTO", title: "Abertos", color_hex: "#3b82f6" },
+       { id: "EM_ATENDIMENTO", title: "Em Atendimento", color_hex: "#f59e0b" },
+       { id: "ENCERRADO", title: "Encerrados", color_hex: "#10b981" },
+     ]);
      const [reportLayout, setReportLayout] = useState<any>({ headerColor: "#000000", footerText: "", showLogo: true });
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
    const [layoutConfig, setLayoutConfig] = useState({ 
@@ -37,89 +41,104 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
     const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
    const [isAdmin, setIsAdmin] = useState(false);
  
-   useEffect(() => {
-     const loadSettings = async () => {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (user) {
-         const { data: profile } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
-         if (profile && (profile.regra === 'ADMIN' || profile.regra === 'MASTER' || profile.is_master)) {
-           setIsAdmin(true);
+     useEffect(() => {
+       const loadSettings = async () => {
+         const { data: { user } } = await supabase.auth.getUser();
+         if (!user) return;
+ 
+         const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+         if (profile) {
+           if (profile.regra === 'ADMIN' || profile.regra === 'MASTER' || profile.is_master) {
+             setIsAdmin(true);
+           }
+           if (profile.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config) {
+             setKanbanConfig((profile.settings as any).kanban_config);
+           }
          }
-       }
+   
+         const { data } = await supabase.from("system_settings").select("*");
+          if (data) {
+            const kConfig = data.find(s => s.key === 'kanban_config');
+             const rLayout = data.find(s => s.key === 'report_layout');
+             const eConfig = data.find(s => s.key === 'email_config');
+             const lConfig = data.find(s => s.key === 'layout_settings');
+            const eTemplates = data.find(s => s.key === 'email_templates');
+            
+            if (kConfig && !(profile?.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config)) {
+              setKanbanConfig(kConfig.value as any[]);
+            }
+             if (rLayout) setReportLayout(rLayout.value as any);
+             if (eConfig) setEmailSettings(eConfig.value as any);
+             if (lConfig) setLayoutConfig(lConfig.value as any);
+            if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
+          }
+       };
+       loadSettings();
+     }, []);
  
-       const { data } = await supabase.from("system_settings").select("*");
-        if (data) {
-          const kConfig = data.find(s => s.key === 'kanban_config');
-           const rLayout = data.find(s => s.key === 'report_layout');
-           const eConfig = data.find(s => s.key === 'email_config');
-           const lConfig = data.find(s => s.key === 'layout_settings');
-          const eTemplates = data.find(s => s.key === 'email_templates');
-          
-          if (kConfig) setKanbanConfig(kConfig.value as any[]);
-           if (rLayout) setReportLayout(rLayout.value as any);
-           if (eConfig) setEmailSettings(eConfig.value as any);
-           if (lConfig) setLayoutConfig(lConfig.value as any);
-          if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
-        }
-     };
-     loadSettings();
-   }, []);
- 
-    const saveSettings = async () => {
-      setLoading(true);
-      try {
-        const settings = [
-          { key: 'kanban_config', value: kanbanConfig },
-           { key: 'report_layout', value: reportLayout },
-           { key: 'email_config', value: emailSettings },
-           { key: 'email_templates', value: emailTemplates },
-           { key: 'layout_settings', value: layoutConfig }
-        ];
-
-        for (const setting of settings) {
-          const { error } = await supabase.from("system_settings").upsert({
-            key: setting.key,
-            value: setting.value,
-            updated_at: new Date().toISOString()
-          });
-          if (error) throw error;
-        }
+      const saveSettings = async () => {
+        setLoading(true);
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
   
-        toast({ title: "Sucesso", description: "Configurações salvas com sucesso!" });
-      } catch (error: any) {
-        toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
-      } finally {
-        setLoading(false);
-      }
-    };
+          // Save personal Kanban config
+          const { data: profile } = await supabase.from("profiles").select("settings").eq("id", user.id).single();
+          const updatedSettings = { ...(profile?.settings && typeof profile.settings === 'object' ? profile.settings : {}), kanban_config: kanbanConfig };
+          await supabase.from("profiles").update({ settings: updatedSettings }).eq("id", user.id);
+  
+          if (isAdmin) {
+            const settings = [
+              { key: 'kanban_config', value: kanbanConfig },
+               { key: 'report_layout', value: reportLayout },
+               { key: 'email_config', value: emailSettings },
+               { key: 'email_templates', value: emailTemplates },
+               { key: 'layout_settings', value: layoutConfig }
+            ];
+  
+            for (const setting of settings) {
+              const { error } = await supabase.from("system_settings").upsert({
+                key: setting.key,
+                value: setting.value,
+                updated_at: new Date().toISOString()
+              });
+              if (error) throw error;
+            }
+          }
+    
+          toast({ title: "Sucesso", description: "Configurações salvas com sucesso!" });
+        } catch (error: any) {
+          toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
+        } finally {
+          setLoading(false);
+        }
+      };
 
    return (
      <div className="p-4 md:p-8 max-w-5xl mx-auto w-full space-y-8 animate-fade-in">
-       <div className="flex justify-between items-center">
-         <div>
-           <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-           <p className="text-muted-foreground">Ajuste as preferências do sistema e sua experiência.</p>
-         </div>
-         {isAdmin && (
-           <Button onClick={saveSettings} disabled={loading} className="gap-2">
-             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
-             Salvar Alterações
-           </Button>
-         )}
-       </div>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+            <p className="text-muted-foreground">Ajuste as preferências do sistema e sua experiência.</p>
+          </div>
+          <Button onClick={saveSettings} disabled={loading} className="gap-2">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
+            Salvar Alterações
+          </Button>
+        </div>
  
        <Tabs defaultValue="geral" className="w-full">
            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 mb-8">
            <TabsTrigger value="geral">Geral</TabsTrigger>
-           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
-           {isAdmin && (
-             <>
-               <TabsTrigger value="email">E-mail & Alertas</TabsTrigger>
-               <TabsTrigger value="kanban">Kanban</TabsTrigger>
-                 <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
-                 <TabsTrigger value="layout">Layout</TabsTrigger>
-             </>
-           )}
+            <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
+            <TabsTrigger value="kanban">Kanban</TabsTrigger>
+            {isAdmin && (
+              <>
+                <TabsTrigger value="email">E-mail & Alertas</TabsTrigger>
+                  <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+                  <TabsTrigger value="layout">Layout</TabsTrigger>
+              </>
+            )}
          </TabsList>
 
          <TabsContent value="geral" className="space-y-6">

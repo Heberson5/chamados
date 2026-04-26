@@ -152,7 +152,7 @@
                    <Label htmlFor="prioridade">Prioridade</Label>
                    <Select 
                      value={newTicket.prioridade} 
-                     onValueChange={v => setNewTicket({...newTicket, prioridade: v})}
+                     onValueChange={v => setNewTicket({...newTicket, prioridade: v as any})}
                    >
                      <SelectTrigger>
                        <SelectValue />

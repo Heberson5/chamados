@@ -47,8 +47,8 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
    };
  
    return (
-    <div className={cn(
-      "fixed inset-y-0 left-0 z-50 md:relative h-screen flex flex-col bg-sidebar border-r transition-all duration-300",
+    <aside className={cn(
+      "fixed inset-y-0 left-0 z-50 md:relative flex h-screen flex-col bg-sidebar border-r transition-all duration-300 shadow-xl md:shadow-none",
       collapsed ? "w-16" : "w-64"
     )}>
       <div className="p-4 flex justify-between items-center border-b shrink-0">
@@ -94,21 +94,24 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
        </nav>
  
        <div className="p-2 border-t space-y-2">
-         <Button
-           variant="ghost"
-           className={cn(
-             "w-full justify-start",
-             collapsed ? "px-2" : "px-4"
-           )}
-           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-         >
-           {theme === "dark" ? (
-             <Sun size={20} className={cn(!collapsed && "mr-2")} />
-           ) : (
-             <Moon size={20} className={cn(!collapsed && "mr-2")} />
-           )}
-           {!collapsed && <span>Tema {theme === "dark" ? "Claro" : "Escuro"}</span>}
-         </Button>
+          <div className="px-2">
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start h-10 transition-all",
+                collapsed ? "px-0 justify-center" : "px-4"
+              )}
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              title={`Mudar para tema ${theme === "dark" ? "claro" : "escuro"}`}
+            >
+              {theme === "dark" ? (
+                <Sun size={20} className={cn(!collapsed && "mr-2")} />
+              ) : (
+                <Moon size={20} className={cn(!collapsed && "mr-2")} />
+              )}
+              {!collapsed && <span>Tema {theme === "dark" ? "Claro" : "Escuro"}</span>}
+            </Button>
+          </div>
  
          <Button
            variant="ghost"

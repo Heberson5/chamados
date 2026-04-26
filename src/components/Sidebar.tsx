@@ -10,11 +10,8 @@ import {
    Moon,
    Sun,
    Monitor,
-   User,
-   Users,
-   Package,
-   Banknote,
-   BarChart3
+    User,
+    BarChart3
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
@@ -34,9 +31,6 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
     const menuItems = [
       { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
       { icon: Ticket, label: "Chamados", path: "/chamados" },
-      { icon: Package, label: "Inventário", path: "/inventory" },
-      { icon: Users, label: "Gestão de Pessoas", path: "/users" },
-      { icon: Banknote, label: "Financeiro", path: "/finance" },
       { icon: BarChart3, label: "Relatórios", path: "/reports" },
       { icon: User, label: "Perfil", path: "/perfil" },
       { icon: Settings, label: "Configurações", path: "/settings" },

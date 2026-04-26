@@ -25,7 +25,7 @@ export default function Chamados() {
   const [newTicket, setNewTicket] = useState<{
     titulo: string;
     descricao: string;
-      prioridade: "Crítico" | "Alto" | "Médio" | "Baixo" | "Planejado"
+    prioridade: "P1" | "P2" | "P3" | "P4" | "P5"
   }>({
     titulo: "",
     descricao: "",
@@ -134,10 +134,7 @@ export default function Chamados() {
       const { error: insertError } = await supabase.from("chamados").insert({
         titulo: newTicket.titulo || "Sem título",
         descricao: newTicket.descricao,
-        prioridade: newTicket.prioridade === "Crítico" ? "P1" : 
-                   newTicket.prioridade === "Alto" ? "P2" : 
-                   newTicket.prioridade === "Médio" ? "P3" : 
-                   newTicket.prioridade === "Baixo" ? "P4" : "P5",
+        prioridade: newTicket.prioridade,
         usuario_id: user.id,
         status: "ABERTO",
         anexos: uploadedUrls.length > 0 ? uploadedUrls : null

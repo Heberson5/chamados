@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+ import { format } from "date-fns";
+ import { ptBR } from "date-fns/locale";
+ import { getPriorityLabel } from "@/lib/utils/priority";
   import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -69,17 +70,6 @@ import { Label } from "@/components/ui/label";
          default: return "text-muted-foreground bg-muted border-border";
        }
      };
- 
-   const getPriorityLabel = (priority: string) => {
-     const labels: Record<string, string> = { 
-       P1: "Crítico", 
-       P2: "Alto", 
-       P3: "Médio", 
-       P4: "Baixo", 
-       P5: "Muito Baixo" 
-     };
-     return labels[priority] || priority;
-   };
  
    const [slaInfo, setSlaInfo] = useState({ label: "Calculando...", color: "bg-gray-400" });
  

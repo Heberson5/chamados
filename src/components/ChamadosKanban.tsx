@@ -173,7 +173,39 @@ interface ChamadosKanbanProps {
 }
 
 export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProps) {
-  const { toast } = useToast();
+   const { toast } = useToast();
+   const sensors = useSensors(
+     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+   );
+ 
+   const handleDragEnd = async (event: any) => {
+     const { active, over } = event;
+     if (!over) return;
+ 
+     const ticketId = active.id;
+     const newStatus = over.id;
+     const currentStatus = active.data.current.columnId;
+ 
+     if (newStatus === currentStatus) return;
+     if (currentStatus === "ENCERRADO" && newStatus !== "ENCERRADO") {
+       toast({ variant: "destructive", title: "Ação não permitida", description: "Chamados encerrados não podem ser arrastados. Use o botão Reabrir." });
+       return;
+     }
+ 
+     try {
+       const { error } = await supabase
+         .from("chamados")
+         .update({ status: newStatus })
+         .eq("id", ticketId);
+ 
+       if (error) throw error;
+       toast({ title: "Status atualizado", description: `Chamado movido para ${newStatus}` });
+       onUpdate();
+     } catch (error: any) {
+       toast({ variant: "destructive", title: "Erro ao mover chamado", description: error.message });
+     }
+   };
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [closureNote, setClosureNote] = useState("");
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
@@ -226,43 +258,10 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       if (action === "atender") {
         updates.status = "EM_ATENDIMENTO";
         updates.tecnico_id = user.id;
-       } else if (action === "reabrir") {
-         updates.status = "EM_ATENDIMENTO";
-         updates.encerrado_em = null;
-       } else if (action === "encerrar") {
-   const sensors = useSensors(
-     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-   );
- 
-   const handleDragEnd = async (event: any) => {
-     const { active, over } = event;
-     if (!over) return;
- 
-     const ticketId = active.id;
-     const newStatus = over.id;
-     const currentStatus = active.data.current.columnId;
- 
-     if (newStatus === currentStatus) return;
-     if (currentStatus === "ENCERRADO" && newStatus !== "ENCERRADO") {
-       toast({ variant: "destructive", title: "Ação não permitida", description: "Chamados encerrados não podem ser arrastados. Use o botão Reabrir." });
-       return;
-     }
- 
-     try {
-       const { error } = await supabase
-         .from("chamados")
-         .update({ status: newStatus })
-         .eq("id", ticketId);
- 
-       if (error) throw error;
-       toast({ title: "Status atualizado", description: `Chamado movido para ${newStatus}` });
-       onUpdate();
-     } catch (error: any) {
-       toast({ variant: "destructive", title: "Erro ao mover chamado", description: error.message });
-     }
-   };
- 
+      } else if (action === "reabrir") {
+        updates.status = "EM_ATENDIMENTO";
+        updates.encerrado_em = null;
+      } else if (action === "encerrar") {
         updates.status = "ENCERRADO";
         updates.encerrado_em = new Date().toISOString();
         updates.descricao_encerramento = closureNote;

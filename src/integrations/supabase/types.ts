@@ -21,6 +21,7 @@ export type Database = {
           id: string
           new_data: Json | null
           old_data: Json | null
+          path: string | null
           record_id: string | null
           table_name: string | null
           user_email: string | null
@@ -32,6 +33,7 @@ export type Database = {
           id?: string
           new_data?: Json | null
           old_data?: Json | null
+          path?: string | null
           record_id?: string | null
           table_name?: string | null
           user_email?: string | null
@@ -43,6 +45,7 @@ export type Database = {
           id?: string
           new_data?: Json | null
           old_data?: Json | null
+          path?: string | null
           record_id?: string | null
           table_name?: string | null
           user_email?: string | null
@@ -286,6 +289,7 @@ export type Database = {
       }
       comentarios_chamado: {
         Row: {
+          anexos: string[] | null
           atualizado_em: string | null
           autor_id: string
           chamado_id: string
@@ -296,6 +300,7 @@ export type Database = {
           visibilidade_interna: boolean | null
         }
         Insert: {
+          anexos?: string[] | null
           atualizado_em?: string | null
           autor_id: string
           chamado_id: string
@@ -306,6 +311,7 @@ export type Database = {
           visibilidade_interna?: boolean | null
         }
         Update: {
+          anexos?: string[] | null
           atualizado_em?: string | null
           autor_id?: string
           chamado_id?: string
@@ -653,6 +659,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notificacoes: {
+        Row: {
+          created_at: string | null
+          id: string
+          lida: boolean | null
+          link: string | null
+          mensagem: string
+          titulo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lida?: boolean | null
+          link?: string | null
+          mensagem: string
+          titulo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lida?: boolean | null
+          link?: string | null
+          mensagem?: string
+          titulo?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
       }
       ordens_de_servico: {
         Row: {
@@ -1102,6 +1138,10 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          can_create: boolean | null
+          can_delete: boolean | null
+          can_edit: boolean | null
+          can_inactivate: boolean | null
           created_at: string
           id: string
           organization_id: string
@@ -1109,6 +1149,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_inactivate?: boolean | null
           created_at?: string
           id?: string
           organization_id: string
@@ -1116,6 +1160,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_inactivate?: boolean | null
           created_at?: string
           id?: string
           organization_id?: string

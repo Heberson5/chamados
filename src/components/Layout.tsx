@@ -1,11 +1,29 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "./Sidebar";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const trackNavigation = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("audit_logs").insert({
+          user_id: user.id,
+          user_email: user.email,
+          action: "NAVIGATION",
+          path: location.pathname,
+          created_at: new Date().toISOString()
+        });
+      }
+    };
+    trackNavigation();
+  }, [location.pathname]);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">

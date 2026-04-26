@@ -109,16 +109,15 @@ interface SidebarProps {
       "fixed inset-y-0 left-0 z-50 md:relative flex h-screen flex-col bg-sidebar border-r transition-all duration-300 shadow-xl md:shadow-none",
       collapsed ? "w-16" : "w-64"
     )}>
-       <div className={cn(
-         "p-4 flex justify-between items-center border-b shrink-0",
-         layout.sidebarColor || "bg-sidebar"
-       )}>
+        <div className="p-4 flex justify-between items-center border-b shrink-0 bg-sidebar/50 backdrop-blur-sm sticky top-0 z-10">
          {!collapsed && (
            <div className="flex items-center gap-2 overflow-hidden">
              {layout.companyLogo && (
                <img src={layout.companyLogo} alt="Logo" className="w-8 h-8 object-contain shrink-0" />
              )}
-             <span className="font-bold text-xl truncate">{layout.companyName || "Help-Me"}</span>
+              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent truncate">
+                {layout.companyName || "Help-Me"}
+              </span>
            </div>
          )}
         <div className="flex items-center ml-auto">

@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
   import Users from "./pages/Users";
   import Reports from "./pages/Reports";
   import Permissions from "./pages/Permissions";
+import Audit from "./pages/Audit";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ const App = () => {
                  <Route path="/reports" element={<Reports />} />
                 <Route path="/usuarios" element={<Users />} />
                 <Route path="/permissions" element={<Permissions />} />
+                <Route path="/audit" element={<Audit />} />
                <Route path="/perfil" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

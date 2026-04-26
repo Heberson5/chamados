@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Ticket, Shield, Clock, LayoutGrid, Sun, Moon, Monitor } from "lucide-react";
+ import { Ticket, Shield, Clock, LayoutGrid, Sun, Moon, Monitor, Package } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
 export default function Index() {
@@ -78,15 +78,24 @@ export default function Index() {
                 Acompanhe o status dos seus chamados em tempo real com notificações inteligentes.
               </p>
             </div>
-            <div className="space-y-4">
-              <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-500">
-                <LayoutGrid size={24} />
-              </div>
-              <h3 className="text-xl font-bold">Quadro Kanban</h3>
-              <p className="text-muted-foreground">
-                Visualize e organize os chamados de forma ágil com colunas de status e ações rápidas.
-              </p>
-            </div>
+             <div className="space-y-4">
+               <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-500">
+                 <LayoutGrid size={24} />
+               </div>
+               <h3 className="text-xl font-bold">Quadro Kanban</h3>
+               <p className="text-muted-foreground">
+                 Visualize e organize os chamados de forma ágil com colunas de status e ações rápidas.
+               </p>
+             </div>
+             <div className="space-y-4">
+               <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center text-orange-500">
+                 <Package size={24} />
+               </div>
+               <h3 className="text-xl font-bold">Gestão de Inventário</h3>
+               <p className="text-muted-foreground">
+                 Controle total do estoque de hardware e periféricos com histórico de baixas.
+               </p>
+             </div>
           </div>
         </section>
       </main>

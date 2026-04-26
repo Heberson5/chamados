@@ -15,11 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
    const { theme, setTheme } = useTheme();
    const { toast } = useToast();
    const [loading, setLoading] = useState(false);
-     const [kanbanConfig, setKanbanConfig] = useState<any[]>([
-       { id: "ABERTO", title: "Abertos", color_hex: "#3b82f6" },
-       { id: "EM_ATENDIMENTO", title: "Em Atendimento", color_hex: "#f59e0b" },
-       { id: "ENCERRADO", title: "Encerrados", color_hex: "#10b981" },
-     ]);
+      const [kanbanConfig, setKanbanConfig] = useState<any[]>([
+        { id: "ABERTO", title: "Aguardando", color_hex: "#3b82f6" },
+        { id: "EM_ATENDIMENTO", title: "Andamento", color_hex: "#f59e0b" },
+        { id: "PAUSADO", title: "Pausado", color_hex: "#94a3b8" },
+        { id: "AGUARDANDO_USUARIO", title: "Aguardando o Usuário", color_hex: "#6366f1" },
+        { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981" },
+      ]);
      const [reportLayout, setReportLayout] = useState<any>({ headerColor: "#000000", footerText: "", showLogo: true });
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
    const [layoutConfig, setLayoutConfig] = useState({ 

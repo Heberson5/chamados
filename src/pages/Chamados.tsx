@@ -3,7 +3,9 @@
  import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
- import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X } from "lucide-react";
+ import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List } from "lucide-react";
+ import ChamadosKanban from "@/components/ChamadosKanban";
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Input } from "@/components/ui/input";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
  import { Label } from "@/components/ui/label";
@@ -173,13 +175,241 @@
     };
  
    return (
-     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
-       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
          <div>
            <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Chamados</h1>
            <p className="text-muted-foreground">Visualize, gerencie e vincule atendimentos técnicos.</p>
          </div>
-         <div className="flex gap-2">
+         <div className="flex flex-wrap gap-2 w-full md:w-auto">
+           <Select value={statusFilter} onValueChange={setStatusFilter}>
+             <SelectTrigger className="w-[180px]">
+               <SelectValue placeholder="Filtrar por status" />
+             </SelectTrigger>
+             <SelectContent>
+               <SelectItem value="todos">Todos os status</SelectItem>
+               <SelectItem value="ABERTO">Aberto</SelectItem>
+               <SelectItem value="EM_ATENDIMENTO">Em Atendimento</SelectItem>
+               <SelectItem value="ENCERRADO">Encerrado</SelectItem>
+               <SelectItem value="CANCELADO">Cancelado</SelectItem>
+             </SelectContent>
+           </Select>
+
+           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+             <DialogTrigger asChild>
+               <Button className="flex items-center gap-2">
+                 <Plus size={18} />
+                 Novo Chamado
+               </Button>
+             </DialogTrigger>
+             <DialogContent>
+               <DialogHeader>
+                 <DialogTitle>Criar Novo Chamado</DialogTitle>
+               </DialogHeader>
+                <form onSubmit={handleCreateTicket} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="titulo">Título</Label>
+                    <Input 
+                      id="titulo" 
+                      required 
+                      value={newTicket.titulo}
+                      onChange={e => setNewTicket({...newTicket, titulo: e.target.value})}
+                      placeholder="Ex: Problema no servidor"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="descricao">Descrição</Label>
+                    <textarea
+                      id="descricao"
+                      required
+                      className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                      value={newTicket.descricao}
+                      onChange={e => setNewTicket({...newTicket, descricao: e.target.value})}
+                      placeholder="Descreva o problema detalhadamente..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prioridade">Prioridade</Label>
+                    <Select 
+                      value={newTicket.prioridade} 
+                      onValueChange={v => setNewTicket({...newTicket, prioridade: v as any})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="P1">Crítica</SelectItem>
+                        <SelectItem value="P2">Alta</SelectItem>
+                        <SelectItem value="P3">Média</SelectItem>
+                        <SelectItem value="P4">Baixa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="anexos">Anexos (Texto, PDF, Imagens)</Label>
+                    <Input 
+                      id="anexos" 
+                      type="file"
+                      multiple
+                      accept=".txt,.pdf,image/*"
+                      onChange={handleFileChange}
+                    />
+                    <p className="text-[10px] text-muted-foreground">Vídeos e áudios não são permitidos.</p>
+                    
+                    {previews.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2 mt-2">
+                        {previews.map((url, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-md overflow-hidden border">
+                            <img src={url} alt={`Preview ${idx}`} className="object-cover w-full h-full" />
+                            <button
+                              type="button"
+                              onClick={() => removeFile(idx)}
+                              className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                 <DialogFooter>
+                   <Button type="submit" disabled={isLoading}>
+                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Criar Chamado
+                   </Button>
+                 </DialogFooter>
+               </form>
+             </DialogContent>
+           </Dialog>
+         </div>
+       </div>
+ 
+       <Tabs defaultValue="list" className="w-full">
+         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+           <div className="relative w-full md:max-w-md">
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+             <Input 
+               placeholder="Buscar por OS ou descrição..." 
+               className="pl-10"
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+             />
+           </div>
+           <TabsList>
+             <TabsTrigger value="list" className="gap-2">
+               <List size={16} /> Lista
+             </TabsTrigger>
+             <TabsTrigger value="kanban" className="gap-2">
+               <LayoutGrid size={16} /> Kanban
+             </TabsTrigger>
+           </TabsList>
+         </div>
+
+         <TabsContent value="list">
+           <div className="bg-card rounded-md border shadow-sm overflow-x-auto">
+             <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Chamado</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>SLA Status</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                    <TableHead>Técnico</TableHead>
+                    <TableHead>Anexos</TableHead>
+                    <TableHead>Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+               <TableBody>
+                 {filteredTickets.map((ticket) => {
+                   const sla = getSLAStatus(ticket);
+                   return (
+                     <TableRow key={ticket.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span className="font-bold">{ticket.titulo || "Sem título"}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{ticket.os}</span>
+                            {ticket.chamado_pai && (
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <ArrowRight size={10} /> {ticket.chamado_pai.os}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-xs md:max-w-md truncate">
+                          <div className="flex flex-col">
+                            <span className="truncate">{ticket.descricao}</span>
+                            <span className="text-[11px] text-muted-foreground">Solicitante: {ticket.usuario?.nome}</span>
+                          </div>
+                        </TableCell>
+                       <TableCell>
+                         <div className="flex items-center gap-2">
+                           <div className={`w-2 h-2 rounded-full ${sla.color}`} />
+                           <span className="text-xs font-bold tracking-wider">{sla.label}</span>
+                         </div>
+                       </TableCell>
+                       <TableCell>
+                         <Badge variant={
+                           ticket.status === 'ABERTO' ? 'default' : 
+                           ticket.status === 'EM_ATENDIMENTO' ? 'secondary' :
+                           ticket.status === 'ENCERRADO' ? 'outline' : 'destructive'
+                         }>
+                           {ticket.status}
+                         </Badge>
+                       </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={
+                            ticket.prioridade === 'P1' ? 'border-red-500 text-red-500 bg-red-50' :
+                            ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-500 bg-orange-50' :
+                            'border-gray-500'
+                          }>
+                            {getPriorityLabel(ticket.prioridade)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome ? ticket.tecnico.sobrenome.charAt(0) + '.' : ''}` : 'Não atribuído'}
+                        </TableCell>
+                        <TableCell>
+                          {ticket.anexos && ticket.anexos.length > 0 ? (
+                            <div className="flex gap-1">
+                              {ticket.anexos.map((url: string, idx: number) => (
+                                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs">
+                                  [{idx + 1}]
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                       <TableCell className="text-sm whitespace-nowrap">
+                         {ticket.gerado_em ? format(new Date(ticket.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
+                       </TableCell>
+                     </TableRow>
+                   );
+                 })}
+                  {filteredTickets.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                       <div className="flex flex-col items-center gap-2">
+                         <AlertTriangle size={32} className="text-yellow-500" />
+                         <p>Nenhum chamado encontrado para os filtros atuais.</p>
+                       </div>
+                     </TableCell>
+                   </TableRow>
+                 )}
+               </TableBody>
+             </Table>
+           </div>
+         </TabsContent>
+         
+         <TabsContent value="kanban" className="mt-0">
+           <ChamadosKanban tickets={filteredTickets} onUpdate={fetchTickets} />
+         </TabsContent>
+       </Tabs>
+     </div>
+   );
            <Select value={statusFilter} onValueChange={setStatusFilter}>
              <SelectTrigger className="w-[180px]">
                <SelectValue placeholder="Filtrar por status" />

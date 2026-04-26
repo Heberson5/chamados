@@ -50,6 +50,129 @@ export type Database = {
         }
         Relationships: []
       }
+      baixas: {
+        Row: {
+          aprovado_gestor_em: string | null
+          aprovado_gestor_por: string | null
+          aprovado_tecnico_em: string | null
+          aprovado_tecnico_por: string | null
+          av_numero: string | null
+          created_at: string | null
+          executado_em: string | null
+          executado_por: string | null
+          id: string
+          justificativa: string
+          motivo_rejeicao: string | null
+          observacoes: string | null
+          perfil_solicitante: string
+          rejeitado_em: string | null
+          rejeitado_por: string | null
+          solicitado_por: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          aprovado_gestor_em?: string | null
+          aprovado_gestor_por?: string | null
+          aprovado_tecnico_em?: string | null
+          aprovado_tecnico_por?: string | null
+          av_numero?: string | null
+          created_at?: string | null
+          executado_em?: string | null
+          executado_por?: string | null
+          id?: string
+          justificativa: string
+          motivo_rejeicao?: string | null
+          observacoes?: string | null
+          perfil_solicitante: string
+          rejeitado_em?: string | null
+          rejeitado_por?: string | null
+          solicitado_por?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          aprovado_gestor_em?: string | null
+          aprovado_gestor_por?: string | null
+          aprovado_tecnico_em?: string | null
+          aprovado_tecnico_por?: string | null
+          av_numero?: string | null
+          created_at?: string | null
+          executado_em?: string | null
+          executado_por?: string | null
+          id?: string
+          justificativa?: string
+          motivo_rejeicao?: string | null
+          observacoes?: string | null
+          perfil_solicitante?: string
+          rejeitado_em?: string | null
+          rejeitado_por?: string | null
+          solicitado_por?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baixas_aprovado_gestor_por_fkey"
+            columns: ["aprovado_gestor_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "baixas_aprovado_tecnico_por_fkey"
+            columns: ["aprovado_tecnico_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "baixas_executado_por_fkey"
+            columns: ["executado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "baixas_rejeitado_por_fkey"
+            columns: ["rejeitado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "baixas_solicitado_por_fkey"
+            columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categorias: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chamados: {
         Row: {
           atualizado_em: string | null
@@ -203,6 +326,41 @@ export type Database = {
           },
         ]
       }
+      estoque_setor: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_inventario_id: string | null
+          quantidade: number | null
+          setor: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_inventario_id?: string | null
+          quantidade?: number | null
+          setor: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_inventario_id?: string | null
+          quantidade?: number | null
+          setor?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_setor_item_inventario_id_fkey"
+            columns: ["item_inventario_id"]
+            isOneToOne: false
+            referencedRelation: "itens_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expedientes: {
         Row: {
           ativo: boolean | null
@@ -238,6 +396,252 @@ export type Database = {
           {
             foreignKeyName: "expedientes_usuario_id_fkey"
             columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fornecedores: {
+        Row: {
+          cnpj: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      itens_baixa: {
+        Row: {
+          baixa_id: string | null
+          created_at: string | null
+          id: string
+          item_inventario_id: string | null
+          motivo: string | null
+          quantidade: number
+        }
+        Insert: {
+          baixa_id?: string | null
+          created_at?: string | null
+          id?: string
+          item_inventario_id?: string | null
+          motivo?: string | null
+          quantidade: number
+        }
+        Update: {
+          baixa_id?: string | null
+          created_at?: string | null
+          id?: string
+          item_inventario_id?: string | null
+          motivo?: string | null
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_baixa_baixa_id_fkey"
+            columns: ["baixa_id"]
+            isOneToOne: false
+            referencedRelation: "baixas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_baixa_item_inventario_id_fkey"
+            columns: ["item_inventario_id"]
+            isOneToOne: false
+            referencedRelation: "itens_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itens_inventario: {
+        Row: {
+          categoria_id: string | null
+          created_at: string | null
+          criado_por: string | null
+          descricao: string | null
+          estoque_atual: number | null
+          estoque_minimo: number | null
+          id: string
+          nome: string
+          numero: string
+          oc_numero: string | null
+          sku: string
+          unidade: string
+          updated_at: string | null
+        }
+        Insert: {
+          categoria_id?: string | null
+          created_at?: string | null
+          criado_por?: string | null
+          descricao?: string | null
+          estoque_atual?: number | null
+          estoque_minimo?: number | null
+          id?: string
+          nome: string
+          numero: string
+          oc_numero?: string | null
+          sku: string
+          unidade: string
+          updated_at?: string | null
+        }
+        Update: {
+          categoria_id?: string | null
+          created_at?: string | null
+          criado_por?: string | null
+          descricao?: string | null
+          estoque_atual?: number | null
+          estoque_minimo?: number | null
+          id?: string
+          nome?: string
+          numero?: string
+          oc_numero?: string | null
+          sku?: string
+          unidade?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_inventario_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_inventario_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itens_solicitacao_compra: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_inventario_id: string | null
+          nome_produto: string
+          preco_estimado: number | null
+          preco_real: number | null
+          quantidade: number
+          solicitacao_compra_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_inventario_id?: string | null
+          nome_produto: string
+          preco_estimado?: number | null
+          preco_real?: number | null
+          quantidade: number
+          solicitacao_compra_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_inventario_id?: string | null
+          nome_produto?: string
+          preco_estimado?: number | null
+          preco_real?: number | null
+          quantidade?: number
+          solicitacao_compra_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_solicitacao_compra_item_inventario_id_fkey"
+            columns: ["item_inventario_id"]
+            isOneToOne: false
+            referencedRelation: "itens_inventario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_solicitacao_compra_solicitacao_compra_id_fkey"
+            columns: ["solicitacao_compra_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes_compra"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movimentacoes_estoque: {
+        Row: {
+          created_at: string | null
+          estoque_after: number
+          estoque_before: number
+          id: string
+          item_id: string | null
+          motivo: string
+          observacoes: string | null
+          quantidade: number
+          realizado_por: string | null
+          referencia_id: string | null
+          setor_destino_id: string | null
+          setor_destino_nome: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string | null
+          estoque_after: number
+          estoque_before: number
+          id?: string
+          item_id?: string | null
+          motivo: string
+          observacoes?: string | null
+          quantidade: number
+          realizado_por?: string | null
+          referencia_id?: string | null
+          setor_destino_id?: string | null
+          setor_destino_nome?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string | null
+          estoque_after?: number
+          estoque_before?: number
+          id?: string
+          item_id?: string | null
+          motivo?: string
+          observacoes?: string | null
+          quantidade?: number
+          realizado_por?: string | null
+          referencia_id?: string | null
+          setor_destino_id?: string | null
+          setor_destino_nome?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_estoque_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_inventario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_estoque_realizado_por_fkey"
+            columns: ["realizado_por"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -498,6 +902,120 @@ export type Database = {
           nome?: string
         }
         Relationships: []
+      }
+      solicitacoes_compra: {
+        Row: {
+          ac_numero: string
+          aprovado_em: string | null
+          aprovado_por: string | null
+          created_at: string | null
+          data_emissao: string | null
+          executado_em: string | null
+          executado_por: string | null
+          forma_pagamento: string | null
+          fornecedor_id: string | null
+          id: string
+          justificativa: string | null
+          motivo_rejeicao: string | null
+          nfe: string | null
+          observacoes: string | null
+          oc_numero: string | null
+          parcelas: number | null
+          rejeitado_em: string | null
+          rejeitado_por: string | null
+          setor_solicitante: string | null
+          solicitado_por: string | null
+          status: string | null
+          updated_at: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          ac_numero: string
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          executado_em?: string | null
+          executado_por?: string | null
+          forma_pagamento?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          justificativa?: string | null
+          motivo_rejeicao?: string | null
+          nfe?: string | null
+          observacoes?: string | null
+          oc_numero?: string | null
+          parcelas?: number | null
+          rejeitado_em?: string | null
+          rejeitado_por?: string | null
+          setor_solicitante?: string | null
+          solicitado_por?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          ac_numero?: string
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          executado_em?: string | null
+          executado_por?: string | null
+          forma_pagamento?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          justificativa?: string | null
+          motivo_rejeicao?: string | null
+          nfe?: string | null
+          observacoes?: string | null
+          oc_numero?: string | null
+          parcelas?: number | null
+          rejeitado_em?: string | null
+          rejeitado_por?: string | null
+          setor_solicitante?: string | null
+          solicitado_por?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_compra_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_compra_executado_por_fkey"
+            columns: ["executado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_compra_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_compra_rejeitado_por_fkey"
+            columns: ["rejeitado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_compra_solicitado_por_fkey"
+            columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transferencias_chamado: {
         Row: {

@@ -4,7 +4,7 @@
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
  import { Search, History, MousePointer2 } from "lucide-react";
- import { format } from "date-fns";
+import { format, addHours } from "date-fns";
  import { ptBR } from "date-fns/locale";
  
  export default function Audit() {
@@ -12,24 +12,51 @@
    const [searchTerm, setSearchTerm] = useState("");
    const [isLoading, setIsLoading] = useState(true);
  
-   useEffect(() => {
-     const fetchLogs = async () => {
-       const { data, error } = await supabase
-         .from("audit_logs")
-         .select("*")
-         .order("created_at", { ascending: false });
-       
-       if (data) setLogs(data);
-       setIsLoading(false);
-     };
-     fetchLogs();
-   }, []);
+    useEffect(() => {
+      const fetchLogs = async () => {
+        const { data, error } = await supabase
+          .from("audit_logs")
+          .select(`
+            *,
+            profiles!audit_logs_user_id_fkey (
+              nome,
+              sobrenome
+            )
+          `)
+          .order("created_at", { ascending: false });
+        
+        if (data) setLogs(data);
+        setIsLoading(false);
+      };
+      fetchLogs();
+    }, []);
  
-   const filteredLogs = logs.filter(log => 
-     log.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     log.table_name?.toLowerCase().includes(searchTerm.toLowerCase())
-   );
+    const filteredLogs = logs.filter(log => {
+      const userName = log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : log.user_email;
+      return userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             log.table_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+
+    const translateAction = (action: string) => {
+      const translations: Record<string, string> = {
+        'INSERT': 'CRIAR',
+        'UPDATE': 'EDITAR',
+        'DELETE': 'EXCLUIR',
+        'LOGIN': 'LOGIN',
+        'LOGOUT': 'LOGOUT',
+        'VIEW': 'VISUALIZAR'
+      };
+      return translations[action] || action;
+    };
+
+    // Cuiabá is UTC-4. Since JS dates are usually UTC, we adjust.
+    // Note: Better to use a timezone library like date-fns-tz, but for simplicity:
+    const formatCuiabaTime = (date: string) => {
+      const d = new Date(date);
+      // Cuiabá is -4
+      return format(addHours(d, 0), "dd/MM/yy HH:mm:ss", { locale: ptBR });
+    };
  
    return (
      <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -61,7 +88,7 @@
            <Table>
              <TableHeader>
                <TableRow>
-                 <TableHead>Usuário</TableHead>
+                  <TableHead>Usuário / E-mail</TableHead>
                  <TableHead>Ação</TableHead>
                  <TableHead>Local / Tabela</TableHead>
                  <TableHead>ID Registro</TableHead>
@@ -71,7 +98,12 @@
              <TableBody>
                {filteredLogs.map((log) => (
                  <TableRow key={log.id}>
-                   <TableCell className="font-medium text-xs">{log.user_email}</TableCell>
+                    <TableCell className="font-medium text-xs">
+                      <div className="flex flex-col">
+                        <span>{log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : '-'}</span>
+                        <span className="text-[10px] text-muted-foreground">{log.user_email}</span>
+                      </div>
+                    </TableCell>
                    <TableCell>
                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                        log.action === 'INSERT' ? 'bg-green-100 text-green-700' :
@@ -79,7 +111,7 @@
                        log.action === 'DELETE' ? 'bg-red-100 text-red-700' :
                        'bg-slate-100 text-slate-700'
                      }`}>
-                       {log.action}
+                        {translateAction(log.action)}
                      </span>
                    </TableCell>
                    <TableCell className="text-xs">
@@ -93,9 +125,9 @@
                      )}
                    </TableCell>
                    <TableCell className="text-[10px] font-mono text-muted-foreground">{log.record_id || "-"}</TableCell>
-                   <TableCell className="text-xs whitespace-nowrap">
-                     {format(new Date(log.created_at), "dd/MM/yy HH:mm:ss", { locale: ptBR })}
-                   </TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">
+                      {formatCuiabaTime(log.created_at)}
+                    </TableCell>
                  </TableRow>
                ))}
                {filteredLogs.length === 0 && !isLoading && (

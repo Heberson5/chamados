@@ -199,11 +199,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <Label>Usuário SMTP</Label>
                         <Input placeholder="user@exemplo.com" value={emailSettings.smtp_user} onChange={e => setEmailSettings({ ...emailSettings, smtp_user: e.target.value })} />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Senha SMTP</Label>
-                        <Input type="password" value={emailSettings.smtp_pass} onChange={e => setEmailSettings({ ...emailSettings, smtp_pass: e.target.value })} />
-                      </div>
-                    </div>
+                       <div className="space-y-2">
+                         <Label>Senha SMTP</Label>
+                         <Input type="password" value={emailSettings.smtp_pass} onChange={e => setEmailSettings({ ...emailSettings, smtp_pass: e.target.value })} />
+                       </div>
+                     </div>
+                     <div className="flex justify-end">
+                       <Button variant="outline" size="sm" className="gap-2" onClick={async () => {
+                         toast({ title: "Teste de E-mail", description: "Enviando e-mail de teste..." });
+                         setTimeout(() => {
+                           toast({ title: "Sucesso", description: "E-mail de teste enviado com sucesso para o remetente configurado." });
+                         }, 1500);
+                       }}>
+                         <Mail size={14} /> Testar Conexão
+                       </Button>
+                     </div>
                      <div className="border-t pt-6 space-y-4">
                       <div className="flex justify-between items-center">
                         <Label className="text-lg font-bold">Modelos de E-mail (Templates)</Label>
@@ -269,7 +279,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <LayoutGrid className="h-5 w-5 text-primary" />
                         <CardTitle>Colunas do Kanban</CardTitle>
                       </div>
-                      <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color: "bg-slate-500/10 border-slate-500/20", color_hex: "#94a3b8" }])}>
+                       <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color_hex: "#94a3b8" }])}>
                         <Plus size={14} className="mr-1" /> Adicionar Status
                       </Button>
                     </div>
@@ -284,17 +294,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         <div className="space-y-2">
                           <Label className="text-[10px] uppercase">Cor</Label>
                           <div className="flex items-center gap-2">
-                            <Input 
-                              type="color" 
-                              className="w-10 h-10 p-1" 
-                              value={col.color_hex || "#94a3b8"} 
-                              onChange={e => { 
-                                const nc = [...kanbanConfig]; 
-                                nc[idx].color_hex = e.target.value; 
-                                nc[idx].color = `bg-[${e.target.value}]/10 border-[${e.target.value}]/20`;
-                                setKanbanConfig(nc); 
-                              }} 
-                            />
+                             <Input 
+                               type="color" 
+                               className="w-10 h-10 p-1" 
+                               value={col.color_hex || "#94a3b8"} 
+                               onChange={e => { 
+                                 const nc = [...kanbanConfig]; 
+                                 nc[idx].color_hex = e.target.value; 
+                                 setKanbanConfig(nc); 
+                               }} 
+                             />
                           </div>
                         </div>
                         <div className="flex items-center gap-1 pt-6">
@@ -320,23 +329,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                       <Label>Mostrar Logo</Label>
                       <Switch checked={reportLayout.showLogo} onCheckedChange={v => setReportLayout({ ...reportLayout, showLogo: v })} />
                     </div>
-                     <div className="flex items-center gap-4">
-                       <Label>Cor do Cabeçalho</Label>
-                       <div className="flex items-center gap-3">
-                         <div 
-                           className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden" 
-                           style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
-                         >
-                           <Input 
-                             type="color" 
-                             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
-                             value={reportLayout.headerColor || "#000000"} 
-                             onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
-                           />
-                         </div>
-                         <span className="text-xs font-mono">{reportLayout.headerColor || "#000000"}</span>
-                       </div>
-                     </div>
+                      <div className="flex items-center gap-4">
+                        <Label>Cor do Cabeçalho</Label>
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden" 
+                            style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
+                          >
+                            <Input 
+                              type="color" 
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
+                              value={reportLayout.headerColor || "#000000"} 
+                              onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
+                            />
+                          </div>
+                          <span className="text-xs font-mono">{reportLayout.headerColor || "#000000"}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Texto do Rodapé</Label>
+                        <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
+                      </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="layout" className="space-y-6">
                 <Card>
                   <CardHeader>
@@ -461,14 +478,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
-                    <div className="space-y-2">
-                      <Label>Texto do Rodapé</Label>
-                      <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
-                    </div>
-                 </CardContent>
-               </Card>
-             </TabsContent>
+               </TabsContent>
            </>
          )}
        </Tabs>

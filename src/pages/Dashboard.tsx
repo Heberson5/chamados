@@ -1,66 +1,136 @@
- import { useEffect, useState } from "react";
+ import { useEffect, useState, useMemo } from "react";
  import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
- import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { 
-  Ticket, 
-  AlertCircle, 
-  CheckCircle2, 
-  Clock, 
-  Package, 
-  Users 
-} from "lucide-react";
-
-export default function Dashboard() {
+ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
+ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon } from "lucide-react";
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+ import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay } from "date-fns";
+ import { ptBR } from "date-fns/locale";
+ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ 
+ export default function Dashboard() {
    const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalTickets: 0,
-    openTickets: 0,
-    resolvedTickets: 0,
-    slaViolations: 0,
-    activeUsers: 0
-  });
-
+   const [loading, setLoading] = useState(true);
+   const [tickets, setTickets] = useState<any[]>([]);
+   const [profiles, setProfiles] = useState<any[]>([]);
+   const [filters, setFilters] = useState({
+     period: "7d",
+     technician: "all",
+     user: "all",
+     dateRange: { from: subDays(new Date(), 7), to: new Date() }
+   });
+ 
+   const [stats, setStats] = useState({
+     totalTickets: 0,
+     openTickets: 0,
+     resolvedTickets: 0,
+     slaViolations: 0,
+     activeUsers: 0
+   });
+ 
    useEffect(() => {
-     const checkRoleAndFetchStats = async () => {
+     const checkRole = async () => {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;
-       
        const { data: profile } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
-       
        if (profile && profile.regra !== 'ADMIN' && profile.regra !== 'MASTER' && !profile.is_master) {
          navigate("/chamados");
-         return;
        }
-
-       const [
-         { count: total },
-         { count: open },
-         { count: resolved },
-         { count: sla },
-         { count: users }
-       ] = await Promise.all([
-         supabase.from("chamados").select("*", { count: 'exact', head: true }),
-         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ABERTO'),
-         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ENCERRADO'),
-         supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('sla_violado', true),
-         supabase.from("profiles").select("*", { count: 'exact', head: true }).eq('ativo', true)
-       ]);
-
-       setStats({
-         totalTickets: total || 0,
-         openTickets: open || 0,
-         resolvedTickets: resolved || 0,
-         slaViolations: sla || 0,
-         activeUsers: users || 0
-       });
      };
-
-      checkRoleAndFetchStats();
-      const interval = setInterval(checkRoleAndFetchStats, 30000); // 30s update
-      return () => clearInterval(interval);
-    }, [navigate]);
+     checkRole();
+   }, [navigate]);
+ 
+   const fetchData = async () => {
+     try {
+       const [ticketsRes, profilesRes] = await Promise.all([
+         supabase.from("chamados").select("*").order('gerado_em', { ascending: false }),
+         supabase.from("profiles").select("*").eq('ativo', true)
+       ]);
+ 
+       if (ticketsRes.data) setTickets(ticketsRes.data);
+       if (profilesRes.data) setProfiles(profilesRes.data);
+ 
+       const activeUsersCount = profilesRes.data?.length || 0;
+       setStats(prev => ({ ...prev, activeUsers: activeUsersCount }));
+     } catch (error) {
+       console.error("Error fetching dashboard data:", error);
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   useEffect(() => {
+     fetchData();
+     const interval = setInterval(fetchData, 30000);
+     return () => clearInterval(interval);
+   }, []);
+ 
+   const filteredTickets = useMemo(() => {
+     let result = [...tickets];
+ 
+     // Period Filter
+     let startDate = filters.dateRange.from;
+     let endDate = filters.dateRange.to;
+ 
+     if (filters.period !== "custom") {
+       endDate = new Date();
+       if (filters.period === "1d") startDate = startOfDay(new Date());
+       else if (filters.period === "7d") startDate = subDays(new Date(), 7);
+       else if (filters.period === "30d") startDate = subDays(new Date(), 30);
+       else if (filters.period === "1y") startDate = subDays(new Date(), 365);
+     }
+ 
+     result = result.filter(t => {
+       const date = new Date(t.gerado_em);
+       const withinInterval = isWithinInterval(date, { start: startOfDay(startDate), end: endOfDay(endDate) });
+       const technicianMatch = filters.technician === "all" || t.tecnico_id === filters.technician;
+       const userMatch = filters.user === "all" || t.usuario_id === filters.user;
+       return withinInterval && technicianMatch && userMatch;
+     });
+ 
+     return result;
+   }, [tickets, filters]);
+ 
+   useEffect(() => {
+     const total = filteredTickets.length;
+     const open = filteredTickets.filter(t => t.status === 'ABERTO').length;
+     const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
+     const sla = filteredTickets.filter(t => t.sla_violado).length;
+ 
+     setStats(prev => ({
+       ...prev,
+       totalTickets: total,
+       openTickets: open,
+       resolvedTickets: resolved,
+       slaViolations: sla
+     }));
+   }, [filteredTickets]);
+ 
+   const chartData = useMemo(() => {
+     let startDate = filters.dateRange.from;
+     let endDate = filters.dateRange.to;
+ 
+     if (filters.period !== "custom") {
+       endDate = new Date();
+       if (filters.period === "1d") startDate = startOfDay(new Date());
+       else if (filters.period === "7d") startDate = subDays(new Date(), 7);
+       else if (filters.period === "30d") startDate = subDays(new Date(), 30);
+       else if (filters.period === "1y") startDate = subDays(new Date(), 365);
+     }
+ 
+     const days = eachDayOfInterval({ start: startDate, end: endDate });
+     
+     return days.map(day => {
+       const dayTickets = filteredTickets.filter(t => isSameDay(new Date(t.gerado_em), day));
+       return {
+         name: format(day, "dd/MM"),
+         chamados: dayTickets.length,
+         sla: dayTickets.filter(t => !t.sla_violado).length
+       };
+     });
+   }, [filteredTickets, filters]);
 
   const cards = [
     { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },
@@ -70,35 +140,109 @@ export default function Dashboard() {
     { title: "Usuários Ativos", value: stats.activeUsers, icon: Users, color: "text-indigo-600" },
   ];
 
-   const chartData = [
-     { name: 'Seg', chamados: 12, sla: 10 },
-     { name: 'Ter', chamados: 19, sla: 15 },
-     { name: 'Qua', chamados: 15, sla: 14 },
-     { name: 'Qui', chamados: 22, sla: 20 },
-     { name: 'Sex', chamados: 30, sla: 25 },
-     { name: 'Sáb', chamados: 8, sla: 8 },
-     { name: 'Dom', chamados: 5, sla: 5 },
-   ];
- 
    return (
-     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
-       <div>
-         <h1 className="text-3xl font-bold tracking-tight">Painel Analítico</h1>
-         <p className="text-muted-foreground">Monitoramento em tempo real do suporte e infraestrutura.</p>
+     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fade-in">
+       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+         <div>
+           <h1 className="text-3xl font-bold tracking-tight">Painel Analítico</h1>
+           <p className="text-muted-foreground">Monitoramento em tempo real do suporte e infraestrutura.</p>
+         </div>
+         {loading && <Loader2 className="animate-spin text-primary" />}
        </div>
+ 
+       <Card className="p-4 bg-muted/30 border-none shadow-none">
+         <div className="flex flex-wrap items-end gap-4">
+           <div className="space-y-2">
+             <label className="text-xs font-medium flex items-center gap-1"><Filter size={12} /> Período</label>
+             <Select value={filters.period} onValueChange={(v) => setFilters({ ...filters, period: v })}>
+               <SelectTrigger className="w-[180px] h-9 bg-background">
+                 <SelectValue placeholder="Selecione o período" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="1d">Hoje</SelectItem>
+                 <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                 <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                 <SelectItem value="1y">Este Ano</SelectItem>
+                 <SelectItem value="custom">Personalizado</SelectItem>
+               </SelectContent>
+             </Select>
+           </div>
+ 
+           {filters.period === "custom" && (
+             <>
+               <div className="space-y-2">
+                 <label className="text-xs font-medium">De</label>
+                 <Input 
+                   type="date" 
+                   className="h-9 w-40" 
+                   value={format(filters.dateRange.from, "yyyy-MM-dd")} 
+                   onChange={(e) => setFilters({ ...filters, dateRange: { ...filters.dateRange, from: new Date(e.target.value) } })}
+                 />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-xs font-medium">Até</label>
+                 <Input 
+                   type="date" 
+                   className="h-9 w-40" 
+                   value={format(filters.dateRange.to, "yyyy-MM-dd")} 
+                   onChange={(e) => setFilters({ ...filters, dateRange: { ...filters.dateRange, to: new Date(e.target.value) } })}
+                 />
+               </div>
+             </>
+           )}
+ 
+           <div className="space-y-2">
+             <label className="text-xs font-medium flex items-center gap-1"><UserIcon size={12} /> Técnico</label>
+             <Select value={filters.technician} onValueChange={(v) => setFilters({ ...filters, technician: v })}>
+               <SelectTrigger className="w-[200px] h-9 bg-background">
+                 <SelectValue placeholder="Todos os técnicos" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="all">Todos os técnicos</SelectItem>
+                 {profiles.filter(p => p.regra !== 'USUARIO').map(p => (
+                   <SelectItem key={p.id} value={p.id}>{p.nome} {p.sobrenome}</SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
+ 
+           <div className="space-y-2">
+             <label className="text-xs font-medium flex items-center gap-1"><Users size={12} /> Usuário</label>
+             <Select value={filters.user} onValueChange={(v) => setFilters({ ...filters, user: v })}>
+               <SelectTrigger className="w-[200px] h-9 bg-background">
+                 <SelectValue placeholder="Todos os usuários" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="all">Todos os usuários</SelectItem>
+                 {profiles.map(p => (
+                   <SelectItem key={p.id} value={p.id}>{p.nome} {p.sobrenome}</SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
+ 
+           <Button variant="ghost" className="h-9 text-xs" onClick={() => {
+             setFilters({
+               period: "7d",
+               technician: "all",
+               user: "all",
+               dateRange: { from: subDays(new Date(), 7), to: new Date() }
+             });
+           }}>Limpar Filtros</Button>
+         </div>
+       </Card>
        
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
          {cards.map((card) => (
            <Card key={card.title} className="hover:shadow-md transition-shadow">
              <CardHeader className="flex flex-row items-center justify-between pb-2">
-               <CardTitle className="text-sm font-medium text-muted-foreground">
+               <CardTitle className="text-xs font-medium text-muted-foreground">
                  {card.title}
                </CardTitle>
                <card.icon className={`h-4 w-4 ${card.color}`} />
              </CardHeader>
              <CardContent>
                <div className="text-2xl font-bold">{card.value}</div>
-               <p className="text-xs text-muted-foreground mt-1">+2.5% em relação ao mês anterior</p>
              </CardContent>
            </Card>
          ))}
@@ -108,7 +252,7 @@ export default function Dashboard() {
          <Card>
            <CardHeader>
              <CardTitle>Volume de Chamados</CardTitle>
-             <CardDescription>Quantidade de atendimentos nos últimos 7 dias</CardDescription>
+             <CardDescription>Quantidade de atendimentos no período selecionado</CardDescription>
            </CardHeader>
            <CardContent className="h-[300px]">
              <ResponsiveContainer width="100%" height="100%">
@@ -120,7 +264,7 @@ export default function Dashboard() {
                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                    itemStyle={{ color: 'hsl(var(--primary))' }}
                  />
-                 <Bar dataKey="chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                 <Bar dataKey="chamados" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                </BarChart>
              </ResponsiveContainer>
            </CardContent>
@@ -129,7 +273,7 @@ export default function Dashboard() {
          <Card>
            <CardHeader>
              <CardTitle>Conformidade de SLA</CardTitle>
-             <CardDescription>Taxa de atendimento dentro do prazo</CardDescription>
+             <CardDescription>Chamados atendidos dentro do prazo</CardDescription>
            </CardHeader>
            <CardContent className="h-[300px]">
              <ResponsiveContainer width="100%" height="100%">
@@ -140,7 +284,9 @@ export default function Dashboard() {
                  <Tooltip 
                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                  />
-                 <Line type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+                 <Legend verticalAlign="top" height={36}/>
+                 <Line name="Chamados no Prazo" type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+                 <Line name="Total Chamados" type="monotone" dataKey="chamados" stroke="hsl(var(--primary))" strokeWidth={1} strokeDasharray="5 5" dot={false} />
                </LineChart>
              </ResponsiveContainer>
            </CardContent>
@@ -153,11 +299,11 @@ export default function Dashboard() {
          </CardHeader>
          <CardContent>
            <p className="text-muted-foreground">
-             O sistema Help-Me está operando com conformidade de 85% no SLA geral. 
-             A infraestrutura baseada na arquitetura microservices do repositório garante alta disponibilidade e rastreabilidade total.
+             O sistema Help-Me está monitorando {filteredTickets.length} chamados no período selecionado.
+             A conformidade atual de SLA é de {stats.totalTickets > 0 ? ((stats.totalTickets - stats.slaViolations) / stats.totalTickets * 100).toFixed(1) : 0}%.
            </p>
          </CardContent>
        </Card>
      </div>
    );
-}
+ }

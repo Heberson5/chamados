@@ -409,7 +409,14 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
        >
          <div className={`grid grid-cols-1 md:grid-cols-${kanbanCols.length} gap-6 h-full min-h-[600px]`}>
            {kanbanCols.map((column) => (
-             <div key={column.id} className={`flex flex-col rounded-xl border ${column.color} p-4`}>
+             <div 
+               key={column.id} 
+               className="flex flex-col rounded-xl border p-4"
+               style={{ 
+                 backgroundColor: column.color_hex ? `${column.color_hex}1a` : undefined, // 1a is 10% opacity in hex
+                 borderColor: column.color_hex ? `${column.color_hex}33` : undefined    // 33 is 20% opacity in hex
+               }}
+             >
                <div className="flex items-center justify-between mb-4 px-2">
                  <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
                    {column.title}

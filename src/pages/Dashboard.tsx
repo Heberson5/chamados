@@ -159,9 +159,17 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
             const diff = (new Date(t.atendido_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
             if (diff > 0) acceptanceTimes.push(diff);
           }
-          if (t.encerrado_em && t.gerado_em) {
-            const diff = (new Date(t.encerrado_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
-            if (diff > 0) completionTimes.push(diff);
+          // Completion time = (encerrado - atendido) - paused - waiting (effective working time)
+          // Falls back to (encerrado - gerado) when atendido_em is missing.
+          if (t.encerrado_em) {
+            const start = t.atendido_em ?? t.gerado_em;
+            if (start) {
+              const grossMin = (new Date(t.encerrado_em).getTime() - new Date(start).getTime()) / (1000 * 60);
+              const pausedMin = (t.tempo_total_pausado || 0) / 60;
+              const waitingMin = (t.tempo_total_aguardando_usuario || 0) / 60;
+              const effective = grossMin - pausedMin - waitingMin;
+              if (effective > 0) completionTimes.push(effective);
+            }
           }
           totalPaused += (t.tempo_total_pausado || 0);
           totalWaiting += (t.tempo_total_aguardando_usuario || 0);

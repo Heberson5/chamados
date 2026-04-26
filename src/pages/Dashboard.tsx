@@ -57,8 +57,10 @@ export default function Dashboard() {
        });
      };
 
-     checkRoleAndFetchStats();
-   }, [navigate]);
+      checkRoleAndFetchStats();
+      const interval = setInterval(checkRoleAndFetchStats, 30000); // 30s update
+      return () => clearInterval(interval);
+    }, [navigate]);
 
   const cards = [
     { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },

@@ -6,7 +6,163 @@ import { ptBR } from "date-fns/locale";
 import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
- import { useState, useEffect } from "react";
+  import { useState, useEffect, useCallback } from "react";
+  import { 
+    DndContext, 
+    closestCorners, 
+    KeyboardSensor, 
+    PointerSensor, 
+    useSensor, 
+    useSensors, 
+    DragOverlay,
+    defaultDropAnimationSideEffects
+  } from "@dnd-kit/core";
+  import { 
+    arrayMove, 
+    SortableContext, 
+    sortableKeyboardCoordinates, 
+    verticalListSortingStrategy,
+    useSortable
+  } from "@dnd-kit/sortable";
+  import { CSS } from "@dnd-kit/utilities";
+ function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
+   const {
+     attributes,
+     listeners,
+     setNodeRef,
+     transform,
+     transition,
+     isDragging
+   } = useSortable({
+     id: ticket.id,
+     data: { ticket, columnId },
+     disabled: ticket.status === "ENCERRADO"
+   });
+ 
+   const style = {
+     transform: CSS.Translate.toString(transform),
+     transition,
+     opacity: isDragging ? 0.5 : 1,
+   };
+ 
+   const getPriorityColor = (priority: string) => {
+     switch (priority) {
+       case "P1": return "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400";
+       case "P2": return "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400";
+       case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
+       default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
+     }
+   };
+ 
+   const getPriorityLabel = (priority: string) => {
+     const labels: Record<string, string> = { P1: "Crítica", P2: "Alta", P3: "Média", P4: "Baixa", P5: "Muito Baixa" };
+     return labels[priority] || priority;
+   };
+ 
+   const [slaInfo, setSlaInfo] = useState({ label: "Calculando...", color: "bg-gray-400" });
+ 
+   useEffect(() => {
+     const calc = () => {
+       if (ticket.status === "ENCERRADO") {
+         setSlaInfo({ label: "FINALIZADO", color: "bg-blue-500" });
+         return;
+       }
+       if (!ticket.sla_deadline) {
+         setSlaInfo({ label: "N/A", color: "bg-gray-400" });
+         return;
+       }
+       const deadline = new Date(ticket.sla_deadline);
+       const now = new Date();
+       const diffMinutes = (deadline.getTime() - now.getTime()) / (1000 * 60);
+       
+       if (diffMinutes < 0) setSlaInfo({ label: "VENCIDO", color: "bg-red-500" });
+       else if (diffMinutes < 30) setSlaInfo({ label: "VENCENDO", color: "bg-yellow-500 animate-pulse" });
+       else setSlaInfo({ label: "NO PRAZO", color: "bg-green-500" });
+     };
+     calc();
+     const interval = setInterval(calc, 60000);
+     return () => clearInterval(interval);
+   }, [ticket]);
+ 
+   return (
+     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+       <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-slate-200 dark:border-slate-800 ${ticket.status === "ENCERRADO" ? "cursor-default grayscale-[0.3]" : ""}`}>
+         <CardHeader className="p-4 pb-2">
+           <div className="flex justify-between items-start mb-2">
+             <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
+               {getPriorityLabel(ticket.prioridade)}
+             </Badge>
+             <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
+           </div>
+           <CardTitle className="text-sm font-bold line-clamp-2 leading-tight">
+             {ticket.titulo || "Sem título"}
+           </CardTitle>
+         </CardHeader>
+         <CardContent className="p-4 pt-0">
+           <p className="text-xs text-muted-foreground line-clamp-3 mb-4">
+             {ticket.descricao}
+           </p>
+           <div className="space-y-2">
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                 <User size={12} />
+                 <span className="truncate">{ticket.usuario?.nome} {ticket.usuario?.sobrenome}</span>
+               </div>
+               <div className="flex items-center gap-1">
+                 <div className={`w-1.5 h-1.5 rounded-full ${slaInfo.color}`} />
+                 <span className="text-[9px] font-bold">{slaInfo.label}</span>
+               </div>
+             </div>
+             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+               <Clock size={12} />
+               <span>{format(new Date(ticket.gerado_em), "dd/MM HH:mm", { locale: ptBR })}</span>
+             </div>
+           </div>
+         </CardContent>
+         <CardFooter className="p-4 pt-0 flex gap-2">
+           <Button 
+             size="sm" 
+             variant="ghost"
+             className="flex-1 gap-2 text-[10px] h-8"
+             onClick={(e) => { e.stopPropagation(); onDetails(ticket); }}
+           >
+             <Eye size={12} /> Detalhes
+           </Button>
+           {columnId === "ABERTO" && userRole !== "USUARIO" && (
+             <Button 
+               size="sm" 
+               className="flex-1 gap-2 text-[10px] h-8"
+               onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "atender"); }}
+             >
+               <Play size={12} /> Atender
+             </Button>
+           )}
+           {columnId === "EM_ATENDIMENTO" && userRole !== "USUARIO" && (
+             <Button 
+               size="sm" 
+               variant="outline"
+               className="flex-1 gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+               onClick={(e) => { e.stopPropagation(); onOpenClosure(ticket); }}
+             >
+               <CheckCircle size={12} /> Encerrar
+             </Button>
+           )}
+           {ticket.status === "ENCERRADO" && (
+             <Button 
+               size="sm" 
+               variant="secondary"
+               className="flex-1 gap-2 text-[10px] h-8"
+               onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "reabrir"); }}
+             >
+               <Plus size={12} /> Reabrir
+             </Button>
+           )}
+         </CardFooter>
+       </Card>
+     </div>
+   );
+ }
+ 
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -61,7 +217,7 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      loadData();
    }, []);
 
-   const handleAction = async (ticketId: string, action: "atender" | "encerrar") => {
+   const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir") => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -70,7 +226,43 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       if (action === "atender") {
         updates.status = "EM_ATENDIMENTO";
         updates.tecnico_id = user.id;
-      } else if (action === "encerrar") {
+       } else if (action === "reabrir") {
+         updates.status = "EM_ATENDIMENTO";
+         updates.encerrado_em = null;
+       } else if (action === "encerrar") {
+   const sensors = useSensors(
+     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+   );
+ 
+   const handleDragEnd = async (event: any) => {
+     const { active, over } = event;
+     if (!over) return;
+ 
+     const ticketId = active.id;
+     const newStatus = over.id;
+     const currentStatus = active.data.current.columnId;
+ 
+     if (newStatus === currentStatus) return;
+     if (currentStatus === "ENCERRADO" && newStatus !== "ENCERRADO") {
+       toast({ variant: "destructive", title: "Ação não permitida", description: "Chamados encerrados não podem ser arrastados. Use o botão Reabrir." });
+       return;
+     }
+ 
+     try {
+       const { error } = await supabase
+         .from("chamados")
+         .update({ status: newStatus })
+         .eq("id", ticketId);
+ 
+       if (error) throw error;
+       toast({ title: "Status atualizado", description: `Chamado movido para ${newStatus}` });
+       onUpdate();
+     } catch (error: any) {
+       toast({ variant: "destructive", title: "Erro ao mover chamado", description: error.message });
+     }
+   };
+ 
         updates.status = "ENCERRADO";
         updates.encerrado_em = new Date().toISOString();
         updates.descricao_encerramento = closureNote;
@@ -209,93 +401,57 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      return labels[priority] || priority;
    };
 
-  return (
-    <>
+   return (
+     <DndContext 
+       sensors={sensors} 
+       collisionDetection={closestCorners} 
+       onDragEnd={handleDragEnd}
+     >
        <div className={`grid grid-cols-1 md:grid-cols-${kanbanCols.length} gap-6 h-full min-h-[600px]`}>
-       {kanbanCols.map((column) => (
-        <div key={column.id} className={`flex flex-col rounded-xl border ${column.color} p-4`}>
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
-              {column.title}
-              <Badge variant="secondary" className="rounded-full px-2 py-0">
-                {tickets.filter(t => t.status === column.id).length}
-              </Badge>
-            </h3>
-          </div>
-
-          <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
-            {tickets
-              .filter((t) => t.status === column.id)
-              .map((ticket) => (
-                <Card key={ticket.id} className="shadow-sm hover:shadow-md transition-shadow cursor-default border-slate-200 dark:border-slate-800">
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between items-start mb-2">
-                       <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
-                         {getPriorityLabel(ticket.prioridade)}
-                       </Badge>
-                      <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
-                    </div>
-                    <CardTitle className="text-sm font-bold line-clamp-2 leading-tight">
-                      {ticket.titulo || "Sem título"}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-xs text-muted-foreground line-clamp-3 mb-4">
-                      {ticket.descricao}
-                    </p>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                        <User size={12} />
-                        <span className="truncate">{ticket.usuario?.nome} {ticket.usuario?.sobrenome}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                        <Clock size={12} />
-                        <span>{format(new Date(ticket.gerado_em), "dd/MM HH:mm", { locale: ptBR })}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0 flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="ghost"
-                      className="flex-1 gap-2 text-[10px] h-8"
-                      onClick={() => openDetails(ticket)}
-                    >
-                      <Eye size={12} /> Detalhes
-                    </Button>
-                    {column.id === "ABERTO" && userRole !== "USUARIO" && (
-                      <Button 
-                        size="sm" 
-                        className="flex-1 gap-2 text-[10px] h-8"
-                        onClick={() => handleAction(ticket.id, "atender")}
-                      >
-                        <Play size={12} /> Atender
-                      </Button>
-                    )}
-                    {column.id === "EM_ATENDIMENTO" && userRole !== "USUARIO" && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="flex-1 gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                        onClick={() => openClosureDialog(ticket)}
-                      >
-                        <CheckCircle size={12} /> Encerrar
-                      </Button>
-                    )}
-                  </CardFooter>
-                </Card>
-              ))}
-            
-            {tickets.filter(t => t.status === column.id).length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50 border-2 border-dashed rounded-lg">
-                <AlertTriangle size={24} className="mb-2 opacity-20" />
-                <p className="text-xs">Nenhum chamado</p>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-      </div>
+         {kanbanCols.map((column) => (
+           <div key={column.id} className={`flex flex-col rounded-xl border ${column.color} p-4`}>
+             <div className="flex items-center justify-between mb-4 px-2">
+               <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
+                 {column.title}
+                 <Badge variant="secondary" className="rounded-full px-2 py-0">
+                   {tickets.filter(t => t.status === column.id).length}
+                 </Badge>
+               </h3>
+             </div>
+ 
+             <SortableContext 
+               id={column.id} 
+               items={tickets.filter(t => t.status === column.id).map(t => t.id)} 
+               strategy={verticalListSortingStrategy}
+             >
+               <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
+                 {tickets
+                   .filter((t) => t.status === column.id)
+                   .map((ticket) => (
+                     <SortableCard 
+                       key={ticket.id} 
+                       ticket={ticket} 
+                       columnId={column.id} 
+                       userRole={userRole} 
+                       onUpdate={onUpdate}
+                       onDetails={openDetails}
+                       onAction={handleAction}
+                       onOpenClosure={openClosureDialog}
+                     />
+                   ))}
+                 
+                 {tickets.filter(t => t.status === column.id).length === 0 && (
+                   <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50 border-2 border-dashed rounded-lg">
+                     <AlertTriangle size={24} className="mb-2 opacity-20" />
+                     <p className="text-xs">Nenhum chamado</p>
+                   </div>
+                 )}
+               </div>
+             </SortableContext>
+           </div>
+         ))}
+       </div>
+     </DndContext>
 
     <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
       <DialogContent>

@@ -304,7 +304,41 @@ export const AppLayout = () => {
                   </NavLink>
                 ))}
               </nav>
-              <div className="p-4 border-t border-border space-y-2">
+               <div className="px-4 py-2 border-b border-border">
+                 <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Empresa</div>
+                 {profile?.is_master ? (
+                   <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                       <Button variant="ghost" size="sm" className="w-full justify-between px-2 h-auto py-1.5 font-medium hover:bg-secondary border">
+                         <span className="truncate">{org?.name ?? "Todas as Empresas"}</span>
+                         <ChevronsUpDown className="size-3 shrink-0 opacity-50 ml-2" />
+                       </Button>
+                     </DropdownMenuTrigger>
+                     <DropdownMenuContent align="start" className="w-56">
+                       {allOrgs.map((o) => (
+                         <DropdownMenuItem key={o.id} onClick={() => setOrg(o)}>
+                           <Building2 className="mr-2 size-4" />
+                           <span className="flex-1 truncate">{o.name}</span>
+                           {org?.id === o.id && <Check className="size-3" />}
+                         </DropdownMenuItem>
+                       ))}
+                       {allOrgs.length > 0 && (
+                         <>
+                           <div className="h-px bg-border my-1" />
+                           <DropdownMenuItem onClick={() => setOrg(null)}>
+                             <LayoutGrid className="mr-2 size-4" />
+                             <span className="flex-1 truncate">Todas as Empresas</span>
+                             {!org && <Check className="size-3" />}
+                           </DropdownMenuItem>
+                         </>
+                       )}
+                     </DropdownMenuContent>
+                   </DropdownMenu>
+                 ) : (
+                   <div className="text-sm font-medium px-2 py-1 truncate">{org?.name ?? "—"}</div>
+                 )}
+               </div>
+               <div className="p-4 space-y-2">
                 <div className="flex items-center gap-2 px-1 mb-2">
                   <div className="size-7 rounded-full bg-secondary grid place-items-center text-xs font-medium">
                     {profile?.full_name?.[0]?.toUpperCase() ?? profile?.email?.[0]?.toUpperCase() ?? "U"}

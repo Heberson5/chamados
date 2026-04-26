@@ -1,4 +1,4 @@
- import { useEffect, useState } from "react";
+ import { useEffect, useState, useCallback } from "react";
  import { supabase } from "@/integrations/supabase/client";
  import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,6 +7,11 @@
  import { Loader2, Shield, User as UserIcon, MoreHorizontal } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+ import { Database } from "@/integrations/supabase/types";
+ 
+ type Regra = Database["public"]["Enums"]["regra"];
+ 
+ export default function Users() {
  
  export default function Users() {
    const [users, setUsers] = useState<any[]>([]);
@@ -36,7 +41,7 @@
    const updateRole = async (userId: string, newRole: string) => {
      const { error } = await supabase
        .from("profiles")
-       .update({ regra: newRole, is_master: newRole === 'MASTER' })
+       .update({ regra: newRole as Regra, is_master: newRole === 'MASTER' })
        .eq("id", userId);
  
      if (error) {

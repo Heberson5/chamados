@@ -522,6 +522,33 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                </ResponsiveContainer>
              </CardContent>
            </Card>
+
+           <Card className="lg:col-span-2">
+             <CardHeader>
+               <CardTitle>Chamados por Usuário</CardTitle>
+               <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[360px]">
+               {stats.byUser.length === 0 ? (
+                 <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                   Sem chamados no período selecionado.
+                 </div>
+               ) : (
+                 <ResponsiveContainer width="100%" height="100%">
+                   <BarChart data={stats.byUser} layout="vertical" margin={{ left: 20, right: 20 }}>
+                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--muted))" />
+                     <XAxis type="number" stroke="currentColor" fontSize={12} allowDecimals={false} />
+                     <YAxis dataKey="name" type="category" stroke="currentColor" fontSize={12} width={150} />
+                     <Tooltip
+                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                       itemStyle={{ color: 'hsl(var(--foreground))' }}
+                     />
+                     <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                   </BarChart>
+                 </ResponsiveContainer>
+               )}
+             </CardContent>
+           </Card>
          </div>
  
        <Card className="bg-primary/5 border-primary/20">

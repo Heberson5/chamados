@@ -1,9 +1,26 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
  import { Ticket, Shield, Clock, LayoutGrid, Sun, Moon, Monitor, Package } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
 export default function Index() {
+  const [layout, setLayout] = useState<any>({ companyName: "Help-Me", companyLogo: "" });
+  useEffect(() => {
+    const loadBranding = async () => {
+      const { data } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "layout_settings")
+        .single();
+      if (data) {
+        setLayout(data.value as any);
+      }
+    };
+    loadBranding();
+  }, []);
+
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
@@ -11,9 +28,13 @@ export default function Index() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Hero Section */}
       <header className="px-6 py-4 border-b flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Ticket className="text-blue-600" size={24} />
-          <span className="font-bold text-xl">Help-Me</span>
+        <div className="flex items-center gap-2" onClick={() => navigate("/")} style={{ cursor: 'pointer' }}>
+          {layout.companyLogo ? (
+            <img src={layout.companyLogo} alt="Logo" className="w-8 h-8 object-contain" />
+          ) : (
+            <Ticket className="text-blue-600" size={24} />
+          )}
+          <span className="font-bold text-xl">{layout.companyName || "Help-Me"}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -101,7 +122,7 @@ export default function Index() {
       </main>
 
       <footer className="py-12 border-t text-center text-muted-foreground text-sm">
-        <p>&copy; 2026 Help-Me System. Todos os direitos reservados.</p>
+        <p>&copy; {new Date().getFullYear()} {layout.companyName || "Help-Me System"}. Todos os direitos reservados.</p>
         <p className="mt-2">Contato: hebersohas@gmail.com</p>
       </footer>
     </div>

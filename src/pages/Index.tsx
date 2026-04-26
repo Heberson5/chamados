@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Ticket, Shield, Clock, Package, Sun, Moon, Monitor } from "lucide-react";
+import { Ticket, Shield, Clock, LayoutGrid, Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
 export default function Index() {
@@ -44,7 +44,7 @@ export default function Index() {
             Gestão de Atendimento <span className="text-blue-600">Inteligente</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-10">
-            Sistema completo de Help Desk com controle de SLA, gestão de inventário e financeiro integrado. 
+            Sistema completo de Help Desk com controle de SLA, quadro Kanban para técnicos e gestão centralizada. 
             Inspirado na arquitetura do repositório Help-Me.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -80,11 +80,11 @@ export default function Index() {
             </div>
             <div className="space-y-4">
               <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-500">
-                <Package size={24} />
+                <LayoutGrid size={24} />
               </div>
-              <h3 className="text-xl font-bold">Gestão de Inventário</h3>
+              <h3 className="text-xl font-bold">Quadro Kanban</h3>
               <p className="text-muted-foreground">
-                Controle de estoque, solicitações de compra e baixas de material de forma integrada.
+                Visualize e organize os chamados de forma ágil com colunas de status e ações rápidas.
               </p>
             </div>
           </div>

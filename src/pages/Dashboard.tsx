@@ -117,12 +117,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
       const technicianMatch = filters.technician === "all" || t.tecnico_id === filters.technician;
       const userMatch = filters.user === "all" || t.usuario_id === filters.user;
       
-      let statusMatch = true;
-      if (filters.statusType !== "all") {
-        const statusDef = kanbanConfig.find(c => c.id === t.status);
-        statusMatch = statusDef?.id === filters.statusType;
-      }
-      return withinInterval && technicianMatch && userMatch && statusMatch;
+      return withinInterval && technicianMatch && userMatch;
     });
 
     return result;
@@ -321,7 +316,6 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
               period: "7d",
               technician: "all",
               user: "all",
-              statusType: "all",
               dateRange: { from: subDays(new Date(), 7), to: new Date() }
             });
           }}>Limpar Filtros</Button>

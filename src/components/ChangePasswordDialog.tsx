@@ -116,15 +116,15 @@ export default function ChangePasswordDialog({ open, onOpenChange, forced, onSuc
               const ok = pwd.length > 0 && !validation.errors.some((e) => e.toLowerCase().includes(r.toLowerCase().split(" ")[0]) || (r.startsWith("Mínimo") && e.startsWith("Mínimo")));
               return (
                 <div key={i} className="flex items-center gap-2">
-                  {ok ? <Check size={14} className="text-green-600" /> : <X size={14} className="text-muted-foreground" />}
-                  <span className={ok ? "text-green-700" : "text-muted-foreground"}>{r}</span>
+                  {ok ? <Check size={14} className="text-primary" /> : <X size={14} className="text-muted-foreground" />}
+                  <span className={ok ? "text-foreground" : "text-muted-foreground"}>{r}</span>
                 </div>
               );
             })}
             {confirm.length > 0 && (
               <div className="flex items-center gap-2 pt-1">
-                {matches ? <Check size={14} className="text-green-600" /> : <X size={14} className="text-destructive" />}
-                <span className={matches ? "text-green-700" : "text-destructive"}>As senhas coincidem</span>
+                {matches ? <Check size={14} className="text-primary" /> : <X size={14} className="text-destructive" />}
+                <span className={matches ? "text-foreground" : "text-destructive"}>As senhas coincidem</span>
               </div>
             )}
           </div>

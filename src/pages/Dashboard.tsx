@@ -61,11 +61,28 @@ import { supabase } from "@/integrations/supabase/client";
      }
    };
  
-   useEffect(() => {
-     fetchData();
-     const interval = setInterval(fetchData, 30000);
-     return () => clearInterval(interval);
-   }, []);
+    useEffect(() => {
+      fetchData();
+      
+      const channel = supabase
+        .channel('dashboard-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'chamados'
+          },
+          () => {
+            fetchData();
+          }
+        )
+        .subscribe();
+ 
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }, []);
  
    const filteredTickets = useMemo(() => {
      let result = [...tickets];

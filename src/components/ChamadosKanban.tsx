@@ -92,7 +92,14 @@ import { Label } from "@/components/ui/label";
              <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
                {getPriorityLabel(ticket.prioridade)}
              </Badge>
-             <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
+               <div className="flex items-center gap-1">
+                 {ticket.reaberto && (
+                   <Badge variant="outline" className="text-[9px] bg-yellow-100 text-yellow-700 border-yellow-200 px-1 py-0">
+                     Reaberto
+                   </Badge>
+                 )}
+                 <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
+               </div>
            </div>
            <CardTitle className="text-sm font-bold line-clamp-2 leading-tight">
              {ticket.titulo || "Sem título"}
@@ -258,10 +265,11 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       if (action === "atender") {
         updates.status = "EM_ATENDIMENTO";
         updates.tecnico_id = user.id;
-      } else if (action === "reabrir") {
-        updates.status = "EM_ATENDIMENTO";
-        updates.encerrado_em = null;
-      } else if (action === "encerrar") {
+       } else if (action === "reabrir") {
+         updates.status = "EM_ATENDIMENTO";
+         updates.encerrado_em = null;
+         updates.reaberto = true;
+       } else if (action === "encerrar") {
         updates.status = "ENCERRADO";
         updates.encerrado_em = new Date().toISOString();
         updates.descricao_encerramento = closureNote;
@@ -296,15 +304,15 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
     fetchComments(ticket.id);
   };
 
-  const fetchComments = async (ticketId: string) => {
+   const fetchComments = useCallback(async (ticketId: string) => {
     const { data, error } = await supabase
       .from("comentarios_chamado")
       .select(`*, autor:profiles(nome, sobrenome)`)
       .eq("chamado_id", ticketId)
       .order("criado_em", { ascending: true });
     
-    if (data) setComments(data);
-  };
+     if (data) setComments(data);
+    }, []);
 
   const handleCommentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -380,14 +388,31 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
     }
   };
 
-   const getPriorityColor = (priority: string) => {
-     switch (priority) {
-       case "P1": return "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400";
-       case "P2": return "text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400";
-       case "P3": return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
-       default: return "text-slate-600 bg-slate-100 dark:bg-slate-900/30 dark:text-slate-400";
+   // getPriorityColor removed here as it is already defined above
+ 
+   useEffect(() => {
+     if (isDetailsOpen && selectedTicket) {
+       const channel = supabase
+         .channel(`comments-${selectedTicket.id}`)
+         .on(
+           'postgres_changes',
+           {
+             event: '*',
+             schema: 'public',
+             table: 'comentarios_chamado',
+             filter: `chamado_id=eq.${selectedTicket.id}`
+           },
+           () => {
+             fetchComments(selectedTicket.id);
+           }
+         )
+         .subscribe();
+ 
+       return () => {
+         supabase.removeChannel(channel);
+       };
      }
-   };
+   }, [isDetailsOpen, selectedTicket, fetchComments]);
  
    const getPriorityLabel = (priority: string) => {
      const labels: Record<string, string> = {

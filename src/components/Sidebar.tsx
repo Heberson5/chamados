@@ -66,18 +66,38 @@ interface SidebarProps {
      loadData();
    }, []);
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: Ticket, label: "Chamados", path: "/chamados" },
-     ...(role === 'ADMIN' || role === 'MASTER' ? [
-        { icon: Users, label: "Usuários", path: "/usuarios" },
-        { icon: Lock, label: "Permissões", path: "/permissions" },
-        { icon: History, label: "Auditoria", path: "/audit" }
-     ] : []),
-    { icon: BarChart3, label: "Relatórios", path: "/reports" },
-    { icon: User, label: "Perfil", path: "/perfil" },
-    { icon: Settings, label: "Configurações", path: "/settings" },
-  ];
+   const defaultMenuItems = [
+     { id: '1', icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+     { id: '2', icon: Ticket, label: "Chamados", path: "/chamados" },
+     { id: '3', icon: Users, label: "Usuários", path: "/usuarios" },
+     { id: '4', icon: Lock, label: "Permissões", path: "/permissions" },
+     { id: '5', icon: History, label: "Auditoria", path: "/audit" },
+     { id: '6', icon: BarChart3, label: "Relatórios", path: "/reports" },
+     { id: '7', icon: User, label: "Perfil", path: "/perfil" },
+     { id: '8', icon: Settings, label: "Configurações", path: "/settings" },
+   ];
+ 
+   const menuItems = (layout.menuOrder && layout.menuOrder.length > 0) 
+     ? layout.menuOrder
+         .map((orderItem: any) => {
+           const defaultItem = defaultMenuItems.find(i => i.id === orderItem.id || i.label === orderItem.label);
+           if (!defaultItem) return null;
+           return { ...defaultItem, label: orderItem.label, visible: orderItem.visible !== false };
+         })
+         .filter((item: any) => {
+           if (!item || !item.visible) return false;
+           // Access control
+           if ((item.path === '/usuarios' || item.path === '/permissions' || item.path === '/audit') && !(role === 'ADMIN' || role === 'MASTER')) {
+             return false;
+           }
+           return true;
+         })
+     : defaultMenuItems.filter(item => {
+         if ((item.path === '/usuarios' || item.path === '/permissions' || item.path === '/audit') && !(role === 'ADMIN' || role === 'MASTER')) {
+           return false;
+         }
+         return true;
+       });
  
    const handleLogout = async () => {
      await supabase.auth.signOut();

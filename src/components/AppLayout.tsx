@@ -81,12 +81,12 @@ export const AppLayout = () => {
       { key: "Dashboard", to: "/app", icon: LayoutDashboard, label: "Dashboard", end: true },
       { key: "Chamados", to: "/app/tickets", icon: Inbox, label: "Chamados" },
       { key: "Kanban", to: "/app/board", icon: KanbanSquare, label: "Kanban" },
-      { key: "Empresas", to: "/app/admin/companies", icon: Building2, label: "Empresas", adminOnly: true },
+      { key: "Empresas", to: "/app/admin/companies", icon: Building2, label: "Empresas", masterOnly: true },
       { key: "Usuários", to: "/app/admin/users", icon: Users, label: "Usuários", adminOnly: true },
       { key: "Estrutura", to: "/app/admin/structure", icon: Briefcase, label: "Estrutura", adminOnly: true },
-      { key: "Sistema", to: "/app/admin/system", icon: LayoutGrid, label: "Sistema", adminOnly: true },
+      { key: "Sistema", to: "/app/admin/system", icon: LayoutGrid, label: "Sistema", masterOnly: true },
       { key: "Permissões", to: "/app/admin/permissions", icon: Lock, label: "Permissões", adminOnly: true },
-      { key: "Auditoria", to: "/app/admin/audit-logs", icon: Shield, label: "Auditoria", adminOnly: true },
+      { key: "Auditoria", to: "/app/admin/audit-logs", icon: Shield, label: "Auditoria", masterOnly: true },
       { key: "Configurações", to: "/app/settings", icon: Settings, label: "Configurações" },
     ];
 
@@ -109,9 +109,13 @@ export const AppLayout = () => {
       orderedNav = defaultItems;
     }
 
-    const filteredNav = orderedNav.filter(item => !item?.adminOnly || profile?.is_master);
+    const filteredNav = orderedNav.filter(item => {
+      if (item?.masterOnly) return !!profile?.is_master;
+      if (item?.adminOnly) return !!profile?.is_master || profile?.role === 'admin';
+      return true;
+    });
     setNav(filteredNav);
-  }, [settings?.menu_config, profile?.is_master]);
+  }, [settings?.menu_config, profile?.is_master, profile?.role]);
 
   useEffect(() => {
     const fetchOrgs = async () => {

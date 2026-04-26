@@ -27,19 +27,22 @@ const Auth = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { data: settings } = useSystemSettings();
 
-   useEffect(() => {
-     if (!authLoading && user) {
-       console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
-       
-       if (profile?.organization_id || profile?.is_master) {
-         navigate("/app", { replace: true });
-       } else {
-         // If we have a user but no profile info that leads to /app, go to /onboarding
-         // This handles new users or cases where profile is still being created/synced
-         navigate("/onboarding", { replace: true });
-       }
-     }
-   }, [user, profile, authLoading, navigate]);
+  useEffect(() => {
+    if (user && !authLoading) {
+      console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
+      
+      // Give it a tiny bit of time to make sure profile is synced if it's a new login
+      const redirect = () => {
+        if (profile?.organization_id || profile?.is_master) {
+          navigate("/app", { replace: true });
+        } else {
+          navigate("/onboarding", { replace: true });
+        }
+      };
+
+      redirect();
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,25 +66,22 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success("Conta criada!");
+        toast.success("Conta criada! Verifique seu e-mail.");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         
         if (data.user) {
           toast.success("Login realizado com sucesso!");
-          // Fallback navigation in case useEffect takes too long
-          setTimeout(() => {
-            if (window.location.pathname === "/auth") {
-              navigate("/app");
-            }
-          }, 1000);
+          // Redirect immediately if possible
+          const target = profile?.organization_id || profile?.is_master ? "/app" : "/onboarding";
+          navigate(target, { replace: true });
         }
       }
-      
-      setIsSubmitting(false);
     } catch (err: any) {
-      toast.error(err.message ?? "Erro ao autenticar");
+      console.error("Auth error:", err);
+      toast.error(err.message ?? "Erro ao autenticar. Tente novamente.");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -136,8 +136,19 @@ const Auth = () => {
      }
   }, [settings]);
 
-  return (
-    <div className="min-h-screen grid md:grid-cols-2">
+   if (authLoading && !user) {
+     return (
+       <div className="min-h-screen grid place-items-center">
+         <div className="flex flex-col items-center gap-3">
+           <Loader2 className="size-8 animate-spin text-primary" />
+           <p className="text-sm text-muted-foreground animate-pulse">Carregando...</p>
+         </div>
+       </div>
+     );
+   }
+ 
+   return (
+     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex flex-col justify-between p-10 bg-surface-1 border-r border-border">
         <Link to="/" className="flex items-center gap-2">
           {settings?.logo_url ? (
@@ -186,8 +197,8 @@ const Auth = () => {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? (
+           <Button type="submit" className="w-full" disabled={isSubmitting || authLoading}>
+             {isSubmitting || (authLoading && user) ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Aguarde...

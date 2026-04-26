@@ -8,18 +8,7 @@ import {
   LogOut, 
   Headphones, 
   ChevronLeft, 
-  ChevronRight,
-  Building2,
-  Check,
-  ChevronsUpDown,
-  Users,
-  Briefcase,
-  LayoutGrid,
-  Sun,
-  Moon,
-  Monitor,
-  Lock,
-  Shield
+   ChevronRight, Building2, Check, ChevronsUpDown, Users, Briefcase, LayoutGrid, Sun, Moon, Monitor, Lock, Shield, Menu
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -33,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function hexToHsl(hex: string): { hsl: string; l: number } {
   let r = 0, g = 0, b = 0;
@@ -281,6 +271,68 @@ export const AppLayout = () => {
           </Button>
         </div>
       </aside>
+
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="size-9">
+              <Menu className="size-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64">
+            <div className="flex flex-col h-full bg-background">
+              <div className="h-14 flex items-center px-4 border-b border-border font-semibold">
+                {settings?.system_name ?? "Helpdesk"}
+              </div>
+              <nav className="flex-1 px-2 py-4 space-y-1">
+                {nav.map(({ to, icon: Icon, label, end }: any) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors",
+                        isActive
+                          ? "bg-secondary text-foreground font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                      )
+                    }
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    {label}
+                  </NavLink>
+                ))}
+              </nav>
+              <div className="p-4 border-t border-border space-y-2">
+                <div className="flex items-center gap-2 px-1 mb-2">
+                  <div className="size-7 rounded-full bg-secondary grid place-items-center text-xs font-medium">
+                    {profile?.full_name?.[0]?.toUpperCase() ?? profile?.email?.[0]?.toUpperCase() ?? "U"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium truncate">{profile?.full_name ?? profile?.email}</div>
+                    {profile?.is_master && (
+                      <span className="bg-primary/10 text-primary text-[9px] px-1 rounded font-bold uppercase">Master</span>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 text-muted-foreground"
+                  onClick={async () => {
+                    await signOut();
+                    navigate("/auth");
+                  }}
+                >
+                  <LogOut className="size-4" /> Sair
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+
       <main className="flex-1 min-w-0">
         <Outlet />
       </main>

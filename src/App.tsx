@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
   import Reports from "./pages/Reports";
   import Permissions from "./pages/Permissions";
 import Audit from "./pages/Audit";
+import PasswordPolicyPage from "./pages/PasswordPolicy";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,7 @@ const App = () => {
                 <Route path="/permissions" element={<Permissions />} />
                 <Route path="/audit" element={<Audit />} />
                <Route path="/perfil" element={<Profile />} />
+              <Route path="/configuracoes/senhas" element={<PasswordPolicyPage />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
 

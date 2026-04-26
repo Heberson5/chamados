@@ -11,6 +11,9 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
  import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
  import { Database } from "@/integrations/supabase/types";
+ import { getPasswordPolicy, validatePassword, describePolicy, type PasswordPolicy } from "@/lib/passwordPolicy";
+ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+ import { Check, X } from "lucide-react";
  
  type Regra = Database["public"]["Enums"]["regra"];
  
@@ -22,7 +25,9 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
    const [reassignToId, setReassignToId] = useState("");
-    const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra });
+     const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "" });
+     const [createMode, setCreateMode] = useState<"password" | "invite">("password");
+     const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editUser, setEditUser] = useState<any>(null);
 
@@ -51,25 +56,49 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
       }
     };
    const handleAddUser = async () => {
-     setLoading(true);
-     try {
-       const { error } = await supabase.from("profiles").insert([{
-         id: crypto.randomUUID(),
-         nome: newUser.nome,
-         sobrenome: newUser.sobrenome,
-         email: newUser.email,
-         regra: newUser.regra,
-         ativo: true
-       }]);
-       if (error) throw error;
-       toast({ title: "Sucesso", description: "Perfil de usuário criado." });
-       setIsAddDialogOpen(false);
-       fetchUsers();
-     } catch (error: any) {
-       toast({ variant: "destructive", title: "Erro", description: error.message });
-     } finally {
-       setLoading(false);
-     }
+    if (!newUser.email || !newUser.nome) {
+      toast({ variant: "destructive", title: "Campos obrigatórios", description: "Nome e e-mail são obrigatórios." });
+      return;
+    }
+    if (createMode === "password") {
+      if (!policy) return;
+      const v = validatePassword(newUser.password, policy);
+      if (!v.valid) {
+        toast({ variant: "destructive", title: "Senha inválida", description: v.errors.join(", ") });
+        return;
+      }
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-create-user", {
+        body: {
+          mode: createMode,
+          email: newUser.email,
+          password: createMode === "password" ? newUser.password : undefined,
+          nome: newUser.nome,
+          sobrenome: newUser.sobrenome,
+          regra: newUser.regra,
+          telefone: newUser.telefone || undefined,
+          ramal: newUser.ramal || undefined,
+          cidade: newUser.cidade || undefined,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({
+        title: "Usuário criado",
+        description: createMode === "invite"
+          ? "Convite enviado por e-mail."
+          : "Usuário criado com senha temporária. Será solicitada a troca no primeiro login.",
+      });
+      setIsAddDialogOpen(false);
+      setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "" });
+      fetchUsers();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erro", description: error.message });
+    } finally {
+      setLoading(false);
+    }
    };
  
    const toggleStatus = async (user: any) => {
@@ -142,6 +171,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
  
    useEffect(() => {
      fetchUsers();
+      getPasswordPolicy().then(setPolicy);
    }, []);
  
    const updateRole = async (userId: string, newRole: string) => {
@@ -271,11 +301,17 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
         </div>
  
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <Tabs value={createMode} onValueChange={(v) => setCreateMode(v as any)} className="py-2">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="password">Definir senha</TabsTrigger>
+                <TabsTrigger value="invite">Enviar convite</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nome</Label>
@@ -289,6 +325,20 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
               <div className="space-y-2">
                 <Label>E-mail</Label>
                 <Input type="email" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Telefone</Label>
+                  <Input value={newUser.telefone} onChange={e => setNewUser({...newUser, telefone: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ramal</Label>
+                  <Input value={newUser.ramal} onChange={e => setNewUser({...newUser, ramal: e.target.value})} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Cidade</Label>
+                <Input value={newUser.cidade} onChange={e => setNewUser({...newUser, cidade: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <Label>Permissão</Label>
@@ -304,6 +354,41 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                   </SelectContent>
                 </Select>
               </div>
+              {createMode === "password" && policy && (
+                <div className="space-y-2">
+                  <Label>Senha temporária</Label>
+                  <Input
+                    type="text"
+                    value={newUser.password}
+                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                    placeholder="O usuário trocará no primeiro login"
+                  />
+                  <div className="rounded-md border p-2 text-xs space-y-1 bg-muted/30">
+                    {describePolicy(policy).map((rule, i) => {
+                      const v = validatePassword(newUser.password, policy);
+                      const ok = newUser.password.length > 0 && v.valid;
+                      const ruleOk = newUser.password.length > 0 && !v.errors.some(e =>
+                        (rule.startsWith("Mínimo") && e.startsWith("Mínimo")) ||
+                        (rule === "Letra maiúscula" && e.includes("maiúscula")) ||
+                        (rule === "Letra minúscula" && e.includes("minúscula")) ||
+                        (rule === "Número" && e.includes("número")) ||
+                        (rule === "Caractere especial" && e.includes("especial"))
+                      );
+                      return (
+                        <div key={i} className="flex items-center gap-2">
+                          {ruleOk ? <Check size={12} className="text-primary" /> : <X size={12} className="text-muted-foreground" />}
+                          <span className={ruleOk ? "text-foreground" : "text-muted-foreground"}>{rule}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {createMode === "invite" && (
+                <p className="text-sm text-muted-foreground">
+                  Um link de convite será enviado por e-mail. O usuário definirá a própria senha ao acessar.
+                </p>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>

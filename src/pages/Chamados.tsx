@@ -20,16 +20,14 @@
    const [isLoading, setIsLoading] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
-    const [newTicket, setNewTicket] = useState<{ 
-      titulo: string; 
-      os: string; 
-      descricao: string; 
-      prioridade: "P1" | "P2" | "P3" | "P4" | "P5" 
-    }>({ 
+    const [newTicket, setNewTicket] = useState<{
+      titulo: string;
+      descricao: string;
+      prioridade: "P1" | "P2" | "P3" | "P4" | "P5"
+    }>({
       titulo: "",
-      os: "", 
-      descricao: "", 
-      prioridade: "P3" 
+      descricao: "",
+      prioridade: "P3"
     });
    const { toast } = useToast();
  
@@ -125,7 +123,7 @@
   
         toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
         setIsDialogOpen(false);
-        setNewTicket({ titulo: "", os: "", descricao: "", prioridade: "P3" });
+        setNewTicket({ titulo: "", descricao: "", prioridade: "P3" });
         setFiles([]);
         setPreviews([]);
         fetchTickets();

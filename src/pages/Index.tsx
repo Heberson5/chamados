@@ -6,7 +6,7 @@ export default function Index() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Hero Section */}
       <header className="px-6 py-4 border-b flex justify-between items-center">
         <div className="flex items-center gap-2">
@@ -17,11 +17,11 @@ export default function Index() {
       </header>
 
       <main>
-        <section className="py-20 px-6 text-center max-w-4xl mx-auto">
-          <h1 className="text-5xl font-extrabold tracking-tight mb-6">
+        <section className="py-12 md:py-20 px-6 text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6">
             Gestão de Atendimento <span className="text-blue-600">Inteligente</span>
           </h1>
-          <p className="text-xl text-muted-foreground mb-10">
+          <p className="text-lg md:text-xl text-muted-foreground mb-10">
             Sistema completo de Help Desk com controle de SLA, gestão de inventário e financeiro integrado. 
             Inspirado na arquitetura do repositório Help-Me.
           </p>
@@ -36,8 +36,8 @@ export default function Index() {
         </section>
 
         {/* Features */}
-        <section className="py-20 bg-muted/30 px-6">
-          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+        <section className="py-12 md:py-20 bg-muted/30 px-6">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             <div className="space-y-4">
               <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500">
                 <Shield size={24} />

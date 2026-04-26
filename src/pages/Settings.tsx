@@ -2,11 +2,67 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
-import { Bell, Moon, Sun, Monitor, Shield, Globe } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+ import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2 } from "lucide-react";
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+ import { useState, useEffect } from "react";
+ import { supabase } from "@/integrations/supabase/client";
+ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ import { useToast } from "@/hooks/use-toast";
 
-export default function Settings() {
-  const { theme, setTheme } = useTheme();
+ export default function Settings() {
+   const { theme, setTheme } = useTheme();
+   const { toast } = useToast();
+   const [loading, setLoading] = useState(false);
+   const [kanbanConfig, setKanbanConfig] = useState<any[]>([]);
+   const [reportLayout, setReportLayout] = useState<any>({});
+   const [isAdmin, setIsAdmin] = useState(false);
+ 
+   useEffect(() => {
+     const loadSettings = async () => {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (user) {
+         const { data: profile } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
+         if (profile && (profile.regra === 'ADMIN' || profile.regra === 'MASTER' || profile.is_master)) {
+           setIsAdmin(true);
+         }
+       }
+ 
+       const { data } = await supabase.from("system_settings").select("*");
+       if (data) {
+         const kConfig = data.find(s => s.key === 'kanban_config');
+         const rLayout = data.find(s => s.key === 'report_layout');
+         if (kConfig) setKanbanConfig(kConfig.value);
+         if (rLayout) setReportLayout(rLayout.value);
+       }
+     };
+     loadSettings();
+   }, []);
+ 
+   const saveSettings = async () => {
+     setLoading(true);
+     try {
+       const { error: kError } = await supabase.from("system_settings").upsert({
+         key: 'kanban_config',
+         value: kanbanConfig,
+         updated_at: new Date().toISOString()
+       });
+       if (kError) throw kError;
+ 
+       const { error: rError } = await supabase.from("system_settings").upsert({
+         key: 'report_layout',
+         value: reportLayout,
+         updated_at: new Date().toISOString()
+       });
+       if (rError) throw rError;
+ 
+       toast({ title: "Sucesso", description: "Configurações salvas com sucesso!" });
+     } catch (error: any) {
+       toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
+     } finally {
+       setLoading(false);
+     }
+   };
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto w-full space-y-8 animate-fade-in">
@@ -107,24 +163,142 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <CardTitle>Segurança</CardTitle>
-            </div>
-            <CardDescription>Gerencie a segurança da sua conta.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Autenticação de Dois Fatores</Label>
-                <p className="text-sm text-muted-foreground">Adicione uma camada extra de segurança.</p>
-              </div>
-              <Switch />
-            </div>
-          </CardContent>
-        </Card>
+         <Card>
+           <CardHeader>
+             <div className="flex items-center gap-2">
+               <Shield className="h-5 w-5 text-primary" />
+               <CardTitle>Segurança</CardTitle>
+             </div>
+             <CardDescription>Gerencie a segurança da sua conta.</CardDescription>
+           </CardHeader>
+           <CardContent className="space-y-6">
+             <div className="flex items-center justify-between">
+               <div className="space-y-0.5">
+                 <Label>Autenticação de Dois Fatores</Label>
+                 <p className="text-sm text-muted-foreground">Adicione uma camada extra de segurança.</p>
+               </div>
+               <Switch />
+             </div>
+           </CardContent>
+         </Card>
+ 
+         {isAdmin && (
+           <>
+             <Card>
+               <CardHeader>
+                 <div className="flex items-center gap-2">
+                   <LayoutGrid className="h-5 w-5 text-primary" />
+                   <CardTitle>Personalizar Kanban</CardTitle>
+                 </div>
+                 <CardDescription>Altere a ordem, nomes e cores das colunas do Kanban.</CardDescription>
+               </CardHeader>
+               <CardContent className="space-y-6">
+                 {kanbanConfig.map((col, idx) => (
+                   <div key={col.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b pb-4 last:border-0 last:pb-0">
+                     <div className="space-y-2">
+                       <Label>Nome da Coluna</Label>
+                       <Input 
+                         value={col.title} 
+                         onChange={(e) => {
+                           const newConfig = [...kanbanConfig];
+                           newConfig[idx].title = e.target.value;
+                           setKanbanConfig(newConfig);
+                         }}
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Cor (CSS Class)</Label>
+                       <Input 
+                         value={col.color} 
+                         onChange={(e) => {
+                           const newConfig = [...kanbanConfig];
+                           newConfig[idx].color = e.target.value;
+                           setKanbanConfig(newConfig);
+                         }}
+                         placeholder="Ex: bg-blue-500/10"
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Ações</Label>
+                       <div className="flex gap-2">
+                         <Button 
+                           variant="outline" 
+                           size="sm" 
+                           disabled={idx === 0}
+                           onClick={() => {
+                             const newConfig = [...kanbanConfig];
+                             [newConfig[idx-1], newConfig[idx]] = [newConfig[idx], newConfig[idx-1]];
+                             setKanbanConfig(newConfig);
+                           }}
+                         >Subir</Button>
+                         <Button 
+                           variant="outline" 
+                           size="sm" 
+                           disabled={idx === kanbanConfig.length - 1}
+                           onClick={() => {
+                             const newConfig = [...kanbanConfig];
+                             [newConfig[idx+1], newConfig[idx]] = [newConfig[idx], newConfig[idx+1]];
+                             setKanbanConfig(newConfig);
+                           }}
+                         >Baixar</Button>
+                       </div>
+                     </div>
+                   </div>
+                 ))}
+               </CardContent>
+             </Card>
+ 
+             <Card>
+               <CardHeader>
+                 <div className="flex items-center gap-2">
+                   <FileText className="h-5 w-5 text-primary" />
+                   <CardTitle>Layout de Relatórios (PDF)</CardTitle>
+                 </div>
+                 <CardDescription>Personalize o visual dos relatórios exportados em PDF.</CardDescription>
+               </CardHeader>
+               <CardContent className="space-y-6">
+                 <div className="flex items-center justify-between">
+                   <div className="space-y-0.5">
+                     <Label>Mostrar Logo no Cabeçalho</Label>
+                   </div>
+                   <Switch 
+                     checked={reportLayout.showLogo} 
+                     onCheckedChange={(v) => setReportLayout({...reportLayout, showLogo: v})} 
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <Label>Cor do Cabeçalho (HEX)</Label>
+                   <div className="flex gap-2">
+                     <Input 
+                       type="color" 
+                       className="w-12 p-1 h-10" 
+                       value={reportLayout.headerColor || "#000000"} 
+                       onChange={(e) => setReportLayout({...reportLayout, headerColor: e.target.value})}
+                     />
+                     <Input 
+                       value={reportLayout.headerColor || "#000000"} 
+                       onChange={(e) => setReportLayout({...reportLayout, headerColor: e.target.value})}
+                     />
+                   </div>
+                 </div>
+                 <div className="space-y-2">
+                   <Label>Texto do Rodapé</Label>
+                   <Input 
+                     value={reportLayout.footerText || ""} 
+                     onChange={(e) => setReportLayout({...reportLayout, footerText: e.target.value})}
+                   />
+                 </div>
+               </CardContent>
+             </Card>
+ 
+             <div className="flex justify-end">
+               <Button onClick={saveSettings} disabled={loading} className="gap-2">
+                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
+                 Salvar Todas as Configurações
+               </Button>
+             </div>
+           </>
+         )}
       </div>
     </div>
   );

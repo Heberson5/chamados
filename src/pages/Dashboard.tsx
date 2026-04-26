@@ -140,14 +140,6 @@ import { supabase } from "@/integrations/supabase/client";
     { title: "Usuários Ativos", value: stats.activeUsers, icon: Users, color: "text-indigo-600" },
   ];
 
-   const cards = [
-     { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },
-     { title: "Chamados Abertos", value: stats.openTickets, icon: Clock, color: "text-orange-600" },
-     { title: "Resolvidos", value: stats.resolvedTickets, icon: CheckCircle2, color: "text-green-600" },
-     { title: "Violações de SLA", value: stats.slaViolations, icon: AlertCircle, color: "text-red-600" },
-     { title: "Usuários Ativos", value: stats.activeUsers, icon: Users, color: "text-indigo-600" },
-   ];
- 
    return (
      <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fade-in">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

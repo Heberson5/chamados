@@ -370,7 +370,7 @@
                       )}
                     </TableCell>
                    <TableCell className="text-sm whitespace-nowrap">
-                     {format(new Date(ticket.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR })}
+                     {ticket.gerado_em ? format(new Date(ticket.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
                    </TableCell>
                  </TableRow>
                );

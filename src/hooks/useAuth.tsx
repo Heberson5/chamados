@@ -34,7 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [org, setOrgState] = useState<Org | null>(null);
-  const [loading, setLoading] = useState(true);
+   const [loading, setLoading] = useState(true);
+   const [initialized, setInitialized] = useState(false);
 
   const loadProfile = async (uid: string, retryCount = 0) => {
     try {
@@ -92,24 +93,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setOrgState(null);
       }
-    } catch (err) {
-      console.error("Error loading profile:", err);
-      setProfile(null);
-      setOrgState(null);
-    }
+     } catch (err) {
+       console.error("Error loading profile:", err);
+       setProfile(null);
+       setOrgState(null);
+     }
   };
 
   useEffect(() => {
     let mounted = true;
-    let initialLoadDone = false;
 
     // Safety timeout to prevent infinite loading
     const safetyTimeout = setTimeout(() => {
-      if (mounted && !initialLoadDone) {
-        console.warn("Auth loading stuck, forcing false after 10s");
+      if (mounted && !initialized) {
+        console.warn("Auth loading stuck, forcing false after 5s");
         setLoading(false);
+        setInitialized(true);
       }
-    }, 10000);
+    }, 5000);
 
     const init = async () => {
       try {
@@ -127,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } finally {
         if (mounted) {
           setLoading(false);
-          initialLoadDone = true;
+          setInitialized(true);
         }
       }
     };
@@ -140,6 +141,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       
+      // If we get an event, we know the initial auth check is done
+      if (!initialized) setInitialized(true);
+      
       if (s?.user) {
         if (event === "SIGNED_IN") {
           supabase.rpc("log_user_action", { p_action: "LOGIN" }).then(({ error }) => {
@@ -147,17 +151,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         }
         
-        if (initialLoadDone && (event === "SIGNED_IN" || event === "USER_UPDATED")) {
+        if (initialized && (event === "SIGNED_IN" || event === "USER_UPDATED")) {
           setLoading(true);
           await loadProfile(s.user.id);
           if (mounted) setLoading(false);
-        } else if (initialLoadDone) {
+        } else if (initialized) {
           loadProfile(s.user.id);
         }
       } else {
         setProfile(null);
         setOrgState(null);
         if (mounted) setLoading(false);
+        setInitialized(true);
       }
     });
 
@@ -188,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <Ctx.Provider value={{ user, session, profile, org, loading, refresh, signOut, setOrg }}>
+    <Ctx.Provider value={{ user, session, profile, org, loading: loading || !initialized, refresh, signOut, setOrg }}>
       {children}
     </Ctx.Provider>
   );

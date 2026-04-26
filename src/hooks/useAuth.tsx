@@ -91,6 +91,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
+    let initialLoadDone = false;
+
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && !initialLoadDone) {
+        console.warn("Auth loading stuck, forcing false after 10s");
+        setLoading(false);
+      }
+    }, 10000);
+
+    const init = async () => {
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        
+        setSession(s);
+        setUser(s?.user ?? null);
+        
+        if (s?.user) {
+          await loadProfile(s.user.id);
+        }
+      } catch (err) {
+        console.error("Auth init error:", err);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          initialLoadDone = true;
+        }
+      }
+    };
+
+    init();
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, s) => {
       if (!mounted) return;
@@ -98,41 +130,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       
-      try {
-        if (s?.user) {
-          setLoading(true);
-          if (event === "SIGNED_IN") {
-            supabase.rpc("log_user_action", { p_action: "LOGIN" }).then(({ error }) => {
-              if (error) console.error("Log error:", error);
-            });
-          }
-          await loadProfile(s.user.id);
-        } else {
-          setProfile(null);
-          setOrgState(null);
-        }
-      } catch (err) {
-        console.error("Auth state change error:", err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!mounted) return;
-      setSession(s);
-      setUser(s?.user ?? null);
       if (s?.user) {
-        loadProfile(s.user.id).finally(() => {
+        if (event === "SIGNED_IN") {
+          supabase.rpc("log_user_action", { p_action: "LOGIN" }).then(({ error }) => {
+            if (error) console.error("Log error:", error);
+          });
+        }
+        
+        if (initialLoadDone && (event === "SIGNED_IN" || event === "USER_UPDATED")) {
+          setLoading(true);
+          await loadProfile(s.user.id);
           if (mounted) setLoading(false);
-        });
+        } else if (initialLoadDone) {
+          loadProfile(s.user.id);
+        }
       } else {
-        setLoading(false);
+        setProfile(null);
+        setOrgState(null);
+        if (mounted) setLoading(false);
       }
     });
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimeout);
       sub.subscription.unsubscribe();
     };
   }, []);

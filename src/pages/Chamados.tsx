@@ -33,18 +33,24 @@ export default function Chamados() {
   });
   const { toast } = useToast();
 
-  const fetchTickets = useCallback(async () => {
-    const { data, error } = await supabase
-       .from("chamados")
-       .select(`*, tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome), usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome), chamado_pai:chamado_pai_id(os)`)
-       .order("os", { ascending: true });
-    
-    if (error) {
-      toast({ variant: "destructive", title: "Erro ao buscar chamados", description: error.message });
-      return;
-    }
-    if (data) setTickets(data);
-  }, [toast]);
+   const fetchTickets = useCallback(async () => {
+     const { data, error } = await supabase
+        .from("chamados")
+        .select(`
+          *, 
+          tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome), 
+          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome), 
+          chamado_pai:chamado_pai_id(os),
+          comentarios_chamado(count)
+        `)
+        .order("gerado_em", { ascending: false });
+     
+     if (error) {
+       toast({ variant: "destructive", title: "Erro ao buscar chamados", description: error.message });
+       return;
+     }
+     if (data) setTickets(data);
+   }, [toast]);
 
   useEffect(() => {
     fetchTickets();
@@ -106,13 +112,8 @@ export default function Chamados() {
         uploadedUrls.push(publicUrl);
       }
 
-      const timestamp = Date.now();
-      const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-      const osNumber = `OS-${new Date().getFullYear()}${String(timestamp).slice(-4)}${randomPart}`;
-
       const { error: insertError } = await supabase.from("chamados").insert({
         titulo: newTicket.titulo || "Sem título",
-        os: osNumber,
         descricao: newTicket.descricao,
         prioridade: newTicket.prioridade,
         usuario_id: user.id,
@@ -310,7 +311,7 @@ export default function Chamados() {
                   <TableHead>SLA Status</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Prioridade</TableHead>
-                  <TableHead>Técnico</TableHead>
+                  <TableHead>Responsável / Interações</TableHead>
                   <TableHead>Anexos</TableHead>
                   <TableHead>Data</TableHead>
                 </TableRow>
@@ -362,7 +363,14 @@ export default function Chamados() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">
-                        {ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome ? ticket.tecnico.sobrenome.charAt(0) + '.' : ''}` : 'Não atribuído'}
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome}` : 'Não atribuído'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {ticket.comentarios_chamado?.[0]?.count || 0} interações
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {ticket.anexos && ticket.anexos.length > 0 ? (

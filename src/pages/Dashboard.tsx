@@ -36,8 +36,9 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
        totalPausedTime: 0,
        totalWaitingTime: 0,
        byPriority: [] as any[],
-       byStatus: [] as any[],
-       byCategory: [] as any[]
+        byStatus: [] as any[],
+        byStatusType: [] as any[],
+        byCategory: [] as any[]
      });
  
    useEffect(() => {
@@ -148,12 +149,32 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
          }, {});
          const byPriority = Object.keys(priorityCounts).map(name => ({ name, value: priorityCounts[name] }));
   
-        // By Status
+        // By Status (using titles from config)
         const statusCounts = filteredTickets.reduce((acc: any, t) => {
-          acc[t.status] = (acc[t.status] || 0) + 1;
+          const statusDef = kanbanConfig.find(c => c.id === t.status);
+          const label = statusDef ? statusDef.title : t.status;
+          acc[label] = (acc[label] || 0) + 1;
           return acc;
         }, {});
         const byStatus = Object.keys(statusCounts).map(s => ({ name: s, value: statusCounts[s] }));
+
+        // By Status Type
+        const typeLabels: any = {
+          waiting: "Aguardando",
+          in_progress: "Andamento",
+          paused: "Pausado",
+          waiting_user: "Aguardando Usuário",
+          completed: "Encerrado"
+        };
+
+        const typeCounts = filteredTickets.reduce((acc: any, t) => {
+          const statusDef = kanbanConfig.find(c => c.id === t.status);
+          const type = statusDef?.type || (t.status === 'ENCERRADO' ? 'completed' : 'waiting');
+          const label = typeLabels[type] || type;
+          acc[label] = (acc[label] || 0) + 1;
+          return acc;
+        }, {});
+        const byStatusType = Object.keys(typeCounts).map(name => ({ name, value: typeCounts[name] }));
   
         // Calculate averages
         let acceptanceTimes: number[] = [];
@@ -188,7 +209,8 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
           totalPausedTime: Math.round(totalPaused / 60),
           totalWaitingTime: Math.round(totalWaiting / 60),
           byPriority,
-          byStatus
+           byStatus,
+           byStatusType
         }));
     }, [filteredTickets]);
  

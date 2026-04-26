@@ -133,7 +133,6 @@ export const NewTicketDialog = ({
         });
     }
   }, [profile?.is_master]);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

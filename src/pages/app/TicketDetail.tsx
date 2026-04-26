@@ -32,7 +32,7 @@ const commentSchema = z.string().trim().min(1).max(5000);
    const { getStatusLabel, getStatusColor, columns } = useKanbanSettings();
   const { id } = useParams();
   const { user, profile } = useAuth();
-  const isCustomer = profile?.role === 'customer';
+   const isCustomer = profile?.role === 'customer' && !profile?.is_master;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [authors, setAuthors] = useState<Record<string, ProfileLite>>({});

@@ -54,7 +54,13 @@ const Onboarding = () => {
       if (orgErr) throw orgErr;
 
       const { error: profErr } = await supabase
-        .from("profiles").update({ organization_id: org.id }).eq("id", user.id);
+        .from("profiles")
+        .upsert({ 
+          id: user.id, 
+          organization_id: org.id,
+          email: user.email,
+          full_name: profile?.full_name || user.user_metadata?.full_name || user.email
+        });
       if (profErr) throw profErr;
 
       const { error: roleErr } = await supabase

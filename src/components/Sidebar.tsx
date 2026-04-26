@@ -6,11 +6,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  LogOut,
   Moon,
   Sun,
   Monitor,
-  User,
   BarChart3,
   Package,
    History,
@@ -21,6 +19,7 @@ import {
  import { Button } from "@/components/ui/button";
  import { useTheme } from "@/components/ThemeProvider";
  import { supabase } from "@/integrations/supabase/client";
+ import UserMenu from "./UserMenu";
  
 interface SidebarProps {
   onMobileClose?: () => void;
@@ -84,7 +83,6 @@ interface SidebarProps {
       { id: '3', icon: Users, label: "Usuários", path: "/usuarios" },
       { id: '4', icon: Lock, label: "Permissões", path: "/permissions" },
       { id: '5', icon: History, label: "Auditoria", path: "/audit" },
-      { id: '7', icon: User, label: "Meu Perfil", path: "/perfil" },
       { id: '8', icon: Settings, label: "Configurações", path: "/settings" },
     ];
  
@@ -109,11 +107,6 @@ interface SidebarProps {
          }
          return true;
        });
- 
-   const handleLogout = async () => {
-     await supabase.auth.signOut();
-     navigate("/login");
-   };
  
    return (
     <aside className={cn(
@@ -172,6 +165,9 @@ interface SidebarProps {
        </nav>
  
        <div className="p-2 border-t space-y-2">
+          {/* Atalho do perfil */}
+          <UserMenu collapsed={collapsed} />
+
           <div className="px-2">
             <Button
               variant="ghost"
@@ -200,18 +196,6 @@ interface SidebarProps {
               )}
             </Button>
           </div>
- 
-         <Button
-           variant="ghost"
-           className={cn(
-             "w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10",
-             collapsed ? "px-2" : "px-4"
-           )}
-           onClick={handleLogout}
-         >
-           <LogOut size={20} className={cn(!collapsed && "mr-2")} />
-           {!collapsed && <span>Sair</span>}
-         </Button>
        </div>
     </aside>
   );

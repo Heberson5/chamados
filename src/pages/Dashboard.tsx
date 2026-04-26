@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
  import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
- import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay } from "date-fns";
+  import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay, eachHourOfInterval, isSameHour } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
@@ -22,13 +22,17 @@ import { supabase } from "@/integrations/supabase/client";
      dateRange: { from: subDays(new Date(), 7), to: new Date() }
    });
  
-   const [stats, setStats] = useState({
-     totalTickets: 0,
-     openTickets: 0,
-     resolvedTickets: 0,
-     slaViolations: 0,
-     activeUsers: 0
-   });
+    const [stats, setStats] = useState({
+      totalTickets: 0,
+      openTickets: 0,
+      resolvedTickets: 0,
+      slaViolations: 0,
+      activeUsers: 0,
+      avgAcceptanceTime: 0,
+      avgCompletionTime: 0,
+      totalPausedTime: 0,
+      totalWaitingTime: 0
+    });
  
    useEffect(() => {
      const checkRole = async () => {
@@ -110,52 +114,90 @@ import { supabase } from "@/integrations/supabase/client";
      return result;
    }, [tickets, filters]);
  
-   useEffect(() => {
-     const total = filteredTickets.length;
-     const open = filteredTickets.filter(t => t.status === 'ABERTO').length;
-     const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
-     const sla = filteredTickets.filter(t => t.sla_violado).length;
- 
-     setStats(prev => ({
-       ...prev,
-       totalTickets: total,
-       openTickets: open,
-       resolvedTickets: resolved,
-       slaViolations: sla
-     }));
-   }, [filteredTickets]);
- 
-   const chartData = useMemo(() => {
-     let startDate = filters.dateRange.from;
-     let endDate = filters.dateRange.to;
- 
-     if (filters.period !== "custom") {
-       endDate = new Date();
-       if (filters.period === "1d") startDate = startOfDay(new Date());
-       else if (filters.period === "7d") startDate = subDays(new Date(), 7);
-       else if (filters.period === "30d") startDate = subDays(new Date(), 30);
-       else if (filters.period === "1y") startDate = subDays(new Date(), 365);
-     }
- 
-     const days = eachDayOfInterval({ start: startDate, end: endDate });
-     
-     return days.map(day => {
-       const dayTickets = filteredTickets.filter(t => isSameDay(new Date(t.gerado_em), day));
-       return {
-         name: format(day, "dd/MM"),
-         chamados: dayTickets.length,
-         sla: dayTickets.filter(t => !t.sla_violado).length
-       };
-     });
-   }, [filteredTickets, filters]);
+    useEffect(() => {
+      const total = filteredTickets.length;
+      const open = filteredTickets.filter(t => t.status === 'ABERTO').length;
+      const resolved = filteredTickets.filter(t => t.status === 'ENCERRADO').length;
+      const sla = filteredTickets.filter(t => t.sla_violado).length;
 
-  const cards = [
-    { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },
-    { title: "Chamados Abertos", value: stats.openTickets, icon: Clock, color: "text-orange-600" },
-    { title: "Resolvidos", value: stats.resolvedTickets, icon: CheckCircle2, color: "text-green-600" },
-    { title: "Violações de SLA", value: stats.slaViolations, icon: AlertCircle, color: "text-red-600" },
-    { title: "Usuários Ativos", value: stats.activeUsers, icon: Users, color: "text-indigo-600" },
-  ];
+      // Calculate averages
+      let acceptanceTimes: number[] = [];
+      let completionTimes: number[] = [];
+      let totalPaused = 0;
+      let totalWaiting = 0;
+
+      filteredTickets.forEach(t => {
+        if (t.atendido_em && t.gerado_em) {
+          const diff = (new Date(t.atendido_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
+          if (diff > 0) acceptanceTimes.push(diff);
+        }
+        if (t.encerrado_em && t.gerado_em) {
+          const diff = (new Date(t.encerrado_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
+          if (diff > 0) completionTimes.push(diff);
+        }
+        totalPaused += (t.tempo_total_pausado || 0);
+        totalWaiting += (t.tempo_total_aguardando_usuario || 0);
+      });
+
+      const avgAcceptance = acceptanceTimes.length > 0 ? acceptanceTimes.reduce((a, b) => a + b, 0) / acceptanceTimes.length : 0;
+      const avgCompletion = completionTimes.length > 0 ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length : 0;
+  
+      setStats(prev => ({
+        ...prev,
+        totalTickets: total,
+        openTickets: open,
+        resolvedTickets: resolved,
+        slaViolations: sla,
+        avgAcceptanceTime: Math.round(avgAcceptance),
+        avgCompletionTime: Math.round(avgCompletion),
+        totalPausedTime: Math.round(totalPaused / 60),
+        totalWaitingTime: Math.round(totalWaiting / 60)
+      }));
+    }, [filteredTickets]);
+ 
+    const chartData = useMemo(() => {
+      let startDate = filters.dateRange.from;
+      let endDate = filters.dateRange.to;
+  
+      if (filters.period !== "custom") {
+        endDate = new Date();
+        if (filters.period === "1d") startDate = startOfDay(new Date());
+        else if (filters.period === "7d") startDate = subDays(new Date(), 7);
+        else if (filters.period === "30d") startDate = subDays(new Date(), 30);
+        else if (filters.period === "1y") startDate = subDays(new Date(), 365);
+      }
+
+      if (filters.period === "1d") {
+        const hours = eachHourOfInterval({ start: startOfDay(new Date()), end: endOfDay(new Date()) });
+        return hours.map(hour => {
+          const hourTickets = filteredTickets.filter(t => isSameHour(new Date(t.gerado_em), hour));
+          return {
+            name: format(hour, "HH:mm"),
+            chamados: hourTickets.length,
+            sla: hourTickets.filter(t => !t.sla_violado).length
+          };
+        });
+      }
+  
+      const days = eachDayOfInterval({ start: startDate, end: endDate });
+      return days.map(day => {
+        const dayTickets = filteredTickets.filter(t => isSameDay(new Date(t.gerado_em), day));
+        return {
+          name: format(day, "dd/MM"),
+          chamados: dayTickets.length,
+          sla: dayTickets.filter(t => !t.sla_violado).length
+        };
+      });
+    }, [filteredTickets, filters]);
+
+     const cards = [
+       { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },
+       { title: "Chamados Abertos", value: stats.openTickets, icon: Clock, color: "text-orange-600" },
+       { title: "Tempo Médio Aceite", value: `${stats.avgAcceptanceTime} min`, icon: Play, color: "text-amber-600" },
+       { title: "Tempo Médio Conclusão", value: `${stats.avgCompletionTime} min`, icon: CheckCircle2, color: "text-green-600" },
+       { title: "Tempo Total Pausado", value: `${stats.totalPausedTime} min`, icon: Pause, color: "text-slate-600" },
+       { title: "Aguardando Usuário", value: `${stats.totalWaitingTime} min`, icon: History, color: "text-indigo-600" },
+     ];
 
    return (
      <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fade-in">
@@ -249,7 +291,7 @@ import { supabase } from "@/integrations/supabase/client";
          </div>
        </Card>
        
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
          {cards.map((card) => (
            <Card key={card.title} className="hover:shadow-md transition-shadow">
              <CardHeader className="flex flex-row items-center justify-between pb-2">

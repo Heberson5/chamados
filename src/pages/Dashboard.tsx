@@ -17,36 +17,34 @@ export default function Dashboard() {
     openTickets: 0,
     resolvedTickets: 0,
     slaViolations: 0,
-    inventoryItems: 0,
     activeUsers: 0
   });
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [
-        { count: total },
-        { count: open },
-        { count: resolved },
-        { count: sla },
-        { count: inventory },
-        { count: users }
-      ] = await Promise.all([
-        supabase.from("chamados").select("*", { count: 'exact', head: true }),
-        supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ABERTO'),
-        supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ENCERRADO'),
-        supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('sla_violado', true),
-        supabase.from("itens_inventario").select("*", { count: 'exact', head: true }),
-        supabase.from("profiles").select("*", { count: 'exact', head: true }).eq('ativo', true)
-      ]);
+      const fetchStats = async () => {
+        const [
+          { count: total },
+          { count: open },
+          { count: resolved },
+          { count: sla },
+          { count: users }
+        ] = await Promise.all([
+          supabase.from("chamados").select("*", { count: 'exact', head: true }),
+          supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ABERTO'),
+          supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('status', 'ENCERRADO'),
+          supabase.from("chamados").select("*", { count: 'exact', head: true }).eq('sla_violado', true),
+          supabase.from("profiles").select("*", { count: 'exact', head: true }).eq('ativo', true)
+        ]);
 
-      setStats({
-        totalTickets: total || 0,
-        openTickets: open || 0,
-        resolvedTickets: resolved || 0,
-        slaViolations: sla || 0,
-        inventoryItems: inventory || 0,
-        activeUsers: users || 0
-      });
+        setStats({
+          totalTickets: total || 0,
+          openTickets: open || 0,
+          resolvedTickets: resolved || 0,
+          slaViolations: sla || 0,
+          activeUsers: users || 0
+        });
+      };
     };
     fetchStats();
   }, []);
@@ -56,7 +54,6 @@ export default function Dashboard() {
     { title: "Chamados Abertos", value: stats.openTickets, icon: Clock, color: "text-orange-600" },
     { title: "Resolvidos", value: stats.resolvedTickets, icon: CheckCircle2, color: "text-green-600" },
     { title: "Violações de SLA", value: stats.slaViolations, icon: AlertCircle, color: "text-red-600" },
-    { title: "Itens em Inventário", value: stats.inventoryItems, icon: Package, color: "text-purple-600" },
     { title: "Usuários Ativos", value: stats.activeUsers, icon: Users, color: "text-indigo-600" },
   ];
 

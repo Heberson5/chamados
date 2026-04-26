@@ -13,7 +13,7 @@ type Profile = {
   position_id: string | null;
 };
 
-type Org = { id: string; name: string; slug: string };
+type Org = { id: string; name: string; slug: string; email_settings?: any };
 
 type AuthCtx = {
   user: User | null;

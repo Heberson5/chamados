@@ -20,6 +20,7 @@ const AdminSystem = () => {
     primary_color: "#3b82f6",
     menu_config: [] as any[],
     landing_page_config: {} as any,
+    ticket_categories: [] as string[],
   });
 
   useEffect(() => {
@@ -47,6 +48,7 @@ const AdminSystem = () => {
         primary_color: settings.primary_color || "#3b82f6",
         menu_config: mergedConfig,
         landing_page_config: (settings.landing_page_config as any) || {},
+        ticket_categories: (settings.ticket_categories as string[]) || [],
       });
     }
   }, [settings]);
@@ -147,6 +149,45 @@ const AdminSystem = () => {
              </div>
           </CardContent>
         </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Categorias de Chamados</CardTitle>
+          <CardDescription>Defina as categorias disponíveis para novos chamados.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {form.ticket_categories.map((cat, i) => (
+              <div key={i} className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md border">
+                <span className="text-sm">{cat}</span>
+                <button onClick={() => {
+                  const newCats = [...form.ticket_categories];
+                  newCats.splice(i, 1);
+                  setForm({ ...form, ticket_categories: newCats });
+                }} className="text-muted-foreground hover:text-destructive">
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Nova categoria..." 
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const val = (e.target as HTMLInputElement).value.trim();
+                  if (val && !form.ticket_categories.includes(val)) {
+                    setForm({ ...form, ticket_categories: [...form.ticket_categories, val] });
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }
+              }}
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">Pressione Enter para adicionar</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

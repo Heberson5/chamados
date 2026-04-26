@@ -1,4 +1,4 @@
- import { useState, useRef } from "react";
+  import { useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -99,38 +99,23 @@ export const NewTicketDialog = ({
        uploadedUrls.push(publicUrl);
      }
  
-    const { error } = await supabase.from("tickets").insert({
-      subject: parsed.data.subject,
-      description: parsed.data.description ?? null,
-      priority: parsed.data.priority,
+     const { error } = await supabase.from("tickets").insert({
+       subject: parsed.data.subject,
+       description: parsed.data.description ?? null,
+       priority: parsed.data.priority,
        category: parsed.data.category,
        attachment_urls: uploadedUrls,
        organization_id: targetOrgId,
-   useState(() => {
+       requester_id: user.id,
+     });
+   useEffect(() => {
      if (profile?.is_master) {
        supabase.from("organizations").select("id, name").order("name").then(({ data }) => {
          setAllOrgs(data || []);
        });
      }
-   });
+   }, [profile?.is_master]);
  
-           {profile?.is_master && !org && (
-             <div className="space-y-1.5">
-               <Label>Empresa</Label>
-               <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-                 <SelectTrigger>
-                   <SelectValue placeholder="Selecione a empresa..." />
-                 </SelectTrigger>
-                 <SelectContent>
-                   {allOrgs.map((o) => (
-                     <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
-             </div>
-           )}
-      requester_id: user.id,
-    });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Chamado criado");
@@ -147,7 +132,22 @@ export const NewTicketDialog = ({
           <DialogTitle>Novo chamado</DialogTitle>
           <DialogDescription>Descreva o problema ou solicitação.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+         <div className="space-y-4">
+           {profile?.is_master && !org && (
+             <div className="space-y-1.5">
+               <Label>Empresa</Label>
+               <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+                 <SelectTrigger>
+                   <SelectValue placeholder="Selecione a empresa..." />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {allOrgs.map((o) => (
+                     <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+           )}
           <div className="space-y-1.5">
             <Label htmlFor="subject">Assunto</Label>
             <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex.: Erro ao acessar relatório" />

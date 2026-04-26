@@ -91,7 +91,8 @@ import { supabase } from "@/integrations/supabase/client";
       ...user,
       organization_id: user.organization_id || "",
       department_id: user.department_id || "",
-      position_id: user.position_id || ""
+       position_id: user.position_id || "",
+       role: user.user_roles?.[0]?.role || "customer"
     });
     setEditOpen(true);
   };
@@ -99,16 +100,38 @@ import { supabase } from "@/integrations/supabase/client";
   const updateUser = async () => {
     if (!editingUser || !editingUser.full_name) return;
     
+     const { role, ...profileData } = editingUser;
+
     const { error } = await supabase
       .from("profiles")
       .update({
-        full_name: editingUser.full_name,
-        organization_id: editingUser.organization_id || null,
-        department_id: editingUser.department_id || null,
-        position_id: editingUser.position_id || null,
-        is_master: editingUser.is_master
+         full_name: profileData.full_name,
+         organization_id: profileData.organization_id || null,
+         department_id: profileData.department_id || null,
+         position_id: profileData.position_id || null,
+         is_master: profileData.is_master
       })
-      .eq("id", editingUser.id);
+       .eq("id", profileData.id);
+
+     if (!error && editingUser.organization_id && !editingUser.is_master) {
+       // Update or insert role
+       const { data: existingRole } = await supabase
+         .from("user_roles")
+         .select("id")
+         .eq("user_id", editingUser.id)
+         .maybeSingle();
+
+       if (existingRole) {
+         await supabase
+           .from("user_roles")
+           .update({ role, organization_id: editingUser.organization_id })
+           .eq("id", existingRole.id);
+       } else {
+         await supabase
+           .from("user_roles")
+           .insert({ user_id: editingUser.id, role, organization_id: editingUser.organization_id });
+       }
+     }
 
     if (error) {
       toast({ variant: "destructive", title: "Erro", description: error.message });

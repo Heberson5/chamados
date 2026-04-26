@@ -379,15 +379,15 @@ export default function Chamados() {
                           {ticket.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={
-                          ticket.prioridade === 'P1' ? 'border-red-500 text-red-500 bg-red-50' :
-                          ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-500 bg-orange-50' :
-                          'border-gray-500'
-                        }>
-                          {getPriorityLabel(ticket.prioridade)}
-                        </Badge>
-                      </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={
+                            ticket.prioridade === 'P1' ? 'border-destructive text-destructive bg-destructive/10' :
+                            ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-600 bg-orange-500/10' :
+                            'border-muted-foreground'
+                          }>
+                            {getPriorityLabel(ticket.prioridade)}
+                          </Badge>
+                        </TableCell>
                       <TableCell className="text-sm">
                         <div className="flex flex-col">
                           <span className="font-medium">
@@ -401,11 +401,11 @@ export default function Chamados() {
                       <TableCell>
                         {ticket.anexos && ticket.anexos.length > 0 ? (
                           <div className="flex gap-1">
-                            {ticket.anexos.map((url: string, idx: number) => (
-                              <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs">
-                                [{idx + 1}]
-                              </a>
-                            ))}
+                              {ticket.anexos.map((url: string, idx: number) => (
+                                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">
+                                  [{idx + 1}]
+                                </a>
+                              ))}
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
@@ -421,7 +421,7 @@ export default function Chamados() {
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
-                        <AlertTriangle size={32} className="text-yellow-500" />
+                         <AlertTriangle size={32} className="text-warning" />
                         <p>Nenhum chamado encontrado para os filtros atuais.</p>
                       </div>
                     </TableCell>

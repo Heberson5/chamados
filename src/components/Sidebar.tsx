@@ -1,15 +1,19 @@
  import { useState } from "react";
  import { useNavigate, useLocation } from "react-router-dom";
  import { 
-   LayoutDashboard, 
-   Ticket, 
-   Settings, 
-   ChevronLeft, 
-   ChevronRight, 
-   LogOut, 
-   Moon, 
-   Sun,
-   User
+    LayoutDashboard,
+    Ticket,
+    Settings,
+    ChevronLeft,
+    ChevronRight,
+    LogOut,
+    Moon,
+    Sun,
+    User,
+    Users,
+    Package,
+    Banknote,
+    BarChart3
  } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
@@ -22,12 +26,16 @@
    const navigate = useNavigate();
    const location = useLocation();
  
-   const menuItems = [
-     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-     { icon: Ticket, label: "Chamados", path: "/chamados" },
-     { icon: User, label: "Perfil", path: "/perfil" },
-     { icon: Settings, label: "Configurações", path: "/settings" },
-   ];
+    const menuItems = [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+      { icon: Ticket, label: "Chamados", path: "/chamados" },
+      { icon: Package, label: "Inventário", path: "/inventory" },
+      { icon: Users, label: "Gestão de Pessoas", path: "/users" },
+      { icon: Banknote, label: "Financeiro", path: "/finance" },
+      { icon: BarChart3, label: "Relatórios", path: "/reports" },
+      { icon: User, label: "Perfil", path: "/perfil" },
+      { icon: Settings, label: "Configurações", path: "/settings" },
+    ];
  
    const handleLogout = async () => {
      await supabase.auth.signOut();

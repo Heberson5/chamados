@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
- import { Save, Image as ImageIcon, ChevronUp, ChevronDown } from "lucide-react";
+ import { Save, Image as ImageIcon, ChevronUp, ChevronDown, X } from "lucide-react";
 
 const AdminSystem = () => {
   const { data: settings, refetch } = useSystemSettings();

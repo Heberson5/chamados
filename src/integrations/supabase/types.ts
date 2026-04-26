@@ -322,6 +322,7 @@ export type Database = {
           menu_config: Json | null
           primary_color: string | null
           system_name: string | null
+          ticket_categories: string[] | null
           updated_at: string | null
         }
         Insert: {
@@ -332,6 +333,7 @@ export type Database = {
           menu_config?: Json | null
           primary_color?: string | null
           system_name?: string | null
+          ticket_categories?: string[] | null
           updated_at?: string | null
         }
         Update: {
@@ -342,6 +344,7 @@ export type Database = {
           menu_config?: Json | null
           primary_color?: string | null
           system_name?: string | null
+          ticket_categories?: string[] | null
           updated_at?: string | null
         }
         Relationships: []

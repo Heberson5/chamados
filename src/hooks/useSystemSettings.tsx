@@ -17,8 +17,9 @@ export const useSystemSettings = () => {
         logo_url: null,
          favicon_url: null,
          primary_color: "#3b82f6",
-         menu_config: [],
-         landing_page_config: {}
+          menu_config: [],
+          landing_page_config: {},
+          ticket_categories: ['Suporte Técnico', 'Financeiro / Faturamento', 'Dúvidas Gerais', 'Sugestões / Feedback', 'Comercial']
       };
     },
   });

@@ -108,8 +108,8 @@ export const AppLayout = () => {
     }
 
     const filteredNav = orderedNav.filter(item => {
-      if (item?.masterOnly) return !!profile?.is_master;
-      if (item?.adminOnly) return !!profile?.is_master || profile?.role === 'admin';
+      if (item?.masterOnly) return profile?.is_master === true;
+      if (item?.adminOnly) return profile?.is_master === true || profile?.role === 'admin';
       return true;
     });
     setNav(filteredNav);

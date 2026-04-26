@@ -29,29 +29,10 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && !authLoading) {
-      console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master, orgId: profile?.organization_id });
-      
-      if (profile) {
-        // Se for master, vai direto para o app, independente de ter empresa vinculada
-        if (profile.is_master) {
-          navigate("/app", { replace: true });
-          return;
-        }
-        
-        // Se tiver empresa, vai para o app
-        if (profile.organization_id) {
-          navigate("/app", { replace: true });
-          return;
-        }
-
-        // Sempre redireciona para o app, removendo a tela de onboarding obrigatória
-        navigate("/app", { replace: true });
-      } else {
-        // Mesmo sem perfil, vai para o app
-        navigate("/app", { replace: true });
-      }
+      console.log("Auth redirection check:", { hasProfile: !!profile, isMaster: profile?.is_master });
+      navigate("/app", { replace: true });
     }
-  }, [user, profile, authLoading, navigate]);
+  }, [user, authLoading, navigate, profile]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

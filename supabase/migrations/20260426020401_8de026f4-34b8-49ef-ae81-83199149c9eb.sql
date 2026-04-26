@@ -1,0 +1,2 @@
+ALTER TABLE public.system_settings 
+ADD COLUMN IF NOT EXISTS ticket_categories TEXT[] DEFAULT ARRAY['Suporte Técnico', 'Financeiro / Faturamento', 'Dúvidas Gerais', 'Sugestões / Feedback', 'Comercial'];

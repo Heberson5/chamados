@@ -478,14 +478,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
-                    <div className="space-y-2">
-                      <Label>Texto do Rodapé</Label>
-                      <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
-                    </div>
-                 </CardContent>
-               </Card>
-             </TabsContent>
+               </TabsContent>
            </>
          )}
        </Tabs>

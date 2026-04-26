@@ -26,7 +26,7 @@ const Onboarding = () => {
   useEffect(() => {
     if (!loading && user !== undefined) {
       if (!user) navigate("/auth", { replace: true });
-      else if (profile && (profile.organization_id || profile.is_master)) {
+       else if (profile && (profile.organization_id || profile.is_master === true)) {
         navigate("/app", { replace: true });
       }
     }

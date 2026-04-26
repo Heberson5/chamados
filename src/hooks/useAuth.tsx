@@ -8,7 +8,7 @@ type Profile = {
   full_name: string | null;
   avatar_url: string | null;
   organization_id: string | null;
-  is_master: boolean;
+   is_master: boolean | null;
   department_id: string | null;
   position_id: string | null;
   role: "admin" | "agent" | "customer" | null;
@@ -56,10 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return loadProfile(uid, retryCount + 1);
       }
 
-      const profileData = p ? {
-        ...p,
-        role: (p as any).user_roles?.[0]?.role ?? null
-      } : null;
+       const profileData = p ? {
+         ...p,
+         is_master: !!p.is_master,
+         role: (p as any).user_roles?.[0]?.role ?? null
+       } : null;
 
       setProfile(profileData as any);
 

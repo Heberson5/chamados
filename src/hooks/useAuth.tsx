@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    const [loading, setLoading] = useState(false);
    const [initialized, setInitialized] = useState(false);
    const [isInitialLoad, setIsInitialLoad] = useState(true);
+   const [error, setError] = useState<Error | null>(null);
 
   const loadProfile = async (uid: string, retryCount = 0) => {
     try {

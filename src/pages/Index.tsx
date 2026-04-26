@@ -29,7 +29,7 @@ export default function Index() {
             <Button size="lg" className="px-8" onClick={() => navigate("/login")}>
               Começar Agora
             </Button>
-            <Button size="lg" variant="outline" className="px-8">
+            <Button size="lg" variant="outline" className="px-8" onClick={() => navigate("/login")}>
               Saiba Mais
             </Button>
           </div>

@@ -32,7 +32,7 @@ const Onboarding = () => {
     }
   }, [user, profile, loading, navigate]);
 
-  if (loading) {
+  if (loading || (user && !profile)) {
     return (
       <div className="min-h-screen grid place-items-center">
         <div className="size-6 rounded-full border-2 border-muted border-t-foreground animate-spin" />

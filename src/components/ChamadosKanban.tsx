@@ -263,32 +263,36 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
    ]);
 
-   useEffect(() => {
-     const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("regra, is_master")
-          .eq("id", user.id)
-          .single();
-         if (data) {
-           setUserRole(data.is_master ? 'MASTER' : data.regra);
+     useEffect(() => {
+       const loadData = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+           if (profile) {
+             setUserRole(profile.is_master ? 'MASTER' : profile.regra);
+             if (profile.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config) {
+               setKanbanCols((profile.settings as any).kanban_config);
+               return; // Exit early if user has their own config
+             }
+           }
          }
-       }
- 
-       const { data: settings } = await supabase
-         .from("system_settings")
-         .select("value")
-         .eq("key", "kanban_config")
-         .single();
-       
-       if (settings) {
-         setKanbanCols(settings.value as any[]);
-       }
-     };
-     loadData();
-   }, []);
+   
+         const { data: settings } = await supabase
+           .from("system_settings")
+           .select("value")
+           .eq("key", "kanban_config")
+           .single();
+         
+         if (settings) {
+           setKanbanCols(settings.value as any[]);
+         }
+       };
+       loadData();
+     }, []);
 
     const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario") => {
     try {

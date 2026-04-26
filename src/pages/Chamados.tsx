@@ -34,12 +34,7 @@
    const fetchTickets = useCallback(async () => {
      const { data, error } = await supabase
        .from("chamados")
-       .select(`
-         *,
-         tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome),
-         usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome),
-         chamado_pai:chamados!chamados_chamado_pai_id_fkey(os)
-       `)
+        .select(`*, tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome), usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome), chamado_pai:chamado_pai_id(os)`)
        .order("gerado_em", { ascending: false });
      
      if (error) {
@@ -112,9 +107,13 @@
           uploadedUrls.push(publicUrl);
         }
   
+        const timestamp = Date.now();
+        const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        const osNumber = `OS-${new Date().getFullYear()}${String(timestamp).slice(-4)}${randomPart}`;
+
         const { error: insertError } = await supabase.from("chamados").insert({
-          titulo: newTicket.titulo,
-          os: `OS-${new Date().getFullYear()}${Math.floor(Math.random() * 1000)}${String(Date.now()).slice(-4)}`,
+          titulo: newTicket.titulo || "Sem título",
+          os: osNumber,
           descricao: newTicket.descricao,
           prioridade: newTicket.prioridade,
           usuario_id: user.id,
@@ -128,11 +127,11 @@
         }
   
         toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
+        await fetchTickets();
         setIsDialogOpen(false);
         setNewTicket({ titulo: "", descricao: "", prioridade: "P3" });
         setFiles([]);
         setPreviews([]);
-        fetchTickets();
       } catch (error: any) {
         toast({ variant: "destructive", title: "Erro ao criar chamado", description: error.message });
       } finally {
@@ -371,14 +370,14 @@
                       )}
                     </TableCell>
                    <TableCell className="text-sm whitespace-nowrap">
-                     {format(new Date(ticket.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR })}
+                     {ticket.gerado_em ? format(new Date(ticket.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
                    </TableCell>
                  </TableRow>
                );
              })}
-             {filteredTickets.length === 0 && (
-               <TableRow>
-                 <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+              {filteredTickets.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                    <div className="flex flex-col items-center gap-2">
                      <AlertTriangle size={32} className="text-yellow-500" />
                      <p>Nenhum chamado encontrado para os filtros atuais.</p>

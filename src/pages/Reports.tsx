@@ -152,8 +152,9 @@
        if (layout.showLogo && branding.companyLogo) {
          try {
            // Using data URL if possible, otherwise just trying to add image URL
-           doc.addImage(branding.companyLogo, 'PNG', 10, 5, 15, 15);
-           headerTextX = 30;
+            // Try to maintain aspect ratio if possible, otherwise use a slightly larger square
+            doc.addImage(branding.companyLogo, 'PNG', 10, 2.5, 20, 20, undefined, 'FAST');
+            headerTextX = 35;
          } catch (e) {
            console.error("Error adding logo to PDF:", e);
          }

@@ -734,44 +734,46 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           </div>
         </div>
 
-        <div className="p-6 pt-2 border-t bg-muted/20 shrink-0">
-          <div className="space-y-3">
-            <div className="flex flex-col gap-2">
-              <div className="relative">
-                <textarea
-                  placeholder="Escreva uma nova interação..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none pr-10"
-                />
-                <div className="absolute right-2 bottom-2 flex gap-1">
-                   <Label htmlFor="comment-files" className="cursor-pointer p-1.5 hover:bg-muted rounded-full transition-colors text-muted-foreground">
-                     <Paperclip size={18} />
-                     <input id="comment-files" type="file" multiple className="hidden" onChange={handleCommentFileChange} accept="image/*" />
-                   </Label>
+        {selectedTicket?.status !== 'ENCERRADO' && (
+          <div className="p-6 pt-2 border-t bg-muted/20 shrink-0">
+            <div className="space-y-3">
+              <div className="flex flex-col gap-2">
+                <div className="relative">
+                  <textarea
+                    placeholder="Escreva uma nova interação..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none pr-10"
+                  />
+                  <div className="absolute right-2 bottom-2 flex gap-1">
+                     <Label htmlFor="comment-files" className="cursor-pointer p-1.5 hover:bg-muted rounded-full transition-colors text-muted-foreground">
+                       <Paperclip size={18} />
+                       <input id="comment-files" type="file" multiple className="hidden" onChange={handleCommentFileChange} accept="image/*" />
+                     </Label>
+                  </div>
                 </div>
-              </div>
 
-              {commentPreviews.length > 0 && (
-                <div className="flex flex-wrap gap-2 py-2">
-                  {commentPreviews.map((url, idx) => (
-                    <div key={idx} className="relative w-12 h-12 rounded border overflow-hidden">
-                      <img src={url} alt="Preview" className="w-full h-full object-cover" />
-                      <button onClick={() => removeCommentFile(idx)} className="absolute top-0.5 right-0.5 bg-destructive text-white rounded-full p-0.5"><X size={8} /></button>
-                    </div>
-                  ))}
+                {commentPreviews.length > 0 && (
+                  <div className="flex flex-wrap gap-2 py-2">
+                    {commentPreviews.map((url, idx) => (
+                      <div key={idx} className="relative w-12 h-12 rounded border overflow-hidden">
+                        <img src={url} alt="Preview" className="w-full h-full object-cover" />
+                        <button onClick={() => removeCommentFile(idx)} className="absolute top-0.5 right-0.5 bg-destructive text-white rounded-full p-0.5"><X size={8} /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={handleAddComment} disabled={isSendingComment || (!newComment.trim() && commentFiles.length === 0)} className="gap-2">
+                    {isSendingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                    Enviar Interação
+                  </Button>
                 </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button size="sm" onClick={handleAddComment} disabled={isSendingComment || (!newComment.trim() && commentFiles.length === 0)} className="gap-2">
-                  {isSendingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                  Enviar Interação
-                </Button>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
     </>

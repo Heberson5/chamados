@@ -554,18 +554,26 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                    Sem chamados no período selecionado.
                  </div>
                ) : (
-                 <ResponsiveContainer width="100%" height="100%">
-                   <BarChart data={stats.byUser} layout="vertical" margin={{ left: 20, right: 20 }}>
-                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--muted))" />
-                     <XAxis type="number" stroke="currentColor" fontSize={12} allowDecimals={false} />
-                     <YAxis dataKey="name" type="category" stroke="currentColor" fontSize={12} width={150} />
-                     <Tooltip
-                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                       itemStyle={{ color: 'hsl(var(--foreground))' }}
-                     />
-                     <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                   </BarChart>
-                 </ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.byUser} margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                      <XAxis 
+                        dataKey="name" 
+                        stroke="currentColor" 
+                        fontSize={10} 
+                        interval={0}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
+                      <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                )}
              </CardContent>
            </Card>

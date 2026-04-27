@@ -64,16 +64,55 @@
        return { byStatus, byTechnician, byPriority };
      }, [tickets]);
  
-     const exportToExcel = async () => {
-       try {
-         const worksheet = XLSX.utils.json_to_sheet(tickets.map(t => ({
-            OS: t.os,
-            Titulo: t.titulo,
-            Descricao: t.descricao,
-            Status: t.status,
-            Prioridade: getPriorityLabel(t.prioridade),
-            Data: new Date(t.gerado_em).toLocaleDateString()
-         })));
+    const getReportSettings = async () => {
+      const { data: settings } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "report_layout")
+        .single();
+      
+      const defaultColumns = [
+        { id: 'os', label: 'OS', visible: true },
+        { id: 'titulo', label: 'Título', visible: true },
+        { id: 'descricao', label: 'Descrição', visible: true },
+        { id: 'status', label: 'Status', visible: true },
+        { id: 'prioridade', label: 'Prioridade', visible: true },
+        { id: 'gerado_em', label: 'Data', visible: true },
+        { id: 'tecnico', label: 'Técnico', visible: true },
+      ];
+
+      const val = settings?.value as any || {};
+      if (!val.columns) val.columns = defaultColumns;
+      return val;
+    };
+
+    const formatCellValue = (ticket: any, colId: string) => {
+      switch (colId) {
+        case 'os': return ticket.os;
+        case 'titulo': return ticket.titulo;
+        case 'descricao': return ticket.descricao;
+        case 'status': return ticket.status;
+        case 'prioridade': return getPriorityLabel(ticket.prioridade);
+        case 'gerado_em': return new Date(ticket.gerado_em).toLocaleDateString();
+        case 'tecnico': return ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome}` : '-';
+        default: return '';
+      }
+    };
+
+    const exportToExcel = async () => {
+      try {
+        const layout = await getReportSettings();
+        const visibleColumns = layout.columns.filter((c: any) => c.visible);
+
+        const dataToExport = tickets.map(t => {
+          const row: any = {};
+          visibleColumns.forEach((col: any) => {
+            row[col.label] = formatCellValue(t, col.id);
+          });
+          return row;
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
          const workbook = XLSX.utils.book_new();
          XLSX.utils.book_append_sheet(workbook, worksheet, "Chamados");
          XLSX.writeFile(workbook, "Relatorio_Chamados.xlsx");
@@ -83,16 +122,11 @@
        }
      };
  
-     const exportToPDF = async () => {
-       try {
-         const { data: settings } = await supabase
-           .from("system_settings")
-           .select("value")
-           .eq("key", "report_layout")
-           .single();
-         
-         const layout = settings?.value as any || {};
-         const doc = new jsPDF();
+    const exportToPDF = async () => {
+      try {
+        const layout = await getReportSettings();
+        const visibleColumns = layout.columns.filter((c: any) => c.visible);
+        const doc = new jsPDF({ orientation: visibleColumns.length > 5 ? 'landscape' : 'portrait' });
  
          doc.setFillColor(layout.headerColor || "#000000");
          doc.rect(0, 0, 210, 20, 'F');
@@ -100,13 +134,13 @@
          doc.setFontSize(16);
          doc.text("Relatório de Chamados", 10, 13);
  
-         autoTable(doc, {
-           startY: 30,
-            head: [['OS', 'Título', 'Status', 'Prioridade', 'Data']],
-            body: tickets.map(t => [t.os, t.titulo, t.status, getPriorityLabel(t.prioridade), new Date(t.gerado_em).toLocaleDateString()]),
-           theme: 'striped',
-           headStyles: { fillColor: layout.headerColor || [0, 0, 0] }
-         });
+        autoTable(doc, {
+          startY: 30,
+          head: [visibleColumns.map((c: any) => c.label)],
+          body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.id))),
+          theme: 'striped',
+          headStyles: { fillColor: layout.headerColor || [0, 0, 0] }
+        });
  
          const pageCount = (doc as any).internal.getNumberOfPages();
          for (let i = 1; i <= pageCount; i++) {

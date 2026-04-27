@@ -75,13 +75,6 @@
         .eq("key", "report_layout")
         .single();
       
-    const getReportSettings = async () => {
-      const { data: settings } = await supabase
-        .from("system_settings")
-        .select("value")
-        .eq("key", "report_layout")
-        .single();
-      
       const val = settings?.value as any || {};
       if (!val.columns) {
         val.columns = [
@@ -114,8 +107,8 @@
         default: return '';
       }
     };
-    };
 
+    const exportToExcel = async () => {
       try {
         const layout = await getReportSettings();
         const visibleColumns = layout.columns.filter((c: any) => c.visible);

@@ -36,7 +36,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    const admin = createClient(supabaseUrl, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    // Set current user ID for auditing in triggers
+    await admin.rpc('set_session_user_id', { user_id: caller.id });
 
     const { data: callerProfile } = await admin
       .from("profiles")

@@ -7,7 +7,8 @@
  import * as XLSX from 'xlsx';
  import jsPDF from 'jspdf';
  import autoTable from 'jspdf-autotable';
-  import { useToast } from "@/hooks/use-toast";
+   import { useToast } from "@/hooks/use-toast";
+   import { usePermissions } from "@/hooks/usePermissions";
   import { getPriorityLabel } from "@/lib/utils/priority";
   import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart } from 'recharts';
  

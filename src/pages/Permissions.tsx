@@ -10,7 +10,18 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
+import { usePermissions } from "@/hooks/usePermissions";
+import { useNavigate } from "react-router-dom";
+
 export default function Permissions() {
+  const navigate = useNavigate();
+  const { hasPermission, loading: permsLoading } = usePermissions();
+
+  useEffect(() => {
+    if (!permsLoading && !hasPermission("permissoes")) {
+      navigate("/dashboard");
+    }
+  }, [permsLoading, hasPermission, navigate]);
   const [roles, setRoles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

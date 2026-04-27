@@ -11,6 +11,7 @@ import { Ticket, CheckCircle2, Clock, Users, Filter, Loader2, User as UserIcon, 
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/ThemeProvider";
+import { usePermissions } from "@/hooks/usePermissions";
  
   function formatMinutes(min: number): string {
     if (!min || min <= 0) return "0 min";

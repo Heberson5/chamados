@@ -394,14 +394,33 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
         .update(updates)
         .eq("id", ticketId);
 
-      if (error) throw error;
-
-      toast({
-        title: "Status Atualizado",
-        description: `Chamado ${action === "encerrar" ? "encerrado" : "atualizado"} com sucesso.`,
-      } as any);
-
-      onUpdate();
+       if (error) throw error;
+ 
+       const { data: updatedTicket } = await supabase
+         .from("chamados")
+         .select(`*, owner:profiles!chamados_usuario_id_fkey(email, nome, sobrenome)`)
+         .eq("id", ticketId)
+         .single();
+ 
+       if (updatedTicket && updatedTicket.owner) {
+         import("@/utils/email").then(({ sendTemplatedEmail }) => {
+           const trigger = action === "encerrar" ? "ticket_closed" : "status_change";
+           sendTemplatedEmail(updatedTicket.owner.email, trigger, {
+             user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
+             os: updatedTicket.os || "",
+             titulo: updatedTicket.titulo,
+             status: updatedTicket.status,
+             descricao: updatedTicket.descricao
+           });
+         });
+       }
+ 
+       toast({
+         title: "Status Atualizado",
+         description: `Chamado ${action === "encerrar" ? "encerrado" : "atualizado"} com sucesso.`,
+       } as any);
+ 
+       onUpdate();
       setIsClosureDialogOpen(false);
       setClosureNote("");
     } catch (error: any) {

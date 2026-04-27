@@ -54,17 +54,13 @@ import { useTheme } from "@/components/ThemeProvider";
         byUser: [] as any[]
      });
  
-   useEffect(() => {
-     const checkRole = async () => {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (!user) return;
-       const { data: profile } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
-       if (profile && profile.regra !== 'ADMIN' && profile.regra !== 'MASTER' && !profile.is_master) {
-         navigate("/chamados");
-       }
-     };
-     checkRole();
-   }, [navigate]);
+    const { hasPermission, loading: permsLoading } = usePermissions();
+
+    useEffect(() => {
+      if (!permsLoading && !hasPermission("dashboard")) {
+        navigate("/chamados");
+      }
+    }, [permsLoading, hasPermission, navigate]);
  
   const tooltipStyle = useMemo(() => {
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);

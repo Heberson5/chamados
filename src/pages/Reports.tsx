@@ -125,17 +125,13 @@
        }
      };
   
-     useEffect(() => {
-       const checkRole = async () => {
-         const { data: { user } } = await supabase.auth.getUser();
-         if (!user) return;
-         const { data } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
-         if (data && data.regra !== 'ADMIN' && data.regra !== 'MASTER' && !data.is_master) {
-           navigate("/chamados");
-         }
-       };
-       checkRole();
-     }, [navigate]);
+      const { hasPermission, loading: permsLoading } = usePermissions();
+
+      useEffect(() => {
+        if (!permsLoading && !hasPermission("relatorios")) {
+          navigate("/chamados");
+        }
+      }, [permsLoading, hasPermission, navigate]);
   
      const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--destructive))'];
  

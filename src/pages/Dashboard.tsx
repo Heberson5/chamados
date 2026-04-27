@@ -1,4 +1,4 @@
- import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
  import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
 
  export default function Dashboard() {
    const navigate = useNavigate();
+  const { theme } = useTheme();
    const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -64,6 +65,23 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
      checkRole();
    }, [navigate]);
  
+  const tooltipStyle = useMemo(() => {
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    return {
+      contentStyle: {
+        backgroundColor: isDark ? '#1e293b' : 'white',
+        borderColor: isDark ? '#334155' : '#e2e8f0',
+        borderRadius: '8px',
+        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+        color: isDark ? '#f8fafc' : '#1a202c',
+        fontSize: '12px',
+        padding: '8px 12px',
+        border: '1px solid'
+      },
+      itemStyle: { color: isDark ? '#f8fafc' : '#1a202c' }
+    };
+  }, [theme]);
+
   const fetchData = async () => {
     try {
       const [ticketsRes, profilesRes, settingsRes] = await Promise.all([
@@ -539,10 +557,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                     <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
                     <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                      itemStyle={{ color: 'hsl(var(--foreground))' }}
-                    />
+                    <Tooltip {...tooltipStyle} />
                     <Bar dataKey="value" name="Quantidade" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

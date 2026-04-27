@@ -336,12 +336,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                        </div>
                      </div>
                      <div className="flex justify-end">
-                       <Button variant="outline" size="sm" className="gap-2" onClick={async () => {
-                         toast({ title: "Teste de E-mail", description: "Enviando e-mail de teste..." });
-                         setTimeout(() => {
-                           toast({ title: "Sucesso", description: "E-mail de teste enviado com sucesso para o remetente configurado." });
-                         }, 1500);
-                       }}>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-2" 
+                          onClick={async () => {
+                            if (!emailSettings.sender || !emailSettings.smtp_host || !emailSettings.smtp_user || !emailSettings.smtp_pass) {
+                              toast({ variant: "destructive", title: "Configuração incompleta", description: "Por favor, preencha todos os campos do servidor SMTP antes de testar." });
+                              return;
+                            }
+                            
+                            toast({ title: "Teste de E-mail", description: "Enviando e-mail de teste..." });
+                            
+                            try {
+                              const { data, error } = await supabase.functions.invoke("send-email", {
+                                body: {
+                                  to: emailSettings.sender,
+                                  subject: "Teste de Configuração - Sistema de Chamados",
+                                  html: `<p>Este é um e-mail de teste para validar as configurações de SMTP do seu sistema.</p><p>Se você recebeu este e-mail, a configuração está correta!</p>`,
+                                  settings: emailSettings
+                                }
+                              });
+                              
+                              if (error) throw error;
+                              if (data?.error) throw new Error(data.error);
+                              
+                              toast({ title: "Sucesso", description: "E-mail de teste enviado com sucesso para o remetente configurado." });
+                            } catch (err: any) {
+                              console.error("Erro ao enviar e-mail:", err);
+                              toast({ variant: "destructive", title: "Erro no teste", description: err.message || "Não foi possível enviar o e-mail de teste." });
+                            }
+                          }}
+                        >
                          <Mail size={14} /> Testar Conexão
                        </Button>
                      </div>

@@ -184,11 +184,13 @@
         }
        doc.setFontSize(18);
        
-       if (alignment === 'center') {
-         doc.text(branding.companyName || "Relatório de Chamados", headerTextX, 18, { align: 'center' });
-       } else {
-         doc.text(branding.companyName || "Relatório de Chamados", headerTextX, 16);
-       }
+        const headerText = layout.headerText || branding.companyName || "Relatório de Chamados";
+        
+        if (alignment === 'center') {
+          doc.text(headerText, headerTextX, 18, { align: 'center' });
+        } else {
+          doc.text(headerText, headerTextX, 16);
+        }
  
        autoTable(doc, {
          startY: 35,

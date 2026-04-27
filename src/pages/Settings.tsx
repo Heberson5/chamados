@@ -34,9 +34,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981" },
     ]);
       const [reportLayout, setReportLayout] = useState<any>({
-        headerColor: "#000000",
-        headerTextColor: "#ffffff",
-        footerText: "",
+         headerText: "Relatório de Chamados",
+         headerColor: "#000000",
+         headerTextColor: "#ffffff",
+         footerText: "",
         showLogo: true,
         logoAlignment: "left",
         logoWidth: 18,
@@ -112,12 +113,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                    { id: 'tecnico', label: 'Técnico', visible: true, field: 'tecnico' },
                  ];
                }
-                setReportLayout({
-                  logoWidth: 18,
-                  logoHeight: 18,
-                  headerTextColor: "#ffffff",
-                  ...val
-                });
+                 setReportLayout({
+                   logoWidth: 18,
+                   logoHeight: 18,
+                   headerTextColor: "#ffffff",
+                   headerText: "Relatório de Chamados",
+                   ...val
+                 });
              }
              if (eConfig) setEmailSettings(eConfig.value as any);
             if (lConfig) {
@@ -555,9 +557,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                               </div>
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label>Texto do Rodapé</Label>
-                            <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Texto do Cabeçalho</Label>
+                              <Input 
+                                value={reportLayout.headerText || ""} 
+                                onChange={e => setReportLayout({ ...reportLayout, headerText: e.target.value })} 
+                                placeholder="Ex: Relatório Mensal"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Texto do Rodapé</Label>
+                              <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
+                            </div>
                           </div>
                         </div>
 
@@ -601,10 +613,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                                 </div>
                               )}
                               <div className="flex flex-col" style={{ color: reportLayout.headerTextColor || "#ffffff" }}>
-                                <span className="font-bold text-xl px-1">
-                                  {layoutConfig.companyName || "Nome da Empresa"}
+                                <span className="font-bold text-lg px-1">
+                                  {reportLayout.headerText || layoutConfig.companyName || "Relatório de Chamados"}
                                 </span>
-                                <span className="opacity-70 text-[10px] uppercase tracking-wider">Relatório de Atividades</span>
                               </div>
                             </div>
                             <div className="flex-1 p-4 bg-muted/5 flex flex-col gap-2">

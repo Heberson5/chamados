@@ -86,20 +86,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
             }
              if (rLayout) setReportLayout(rLayout.value as any);
              if (eConfig) setEmailSettings(eConfig.value as any);
-               if (lConfig) {
-                 const val = lConfig.value as any;
-                 if (!val.menuOrder || val.menuOrder.length === 0) {
-                   val.menuOrder = defaultMenuOrder;
-                 }
-                 setLayoutConfig(val);
-               }
-               if (sTimeout) setSessionTimeout(sTimeout.value as string);
-                const val = lConfig.value as any;
-                if (!val.menuOrder || val.menuOrder.length === 0) {
-                  val.menuOrder = defaultMenuOrder;
-                }
-                setLayoutConfig(val);
+            if (lConfig) {
+              const val = lConfig.value as any;
+              if (!val.menuOrder || val.menuOrder.length === 0) {
+                val.menuOrder = defaultMenuOrder;
               }
+              setLayoutConfig(val);
+            }
+            if (sTimeout) setSessionTimeout(sTimeout.value as string);
             if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
           }
        };

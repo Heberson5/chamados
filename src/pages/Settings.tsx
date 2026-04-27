@@ -36,7 +36,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       const [reportLayout, setReportLayout] = useState<any>({ 
         headerColor: "#000000", 
         footerText: "", 
-        showLogo: true,
+       showLogo: true, 
+       logoAlignment: "left",
         columns: [
           { id: 'os', label: 'OS', visible: true, field: 'os' },
           { id: 'titulo', label: 'Título', visible: true, field: 'titulo' },
@@ -510,30 +511,89 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         </div>
 
                         <div className="space-y-4">
-                          <h3 className="text-sm font-bold">Visualização do Canvas (Cabeçalho)</h3>
-                          <div 
-                            className="border rounded-lg overflow-hidden shadow-sm bg-white min-h-[120px] flex flex-col"
-                            style={{ borderColor: 'hsl(var(--border))' }}
-                          >
-                            <div 
-                              className="h-16 flex items-center px-4 transition-colors duration-300"
-                              style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
-                            >
-                              {reportLayout.showLogo && layoutConfig.companyLogo && (
-                                <img src={layoutConfig.companyLogo} alt="Logo Preview" className="h-10 w-10 object-contain mr-4 rounded bg-white/10 p-1" />
-                              )}
-                              <span className="text-white font-bold text-lg">
-                                {layoutConfig.companyName || "Nome da Empresa"}
-                              </span>
-                            </div>
-                            <div className="flex-1 p-4 bg-muted/5">
-                              <div className="h-2 w-3/4 bg-muted rounded mb-2 animate-pulse" />
-                              <div className="h-2 w-1/2 bg-muted rounded animate-pulse" />
+                          <div className="flex justify-between items-center">
+                            <h3 className="text-sm font-bold">Visualização Interativa (Canvas)</h3>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant={reportLayout.logoAlignment === 'left' ? 'secondary' : 'ghost'} 
+                                size="sm" 
+                                className="h-7 px-2 text-[10px]"
+                                onClick={() => setReportLayout({...reportLayout, logoAlignment: 'left'})}
+                              >Alinhar Esq.</Button>
+                              <Button 
+                                variant={reportLayout.logoAlignment === 'center' ? 'secondary' : 'ghost'} 
+                                size="sm" 
+                                className="h-7 px-2 text-[10px]"
+                                onClick={() => setReportLayout({...reportLayout, logoAlignment: 'center'})}
+                              >Centralizar</Button>
                             </div>
                           </div>
-                          <div className="border rounded-lg p-2 bg-muted/10 text-[10px] flex justify-between items-center text-muted-foreground">
-                            <span>{reportLayout.footerText || "Rodapé do relatório..."}</span>
-                            <span>Página 1 de 1</span>
+                          <div 
+                            className="border-2 border-dashed rounded-lg overflow-hidden shadow-sm bg-white min-h-[140px] flex flex-col group relative"
+                            style={{ borderColor: 'hsl(var(--primary)/20)' }}
+                          >
+                            <div 
+                              className={`h-20 flex items-center px-6 transition-all duration-300 cursor-pointer hover:brightness-95 relative ${reportLayout.logoAlignment === 'center' ? 'flex-col justify-center text-center gap-1' : 'flex-row'}`}
+                              style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
+                              onClick={() => document.getElementById('report-header-color')?.click()}
+                            >
+                              <Input 
+                                id="report-header-color"
+                                type="color" 
+                                className="absolute opacity-0 w-0 h-0" 
+                                value={reportLayout.headerColor || "#000000"} 
+                                onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
+                              />
+                              {reportLayout.showLogo && layoutConfig.companyLogo && (
+                                <div 
+                                  className="relative group/logo cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setReportLayout({...reportLayout, showLogo: !reportLayout.showLogo});
+                                  }}
+                                >
+                                  <img src={layoutConfig.companyLogo} alt="Logo Preview" className="h-12 w-12 object-contain rounded bg-white/20 p-1" />
+                                </div>
+                              )}
+                              <div className="flex flex-col">
+                                <span 
+                                  className="text-white font-bold text-xl cursor-text hover:bg-white/10 px-1 rounded transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const name = prompt("Nome da Empresa no Relatório:", layoutConfig.companyName);
+                                    if (name !== null) setLayoutConfig({...layoutConfig, companyName: name});
+                                  }}
+                                >
+                                  {layoutConfig.companyName || "Nome da Empresa"}
+                                </span>
+                                <span className="text-white/70 text-[10px] uppercase tracking-wider">Relatório de Atividades</span>
+                              </div>
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
+                                <span className="text-white text-xs font-medium">Clique para editar cores e textos</span>
+                              </div>
+                            </div>
+                            <div className="flex-1 p-4 bg-muted/5 flex flex-col gap-2">
+                              <div className="h-2 w-full bg-muted/20 rounded" />
+                              <div className="grid grid-cols-4 gap-2">
+                                {reportLayout.columns?.slice(0, 4).map((c: any) => (
+                                  <div key={c.id} className="h-4 bg-primary/10 rounded flex items-center px-2 text-[8px] font-medium text-primary/60">
+                                    {c.label}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="h-2 w-3/4 bg-muted/10 rounded" />
+                              <div className="h-2 w-1/2 bg-muted/10 rounded" />
+                            </div>
+                          </div>
+                          <div 
+                            className="border-2 border-dashed rounded-lg p-3 bg-muted/10 text-[10px] flex justify-between items-center text-muted-foreground cursor-pointer hover:bg-muted/20 transition-colors"
+                            onClick={() => {
+                              const footer = prompt("Texto do Rodapé:", reportLayout.footerText);
+                              if (footer !== null) setReportLayout({...reportLayout, footerText: footer});
+                            }}
+                          >
+                            <span className="font-medium italic">{reportLayout.footerText || "Clique para editar o rodapé..."}</span>
+                            <span className="opacity-50">Página 1 de 1</span>
                           </div>
                         </div>
                       </div>

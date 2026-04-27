@@ -323,7 +323,8 @@ export default function Chamados() {
                   <TableHead>Prioridade</TableHead>
                   <TableHead>Responsável / Interações</TableHead>
                   <TableHead>Anexos</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>Criado em</TableHead>
+                  <TableHead>Finalizado em</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -404,6 +405,9 @@ export default function Chamados() {
                       </TableCell>
                       <TableCell className="text-sm whitespace-nowrap">
                         {ticket.gerado_em ? format(new Date(ticket.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
+                      </TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">
+                        {ticket.encerrado_em ? format(new Date(ticket.encerrado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
                       </TableCell>
                     </TableRow>
                   );

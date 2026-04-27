@@ -230,11 +230,32 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
        return;
      }
  
-     try {
-       const { error } = await supabase
-         .from("chamados")
-         .update({ status: newStatus })
-         .eq("id", ticketId);
+      try {
+        const updates: any = { status: newStatus };
+        const now = new Date().toISOString();
+        
+        // Handle timestamps on drag
+        if (newStatus === "EM_ATENDIMENTO") {
+          const ticket = tickets.find(t => t.id === ticketId);
+          if (ticket && !ticket.atendido_em) {
+            updates.atendido_em = now;
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) updates.tecnico_id = user.id;
+          }
+        } else if (newStatus === "ENCERRADO") {
+          updates.encerrado_em = now;
+          const ticket = tickets.find(t => t.id === ticketId);
+          // Fallback closure note if dragged
+          updates.descricao_encerramento = ticket?.descricao_encerramento || "Encerrado via Kanban";
+        } else if (newStatus === "ABERTO") {
+          // Reset if moved back to open (optional but good for consistency)
+          updates.encerrado_em = null;
+        }
+
+        const { error } = await supabase
+          .from("chamados")
+          .update(updates)
+          .eq("id", ticketId);
  
        if (error) throw error;
        toast({ title: "Status atualizado", description: `Chamado movido para ${newStatus}` });

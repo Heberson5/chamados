@@ -6,7 +6,7 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil } from "lucide-react";
+import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
@@ -28,7 +28,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
    const [reassignToId, setReassignToId] = useState("");
-     const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "" });
+    const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "", avatar_url: "" });
      const [createMode, setCreateMode] = useState<"password" | "invite">("password");
      const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -51,6 +51,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
             telefone: editUser.telefone,
             ramal: editUser.ramal,
             cidade: editUser.cidade,
+            avatar_url: editUser.avatar_url,
           },
         });
         if (error) throw error;
@@ -90,6 +91,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
           telefone: newUser.telefone || undefined,
           ramal: newUser.ramal || undefined,
           cidade: newUser.cidade || undefined,
+          avatar_url: newUser.avatar_url || undefined,
         },
       });
       if (error) throw error;
@@ -256,10 +258,14 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
              {users.filter(u => isCurrentMaster ? true : !(u.is_master || u.regra === "MASTER")).map((user) => (
                <TableRow key={user.id}>
                  <TableCell className="font-medium">
-                   <div className="flex items-center gap-3">
-                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">
-                       {user.nome?.[0] || <UserIcon size={14} />}
-                     </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs overflow-hidden border">
+                        {user.avatar_url ? (
+                          <img src={user.avatar_url} alt={user.nome} className="h-full w-full object-cover" />
+                        ) : (
+                          user.nome?.[0] || <UserIcon size={14} />
+                        )}
+                      </div>
                      <span>{user.nome} {user.sobrenome}</span>
                    </div>
                  </TableCell>
@@ -426,10 +432,69 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent className="max-w-lg">
              <DialogHeader>
-               <DialogTitle>Editar Usuário</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil size={18} className="text-primary" />
+                Editar Usuário
+              </DialogTitle>
              </DialogHeader>
              {editUser && (
-                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-1">
+                 <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-1">
+                  <div className="flex flex-col items-center justify-center space-y-2 pb-4">
+                    <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background shadow-lg overflow-hidden relative">
+                      {editUser.avatar_url ? (
+                        <img src={editUser.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                      ) : (
+                        <UserIcon size={48} />
+                      )}
+                      {loading && (
+                        <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <Label htmlFor="avatar-upload" className="cursor-pointer text-xs text-primary hover:underline flex items-center gap-1">
+                        <Camera size={12} /> Alterar foto
+                      </Label>
+                      <Input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setLoading(true);
+                          try {
+                            const ext = file.name.split(".").pop();
+                            const path = `${editUser.id}/avatar.${ext}`;
+                            const { error: upErr } = await supabase.storage
+                              .from("ticket-attachments")
+                              .upload(path, file, { upsert: true, cacheControl: "3600" });
+                            if (upErr) throw upErr;
+                            const { data: pub } = supabase.storage.from("ticket-attachments").getPublicUrl(path);
+                            const url = `${pub.publicUrl}?t=${Date.now()}`;
+                            setEditUser({ ...editUser, avatar_url: url });
+                            toast({ title: "Foto carregada", description: "Clique em Salvar para confirmar." });
+                          } catch (err: any) {
+                            toast({ variant: "destructive", title: "Erro ao carregar foto", description: err.message });
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                      />
+                      {editUser.avatar_url && (
+                        <button
+                          type="button"
+                          onClick={() => setEditUser({ ...editUser, avatar_url: null })}
+                          className="text-[10px] text-destructive hover:underline mt-1"
+                        >
+                          Remover foto
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                  <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-2">
                      <Label>Nome</Label>

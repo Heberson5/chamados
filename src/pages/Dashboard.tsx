@@ -228,6 +228,10 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
       if (filters.period !== "custom") {
         endDate = new Date();
         if (filters.period === "1d") startDate = startOfDay(new Date());
+        else if (filters.period === "yesterday") {
+          startDate = startOfDay(subDays(new Date(), 1));
+          endDate = endOfDay(subDays(new Date(), 1));
+        }
         else if (filters.period === "7d") startDate = subDays(new Date(), 7);
         else if (filters.period === "30d") startDate = subDays(new Date(), 30);
         else if (filters.period === "1y") startDate = subDays(new Date(), 365);
@@ -285,6 +289,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                </SelectTrigger>
                <SelectContent>
                  <SelectItem value="1d">Hoje</SelectItem>
+                <SelectItem value="yesterday">Ontem</SelectItem>
                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
                  <SelectItem value="1y">Este Ano</SelectItem>

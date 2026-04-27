@@ -92,10 +92,18 @@
      };
    }, []);
  
-   const hasPermission = (permission: string) => {
-     if (isMaster || permissions.includes("Acesso Total")) return true;
-     return permissions.includes(permission);
-   };
+  const hasPermission = (permission: string) => {
+    // Special case: if permissions array is empty but user is Master, they might be testing or have no role def.
+    // However, to satisfy the user's request that disabling all perms should block access:
+    if (permissions.length === 0 && !loading) {
+      // Only allow Master to access dashboard as a safety net if everything else is gone? 
+      // No, let's be strict as requested.
+      return false;
+    }
+    
+    if (permissions.includes("Acesso Total")) return true;
+    return permissions.includes(permission);
+  };
  
    return (
      <PermissionContext.Provider value={{ permissions, roleData, loading, hasPermission, isMaster, isAdmin }}>

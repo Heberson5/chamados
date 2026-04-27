@@ -1,15 +1,16 @@
- import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
  import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
   import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as CalendarIcon, Loader2, User as UserIcon, Play, Pause, History, LayoutGrid } from "lucide-react";
+import { Ticket, CheckCircle2, Clock, Users, Filter, Loader2, User as UserIcon, Play, Pause, History } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay, eachHourOfInterval, isSameHour } from "date-fns";
   import { ptBR } from "date-fns/locale";
   import { getPriorityLabel } from "@/lib/utils/priority";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
+import { useTheme } from "@/components/ThemeProvider";
  
   function formatMinutes(min: number): string {
     if (!min || min <= 0) return "0 min";
@@ -24,6 +25,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
 
  export default function Dashboard() {
    const navigate = useNavigate();
+  const { theme } = useTheme();
    const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -64,6 +66,23 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
      checkRole();
    }, [navigate]);
  
+  const tooltipStyle = useMemo(() => {
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    return {
+      contentStyle: {
+        backgroundColor: isDark ? '#1e293b' : 'white',
+        borderColor: isDark ? '#334155' : '#e2e8f0',
+        borderRadius: '8px',
+        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+        color: isDark ? '#f8fafc' : '#1a202c',
+        fontSize: '12px',
+        padding: '8px 12px',
+        border: '1px solid'
+      },
+      itemStyle: { color: isDark ? '#f8fafc' : '#1a202c' }
+    };
+  }, [theme]);
+
   const fetchData = async () => {
     try {
       const [ticketsRes, profilesRes, settingsRes] = await Promise.all([
@@ -414,10 +433,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                    <XAxis dataKey="name" fontSize={12} stroke="currentColor" />
                    <YAxis fontSize={12} stroke="currentColor" />
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                     itemStyle={{ color: 'hsl(var(--foreground))' }}
-                   />
+                    <Tooltip {...tooltipStyle} />
                     <Bar 
                       dataKey="valor" 
                       fill="hsl(var(--primary))" 
@@ -457,10 +473,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                         return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />;
                       })}
                    </Pie>
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                     itemStyle={{ color: 'hsl(var(--foreground))' }}
-                   />
+                    <Tooltip {...tooltipStyle} />
                    <Legend />
                  </PieChart>
                </ResponsiveContainer>
@@ -488,10 +501,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                     <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
                     <YAxis stroke="currentColor" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                      itemStyle={{ color: 'hsl(var(--foreground))' }}
-                    />
+                    <Tooltip {...tooltipStyle} />
                     <Area type="monotone" dataKey="chamados" name="Chamados" stroke="hsl(var(--primary))" fill="url(#colorChamados)" fillOpacity={1} strokeWidth={3} />
                     <Area type="monotone" dataKey="sla" name="Dentro do SLA" stroke="hsl(var(--chart-2, 142 71% 45%))" fill="url(#colorSLA)" fillOpacity={1} strokeWidth={3} />
                   </AreaChart>
@@ -510,10 +520,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                    <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
                    <YAxis stroke="currentColor" fontSize={12} />
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                     itemStyle={{ color: 'hsl(var(--foreground))' }}
-                   />
+                    <Tooltip {...tooltipStyle} />
                    <Legend verticalAlign="top" height={36}/>
                    <Line name="No Prazo" type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
                    <Line name="Total" type="monotone" dataKey="chamados" stroke="hsl(var(--primary))" strokeWidth={1} strokeDasharray="5 5" dot={false} />
@@ -533,10 +540,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                     <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
                     <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                      itemStyle={{ color: 'hsl(var(--foreground))' }}
-                    />
+                    <Tooltip {...tooltipStyle} />
                     <Bar dataKey="value" name="Quantidade" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -567,10 +571,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
                         height={60}
                       />
                       <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                        itemStyle={{ color: 'hsl(var(--foreground))' }}
-                      />
+                      <Tooltip {...tooltipStyle} />
                       <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>

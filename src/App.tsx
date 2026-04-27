@@ -1,4 +1,5 @@
-import { BrandingProvider } from "./hooks/useBranding";
+import { BrandingProvider } from "@/hooks/useBranding";
+import { PermissionProvider } from "@/hooks/usePermissions";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,6 +16,7 @@ import Settings from "./pages/Settings";
   import Permissions from "./pages/Permissions";
 import Audit from "./pages/Audit";
 import PasswordPolicyPage from "./pages/PasswordPolicy";
+import NotAuthorized from "./pages/NotAuthorized";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,9 +31,10 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="chamados-theme">
-        <BrandingProvider>
-          <BrowserRouter>
-          <Routes>
+        <PermissionProvider>
+          <BrandingProvider>
+            <BrowserRouter>
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             
@@ -45,13 +48,15 @@ const App = () => {
                <Route path="/perfil" element={<Profile />} />
               <Route path="/configuracoes/senhas" element={<PasswordPolicyPage />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/unauthorized" element={<NotAuthorized />} />
             </Route>
 
             {/* Fallback for any other route */}
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          </BrowserRouter>
-        </BrandingProvider>
+            </Routes>
+            </BrowserRouter>
+          </BrandingProvider>
+        </PermissionProvider>
       </ThemeProvider>
       <Toaster />
     </QueryClientProvider>

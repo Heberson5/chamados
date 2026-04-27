@@ -3,7 +3,7 @@
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
-import { Search, History, MousePointer2, User as UserIcon } from "lucide-react";
+import { Search, History, MousePointer2, User as UserIcon, RefreshCw } from "lucide-react";
   import { format, addHours } from "date-fns";
   import { usePermissions } from "@/hooks/usePermissions";
   import { useNavigate } from "react-router-dom";
@@ -23,23 +23,28 @@ import { Search, History, MousePointer2, User as UserIcon } from "lucide-react";
    const [searchTerm, setSearchTerm] = useState("");
    const [isLoading, setIsLoading] = useState(true);
  
+    const fetchLogs = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from("audit_logs")
+        .select(`
+          *,
+          profiles!audit_logs_user_id_fkey (
+            nome,
+            sobrenome,
+            avatar_url
+          )
+        `)
+        .order("created_at", { ascending: false });
+      
+      if (error) {
+        console.error("Error fetching logs:", error);
+      }
+      if (data) setLogs(data);
+      setIsLoading(false);
+    };
+
     useEffect(() => {
-      const fetchLogs = async () => {
-        const { data, error } = await supabase
-          .from("audit_logs")
-          .select(`
-            *,
-            profiles!audit_logs_user_id_fkey (
-              nome,
-              sobrenome,
-              avatar_url
-            )
-          `)
-          .order("created_at", { ascending: false });
-        
-        if (data) setLogs(data);
-        setIsLoading(false);
-      };
       fetchLogs();
     }, []);
  
@@ -81,7 +86,17 @@ import { Search, History, MousePointer2, User as UserIcon } from "lucide-react";
          <p className="text-muted-foreground">Monitore as ações e a navegação de todos os usuários cadastrados.</p>
        </div>
  
-       <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchLogs} 
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
          <div className="relative flex-1 max-w-md">
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
            <Input 

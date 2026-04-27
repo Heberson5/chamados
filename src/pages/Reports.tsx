@@ -149,20 +149,37 @@
        
        // Add Logo if available and showLogo is true
        let headerTextX = 15;
+       const alignment = layout.logoAlignment || 'left';
+ 
        if (layout.showLogo && branding.companyLogo) {
          try {
-           // Using data URL if possible, otherwise just trying to add image URL
-            // Try to maintain aspect ratio if possible, otherwise use a slightly larger square
-            doc.addImage(branding.companyLogo, 'PNG', 10, 2.5, 20, 20, undefined, 'FAST');
-            headerTextX = 35;
+           const logoSize = 18;
+           const logoY = 3.5;
+           let logoX = 10;
+           
+           if (alignment === 'center') {
+             logoX = (pageWidth / 2) - (logoSize / 2);
+             headerTextX = (pageWidth / 2);
+           } else {
+             headerTextX = 32;
+           }
+ 
+           doc.addImage(branding.companyLogo, 'PNG', logoX, logoY, logoSize, logoSize, undefined, 'FAST');
          } catch (e) {
            console.error("Error adding logo to PDF:", e);
          }
+       } else if (alignment === 'center') {
+         headerTextX = (pageWidth / 2);
        }
  
        doc.setTextColor(255, 255, 255);
        doc.setFontSize(18);
-       doc.text(branding.companyName || "Relatório de Chamados", headerTextX, 16);
+       
+       if (alignment === 'center') {
+         doc.text(branding.companyName || "Relatório de Chamados", headerTextX, 18, { align: 'center' });
+       } else {
+         doc.text(branding.companyName || "Relatório de Chamados", headerTextX, 16);
+       }
  
        autoTable(doc, {
          startY: 35,

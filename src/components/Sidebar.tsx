@@ -96,7 +96,7 @@ interface SidebarProps {
                <img src={layout.companyLogo} alt="Logo" className="w-8 h-8 object-contain shrink-0" />
              )}
               <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent truncate">
-                {layout.companyName || "Help-Me"}
+                {layout.companyName || "Chamados"}
               </span>
            </div>
          )}

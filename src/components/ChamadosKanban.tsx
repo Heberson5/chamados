@@ -258,14 +258,28 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           updates.encerrado_em = null;
         }
 
-        const { error } = await supabase
-          .from("chamados")
-          .update(updates)
-          .eq("id", ticketId);
+       const { data: updatedTicket, error } = await supabase
+         .from("chamados")
+         .update(updates)
+         .eq("id", ticketId)
+         .select(`*, owner:profiles!chamados_usuario_id_fkey(email, nome, sobrenome)`)
+         .single();
  
        if (error) throw error;
        toast({ title: "Status atualizado", description: `Chamado movido para ${newStatus}` });
        onUpdate();
+ 
+       // Send status change email
+       if (updatedTicket && updatedTicket.owner) {
+         import("@/utils/email").then(({ sendTemplatedEmail }) => {
+           sendTemplatedEmail(updatedTicket.owner.email, "status_change", {
+             user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
+             os: updatedTicket.os || "",
+             titulo: updatedTicket.titulo,
+             status: updatedTicket.status
+           });
+         });
+       }
      } catch (error: any) {
        toast({ variant: "destructive", title: "Erro ao mover chamado", description: error.message });
      }

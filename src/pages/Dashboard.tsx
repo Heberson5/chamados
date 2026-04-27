@@ -557,7 +557,7 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
          </CardHeader>
          <CardContent>
            <p className="text-muted-foreground">
-             O sistema Help-Me está monitorando {filteredTickets.length} chamados no período selecionado.
+             O sistema está monitorando {filteredTickets.length} chamados no período selecionado.
              A conformidade atual de SLA é de {stats.totalTickets > 0 ? ((stats.totalTickets - stats.slaViolations) / stats.totalTickets * 100).toFixed(1) : 0}%.
            </p>
          </CardContent>

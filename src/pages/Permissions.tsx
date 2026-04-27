@@ -151,9 +151,9 @@ export default function Permissions() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
         {roles.map((role) => (
-          <Card key={role.id} className="flex flex-col h-full border-2 hover:border-primary/20 transition-all relative group">
+          <Card key={role.id} className="flex flex-col h-full min-h-[480px] border-2 hover:border-primary/20 transition-all relative group">
             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
                 setSelectedRole(role);
@@ -172,16 +172,28 @@ export default function Permissions() {
               <CardTitle className={role.color}>{role.name}</CardTitle>
               <CardDescription className="text-xs min-h-[40px]">{role.description}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1">
-              <div className="space-y-2 mt-4">
+            <CardContent className="flex-1 flex flex-col justify-between">
+              <div className="space-y-2 mt-2">
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Permissões Incluídas:</h4>
                 <ul className="space-y-1">
-                  {(role.permissions || []).map((perm: string) => (
-                    <li key={perm} className="text-xs flex items-center gap-2">
-                      <div className={`w-1 h-1 rounded-full ${role.color}`} />
-                      {perm}
+                  {(role.permissions || []).slice(0, 5).map((perm: string) => {
+                    // Format permission name to be more readable (e.g. "chamados:visualizar" -> "Chamados (Visualizar)")
+                    const label = perm.includes(':') 
+                      ? perm.split(':').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' (') + ')'
+                      : perm.charAt(0).toUpperCase() + perm.slice(1);
+                    
+                    return (
+                      <li key={perm} className="text-xs flex items-center gap-2 truncate">
+                        <div className={`w-1 h-1 rounded-full flex-shrink-0 ${role.color}`} />
+                        <span className="truncate">{label}</span>
+                      </li>
+                    );
+                  })}
+                  {(role.permissions || []).length > 5 && (
+                    <li className="text-[10px] font-medium text-muted-foreground mt-1 bg-muted/30 px-2 py-0.5 rounded-full inline-block">
+                      +{(role.permissions.length - 5)} acessos
                     </li>
-                  ))}
+                  )}
                   {(!role.permissions || role.permissions.length === 0) && (
                     <li className="text-xs text-muted-foreground italic">Nenhuma permissão definida</li>
                   )}

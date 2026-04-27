@@ -33,7 +33,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       { id: "AGUARDANDO_USUARIO", title: "Aguardando o Usuário", color_hex: "#6366f1" },
       { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981" },
     ]);
-     const [reportLayout, setReportLayout] = useState<any>({ headerColor: "#000000", footerText: "", showLogo: true });
+      const [reportLayout, setReportLayout] = useState<any>({ 
+        headerColor: "#000000", 
+        footerText: "", 
+        showLogo: true,
+        columns: [
+          { id: 'os', label: 'OS', visible: true },
+          { id: 'titulo', label: 'Título', visible: true },
+          { id: 'descricao', label: 'Descrição', visible: true },
+          { id: 'status', label: 'Status', visible: true },
+          { id: 'prioridade', label: 'Prioridade', visible: true },
+          { id: 'gerado_em', label: 'Data', visible: true },
+          { id: 'tecnico', label: 'Técnico', visible: true },
+        ]
+      });
      const [sessionTimeout, setSessionTimeout] = useState("300");
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
     const defaultMenuOrder = [
@@ -84,7 +97,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
             if (kConfig && !(profile?.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config)) {
               setKanbanConfig(kConfig.value as any[]);
             }
-             if (rLayout) setReportLayout(rLayout.value as any);
+             if (rLayout) {
+               const val = rLayout.value as any;
+               if (!val.columns) {
+                 val.columns = [
+                   { id: 'os', label: 'OS', visible: true },
+                   { id: 'titulo', label: 'Título', visible: true },
+                   { id: 'descricao', label: 'Descrição', visible: true },
+                   { id: 'status', label: 'Status', visible: true },
+                   { id: 'prioridade', label: 'Prioridade', visible: true },
+                   { id: 'gerado_em', label: 'Data', visible: true },
+                   { id: 'tecnico', label: 'Técnico', visible: true },
+                 ];
+               }
+               setReportLayout(val);
+             }
              if (eConfig) setEmailSettings(eConfig.value as any);
             if (lConfig) {
               const val = lConfig.value as any;
@@ -453,11 +480,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                      <CardTitle>Layout PDF</CardTitle>
                    </div>
                  </CardHeader>
-                 <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <Label>Mostrar Logo</Label>
-                      <Switch checked={reportLayout.showLogo} onCheckedChange={v => setReportLayout({ ...reportLayout, showLogo: v })} />
-                    </div>
+                  <CardContent className="space-y-8">
+                     <div className="space-y-4">
+                       <h3 className="text-sm font-bold">Visual do PDF</h3>
+                       <div className="flex items-center justify-between">
+                         <Label>Mostrar Logo</Label>
+                         <Switch checked={reportLayout.showLogo} onCheckedChange={v => setReportLayout({ ...reportLayout, showLogo: v })} />
+                       </div>
                       <div className="flex items-center gap-4">
                         <Label>Cor do Cabeçalho</Label>
                         <div className="flex items-center gap-3">
@@ -475,10 +504,67 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                           <span className="text-xs font-mono">{reportLayout.headerColor || "#000000"}</span>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Texto do Rodapé</Label>
-                        <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
-                      </div>
+                       <div className="space-y-2">
+                         <Label>Texto do Rodapé</Label>
+                         <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
+                       </div>
+                     </div>
+
+                     <div className="space-y-4 border-t pt-6">
+                       <h3 className="text-sm font-bold flex items-center gap-2">Colunas do Relatório</h3>
+                       <p className="text-xs text-muted-foreground italic">Selecione e organize as informações que aparecerão nas exportações (PDF e Excel).</p>
+                       <div className="space-y-2 max-w-md">
+                         {reportLayout.columns?.map((col: any, i: number) => (
+                           <div key={col.id} className="flex items-center gap-3 border p-2 rounded bg-muted/10">
+                             <div className="flex flex-col gap-1">
+                               <Button 
+                                 variant="ghost" 
+                                 size="icon" 
+                                 className="h-4 w-4" 
+                                 disabled={i === 0}
+                                 onClick={() => {
+                                   const newCols = [...reportLayout.columns];
+                                   [newCols[i-1], newCols[i]] = [newCols[i], newCols[i-1]];
+                                   setReportLayout({...reportLayout, columns: newCols});
+                                 }}
+                               >
+                                 <ChevronUp size={10} />
+                               </Button>
+                               <Button 
+                                 variant="ghost" 
+                                 size="icon" 
+                                 className="h-4 w-4" 
+                                 disabled={i === reportLayout.columns.length - 1}
+                                 onClick={() => {
+                                   const newCols = [...reportLayout.columns];
+                                   [newCols[i], newCols[i+1]] = [newCols[i+1], newCols[i]];
+                                   setReportLayout({...reportLayout, columns: newCols});
+                                 }}
+                               >
+                                 <ChevronDown size={10} />
+                               </Button>
+                             </div>
+                             <Input 
+                               className="h-8 text-xs" 
+                               value={col.label} 
+                               onChange={e => {
+                                 const newCols = [...reportLayout.columns];
+                                 newCols[i].label = e.target.value;
+                                 setReportLayout({...reportLayout, columns: newCols});
+                               }}
+                             />
+                             <Switch 
+                               checked={col.visible} 
+                               onCheckedChange={v => {
+                                 const newCols = [...reportLayout.columns];
+                                 newCols[i].visible = v;
+                                 setReportLayout({...reportLayout, columns: newCols});
+                               }}
+                             />
+                           </div>
+                         ))}
+                       </div>
+                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>

@@ -171,10 +171,19 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
             const diff = (new Date(t.atendido_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
             if (diff > 0) acceptanceTimes.push(diff);
           }
-          // Completion time = total elapsed from ticket open to closure (encerrado - gerado), in minutes.
-          if (t.encerrado_em && t.gerado_em && t.status === 'ENCERRADO') {
-            const diff = (new Date(t.encerrado_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
-            if (diff > 0) completionTimes.push(diff);
+          // Completion time = effective working time (encerrado - atendido) - pauses - waiting, in minutes.
+          if (t.encerrado_em && t.status === 'ENCERRADO') {
+            const start = t.atendido_em ? new Date(t.atendido_em) : new Date(t.gerado_em || t.atendido_em);
+            const totalElapsed = (new Date(t.encerrado_em).getTime() - start.getTime()) / (1000 * 60);
+            const pauses = (t.tempo_total_pausado || 0) + (t.tempo_total_aguardando_usuario || 0);
+            const netTime = totalElapsed - pauses;
+            
+            // Use net time if positive, otherwise fall back to total elapsed if that's positive
+            if (netTime > 0) {
+              completionTimes.push(netTime);
+            } else if (totalElapsed > 0) {
+              completionTimes.push(totalElapsed);
+            }
           }
           totalPaused += (t.tempo_total_pausado || 0);
           totalWaiting += (t.tempo_total_aguardando_usuario || 0);

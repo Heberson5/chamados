@@ -103,7 +103,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
           : "Usuário criado com senha temporária. Será solicitada a troca no primeiro login.",
       });
       setIsAddDialogOpen(false);
-      setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "" });
+      setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "", avatar_url: "" });
       fetchUsers();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });

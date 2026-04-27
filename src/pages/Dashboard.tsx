@@ -118,6 +118,10 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
      if (filters.period !== "custom") {
        endDate = new Date();
        if (filters.period === "1d") startDate = startOfDay(new Date());
+        else if (filters.period === "yesterday") {
+          startDate = startOfDay(subDays(new Date(), 1));
+          endDate = endOfDay(subDays(new Date(), 1));
+        }
        else if (filters.period === "7d") startDate = subDays(new Date(), 7);
        else if (filters.period === "30d") startDate = subDays(new Date(), 30);
        else if (filters.period === "1y") startDate = subDays(new Date(), 365);

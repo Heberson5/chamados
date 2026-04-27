@@ -38,13 +38,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
         footerText: "", 
         showLogo: true,
         columns: [
-          { id: 'os', label: 'OS', visible: true },
-          { id: 'titulo', label: 'Título', visible: true },
-          { id: 'descricao', label: 'Descrição', visible: true },
-          { id: 'status', label: 'Status', visible: true },
-          { id: 'prioridade', label: 'Prioridade', visible: true },
-          { id: 'gerado_em', label: 'Data', visible: true },
-          { id: 'tecnico', label: 'Técnico', visible: true },
+          { id: 'os', label: 'OS', visible: true, field: 'os' },
+          { id: 'titulo', label: 'Título', visible: true, field: 'titulo' },
+          { id: 'status', label: 'Status', visible: true, field: 'status' },
+          { id: 'prioridade', label: 'Prioridade', visible: true, field: 'prioridade' },
+          { id: 'gerado_em', label: 'Data de Abertura', visible: true, field: 'gerado_em' },
+          { id: 'tecnico', label: 'Técnico', visible: true, field: 'tecnico' },
         ]
       });
      const [sessionTimeout, setSessionTimeout] = useState("300");
@@ -101,13 +100,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                const val = rLayout.value as any;
                if (!val.columns) {
                  val.columns = [
-                   { id: 'os', label: 'OS', visible: true },
-                   { id: 'titulo', label: 'Título', visible: true },
-                   { id: 'descricao', label: 'Descrição', visible: true },
-                   { id: 'status', label: 'Status', visible: true },
-                   { id: 'prioridade', label: 'Prioridade', visible: true },
-                   { id: 'gerado_em', label: 'Data', visible: true },
-                   { id: 'tecnico', label: 'Técnico', visible: true },
+                   { id: 'os', label: 'OS', visible: true, field: 'os' },
+                   { id: 'titulo', label: 'Título', visible: true, field: 'titulo' },
+                   { id: 'status', label: 'Status', visible: true, field: 'status' },
+                   { id: 'prioridade', label: 'Prioridade', visible: true, field: 'prioridade' },
+                   { id: 'gerado_em', label: 'Data de Abertura', visible: true, field: 'gerado_em' },
+                   { id: 'tecnico', label: 'Técnico', visible: true, field: 'tecnico' },
                  ];
                }
                setReportLayout(val);
@@ -510,61 +508,106 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                        </div>
                      </div>
 
-                     <div className="space-y-4 border-t pt-6">
-                       <h3 className="text-sm font-bold flex items-center gap-2">Colunas do Relatório</h3>
-                       <p className="text-xs text-muted-foreground italic">Selecione e organize as informações que aparecerão nas exportações (PDF e Excel).</p>
-                       <div className="space-y-2 max-w-md">
-                         {reportLayout.columns?.map((col: any, i: number) => (
-                           <div key={col.id} className="flex items-center gap-3 border p-2 rounded bg-muted/10">
-                             <div className="flex flex-col gap-1">
-                               <Button 
-                                 variant="ghost" 
-                                 size="icon" 
-                                 className="h-4 w-4" 
-                                 disabled={i === 0}
-                                 onClick={() => {
-                                   const newCols = [...reportLayout.columns];
-                                   [newCols[i-1], newCols[i]] = [newCols[i], newCols[i-1]];
-                                   setReportLayout({...reportLayout, columns: newCols});
-                                 }}
-                               >
-                                 <ChevronUp size={10} />
-                               </Button>
-                               <Button 
-                                 variant="ghost" 
-                                 size="icon" 
-                                 className="h-4 w-4" 
-                                 disabled={i === reportLayout.columns.length - 1}
-                                 onClick={() => {
-                                   const newCols = [...reportLayout.columns];
-                                   [newCols[i], newCols[i+1]] = [newCols[i+1], newCols[i]];
-                                   setReportLayout({...reportLayout, columns: newCols});
-                                 }}
-                               >
-                                 <ChevronDown size={10} />
-                               </Button>
-                             </div>
-                             <Input 
-                               className="h-8 text-xs" 
-                               value={col.label} 
-                               onChange={e => {
-                                 const newCols = [...reportLayout.columns];
-                                 newCols[i].label = e.target.value;
-                                 setReportLayout({...reportLayout, columns: newCols});
-                               }}
-                             />
-                             <Switch 
-                               checked={col.visible} 
-                               onCheckedChange={v => {
-                                 const newCols = [...reportLayout.columns];
-                                 newCols[i].visible = v;
-                                 setReportLayout({...reportLayout, columns: newCols});
-                               }}
-                             />
-                           </div>
-                         ))}
-                       </div>
-                     </div>
+                    <div className="space-y-4 border-t pt-6">
+                      <div className="flex justify-between items-center">
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-bold flex items-center gap-2">Colunas do Relatório</h3>
+                          <p className="text-xs text-muted-foreground italic">Selecione e organize as informações que aparecerão nas exportações.</p>
+                        </div>
+                        <Select onValueChange={(val) => {
+                          const options: Record<string, string> = {
+                            encerrado_em: 'Data de Encerramento',
+                            atendido_em: 'Início de Atendimento',
+                            descricao: 'Descrição',
+                            usuario: 'Solicitante',
+                            sla_deadline: 'Prazo SLA',
+                            descricao_encerramento: 'Motivo Encerramento'
+                          };
+                          if (reportLayout.columns.find((c: any) => c.field === val)) return;
+                          const newCols = [...reportLayout.columns, { 
+                            id: val + Math.random().toString(36).substr(2, 4), 
+                            label: options[val], 
+                            visible: true, 
+                            field: val 
+                          }];
+                          setReportLayout({...reportLayout, columns: newCols});
+                        }}>
+                          <SelectTrigger className="w-[180px] h-8 text-xs">
+                            <Plus size={14} className="mr-2" /> Adicionar Coluna
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="encerrado_em">Data de Encerramento</SelectItem>
+                            <SelectItem value="atendido_em">Início de Atendimento</SelectItem>
+                            <SelectItem value="descricao">Descrição</SelectItem>
+                            <SelectItem value="usuario">Solicitante</SelectItem>
+                            <SelectItem value="sla_deadline">Prazo SLA</SelectItem>
+                            <SelectItem value="descricao_encerramento">Motivo Encerramento</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2 max-w-md">
+                        {reportLayout.columns?.map((col: any, i: number) => (
+                          <div key={col.id} className="flex items-center gap-3 border p-2 rounded bg-muted/10 group">
+                            <div className="flex flex-col gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-4 w-4" 
+                                disabled={i === 0}
+                                onClick={() => {
+                                  const newCols = [...reportLayout.columns];
+                                  [newCols[i-1], newCols[i]] = [newCols[i], newCols[i-1]];
+                                  setReportLayout({...reportLayout, columns: newCols});
+                                }}
+                              >
+                                <ChevronUp size={10} />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-4 w-4" 
+                                disabled={i === reportLayout.columns.length - 1}
+                                onClick={() => {
+                                  const newCols = [...reportLayout.columns];
+                                  [newCols[i], newCols[i+1]] = [newCols[i+1], newCols[i]];
+                                  setReportLayout({...reportLayout, columns: newCols});
+                                }}
+                              >
+                                <ChevronDown size={10} />
+                              </Button>
+                            </div>
+                            <Input 
+                              className="h-8 text-xs" 
+                              value={col.label} 
+                              onChange={e => {
+                                const newCols = [...reportLayout.columns];
+                                newCols[i].label = e.target.value;
+                                setReportLayout({...reportLayout, columns: newCols});
+                              }}
+                            />
+                            <Switch 
+                              checked={col.visible} 
+                              onCheckedChange={v => {
+                                const newCols = [...reportLayout.columns];
+                                newCols[i].visible = v;
+                                setReportLayout({...reportLayout, columns: newCols});
+                              }}
+                            />
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" 
+                              onClick={() => {
+                                const newCols = reportLayout.columns.filter((_: any, idx: number) => idx !== i);
+                                setReportLayout({...reportLayout, columns: newCols});
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

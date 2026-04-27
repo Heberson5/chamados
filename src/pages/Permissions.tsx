@@ -317,7 +317,7 @@ export default function Permissions() {
                         {(selectedRole.permissions || []).includes(menu.id) && menu.actions && (
                           <div className="pl-6 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t pt-2">
                             {menu.actions.map(func => {
-                              const funcKey = `${menu.id}:${func.toLowerCase().replace(/\s+/g, "_")}`;
+                              const funcKey = `${menu.id}:${func.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_")}`;
                              return (
                                <div key={funcKey} className="flex items-center gap-2">
                                  <Switch 

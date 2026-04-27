@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
   import Permissions from "./pages/Permissions";
 import Audit from "./pages/Audit";
 import PasswordPolicyPage from "./pages/PasswordPolicy";
+import NotAuthorized from "./pages/NotAuthorized";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,7 @@ const App = () => {
                <Route path="/perfil" element={<Profile />} />
               <Route path="/configuracoes/senhas" element={<PasswordPolicyPage />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/unauthorized" element={<NotAuthorized />} />
             </Route>
 
             {/* Fallback for any other route */}

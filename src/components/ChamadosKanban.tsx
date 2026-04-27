@@ -483,13 +483,30 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       if (commentError) throw commentError;
 
       const recipientId = user.id === selectedTicket.usuario_id ? selectedTicket.tecnico_id : selectedTicket.usuario_id;
-      if (recipientId) {
+       if (recipientId) {
+         const { data: recipientProfile } = await supabase
+           .from("profiles")
+           .select("email, nome, sobrenome")
+           .eq("id", recipientId)
+           .single();
+ 
         await supabase.from("notificacoes").insert({
           usuario_id: recipientId,
           titulo: `Nova interação no chamado ${selectedTicket.os}`,
           mensagem: `${user.email} incluiu uma nova informação no chamado: ${selectedTicket.titulo}`,
           link: `/chamados?id=${selectedTicket.id}`
-        });
+         });
+ 
+         if (recipientProfile) {
+           import("@/utils/email").then(({ sendTemplatedEmail }) => {
+             sendTemplatedEmail(recipientProfile.email, "new_interaction", {
+               user: `${recipientProfile.nome} ${recipientProfile.sobrenome || ""}`.trim() || recipientProfile.email,
+               os: selectedTicket.os || "",
+               titulo: selectedTicket.titulo,
+               comentario: newComment
+             });
+           });
+         }
       }
 
       setNewComment("");

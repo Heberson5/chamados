@@ -340,6 +340,9 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
        } else if (action === "encerrar") {
         updates.status = "ENCERRADO";
           updates.encerrado_em = now;
+          if (!ticket.atendido_em) {
+            updates.atendido_em = now;
+          }
         updates.descricao_encerramento = closureNote;
 
           // Insert closure note as a comment

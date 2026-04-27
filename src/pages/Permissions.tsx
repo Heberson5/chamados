@@ -101,15 +101,15 @@ export default function Permissions() {
    ];
  
     const availableMenus = [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["Visualizar", "Exportar"] },
-      { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Reabrir", "Excluir"] },
-      { id: "inventario", label: "Inventário", icon: Box, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
-      { id: "financeiro", label: "Financeiro", icon: DollarSign, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
-      { id: "usuarios", label: "Usuários", icon: Users, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Alterar Senha"] },
-      { id: "permissoes", label: "Permissões", icon: Key, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
-      { id: "relatorios", label: "Relatórios", icon: FileText, actions: ["Visualizar", "Exportar PDF", "Exportar Excel"] },
-      { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Layout", "E-mail", "Segurança"] },
-      { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar"] },
+       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["Visualizar", "Exportar", "Ver Chamados por Usuário", "Ver Conformidade SLA"] },
+       { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Reabrir", "Excluir", "Ver Interações", "Assumir Chamado", "Transferir"] },
+       { id: "inventario", label: "Inventário", icon: Box, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Vincular Ativos"] },
+       { id: "financeiro", label: "Financeiro", icon: DollarSign, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Ver Faturas"] },
+       { id: "usuarios", label: "Usuários", icon: Users, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Alterar Senha", "Gerenciar Roles"] },
+       { id: "permissoes", label: "Permissões", icon: Key, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Visualizar Roles"] },
+       { id: "relatorios", label: "Relatórios", icon: FileText, actions: ["Visualizar", "Exportar PDF", "Exportar Excel", "Ver Desempenho Técnico"] },
+       { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Layout", "E-mail", "Segurança", "Kanban"] },
+       { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar", "Limpar Logs"] },
     ];
  
    const getIcon = (iconName: string) => {

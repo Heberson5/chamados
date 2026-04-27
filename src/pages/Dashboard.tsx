@@ -544,37 +544,39 @@ import { usePermissions } from "@/hooks/usePermissions";
               </CardContent>
            </Card>
 
-           <Card className="lg:col-span-2">
-             <CardHeader>
-               <CardTitle>Chamados por Usuário</CardTitle>
-               <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
-             </CardHeader>
-             <CardContent className="h-[360px]">
-               {stats.byUser.length === 0 ? (
-                 <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                   Sem chamados no período selecionado.
-                 </div>
-               ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats.byUser} margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                      <XAxis 
-                        dataKey="name" 
-                        stroke="currentColor" 
-                        fontSize={10} 
-                        interval={0}
-                        angle={-45}
-                        textAnchor="end"
-                        height={60}
-                      />
-                      <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
-                      <Tooltip {...tooltipStyle} />
-                      <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-               )}
-             </CardContent>
-           </Card>
+            {hasPermission("dashboard:ver_chamados_por_usuario") && (
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Chamados por Usuário</CardTitle>
+                  <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[360px]">
+                  {stats.byUser.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                      Sem chamados no período selecionado.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.byUser} margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                        <XAxis 
+                          dataKey="name" 
+                          stroke="currentColor" 
+                          fontSize={10} 
+                          interval={0}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
+                        <Tooltip {...tooltipStyle} />
+                        <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+            )}
          </div>
  
        <Card className="bg-primary/5 border-primary/20">

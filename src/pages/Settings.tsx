@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
     ]);
       const [reportLayout, setReportLayout] = useState<any>({
         headerColor: "#000000",
+        headerTextColor: "#ffffff",
         footerText: "",
         showLogo: true,
         logoAlignment: "left",
@@ -114,6 +115,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                 setReportLayout({
                   logoWidth: 18,
                   logoHeight: 18,
+                  headerTextColor: "#ffffff",
                   ...val
                 });
              }
@@ -517,21 +519,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-4">
-                            <Label>Cor do Cabeçalho</Label>
-                            <div className="flex items-center gap-3">
-                              <div 
-                                className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden" 
-                                style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
-                              >
-                                <Input 
-                                  type="color" 
-                                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
-                                  value={reportLayout.headerColor || "#000000"} 
-                                  onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
-                                />
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Fundo do Cabeçalho</Label>
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden shrink-0" 
+                                  style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
+                                >
+                                  <Input 
+                                    type="color" 
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
+                                    value={reportLayout.headerColor || "#000000"} 
+                                    onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
+                                  />
+                                </div>
+                                <span className="text-[10px] font-mono">{reportLayout.headerColor || "#000000"}</span>
                               </div>
-                              <span className="text-xs font-mono">{reportLayout.headerColor || "#000000"}</span>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Texto do Cabeçalho</Label>
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden shrink-0" 
+                                  style={{ backgroundColor: reportLayout.headerTextColor || "#ffffff" }}
+                                >
+                                  <Input 
+                                    type="color" 
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
+                                    value={reportLayout.headerTextColor || "#ffffff"} 
+                                    onChange={e => setReportLayout({ ...reportLayout, headerTextColor: e.target.value })} 
+                                  />
+                                </div>
+                                <span className="text-[10px] font-mono">{reportLayout.headerTextColor || "#ffffff"}</span>
+                              </div>
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -579,11 +600,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                                   />
                                 </div>
                               )}
-                              <div className="flex flex-col">
-                                <span className="text-white font-bold text-xl px-1">
+                              <div className="flex flex-col" style={{ color: reportLayout.headerTextColor || "#ffffff" }}>
+                                <span className="font-bold text-xl px-1">
                                   {layoutConfig.companyName || "Nome da Empresa"}
                                 </span>
-                                <span className="text-white/70 text-[10px] uppercase tracking-wider">Relatório de Atividades</span>
+                                <span className="opacity-70 text-[10px] uppercase tracking-wider">Relatório de Atividades</span>
                               </div>
                             </div>
                             <div className="flex-1 p-4 bg-muted/5 flex flex-col gap-2">

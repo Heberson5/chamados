@@ -1286,6 +1286,7 @@ export type Database = {
       }
       is_tecnico: { Args: never; Returns: boolean }
       log_user_action: { Args: { p_action: string }; Returns: undefined }
+      set_session_user_id: { Args: { user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "agent" | "customer"

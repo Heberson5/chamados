@@ -210,7 +210,15 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
      return "Usuário";
    };
  
-    if (loading && users.length === 0) {
+     const { hasPermission, loading: permsLoading } = usePermissions();
+
+     useEffect(() => {
+       if (!permsLoading && !hasPermission("usuarios")) {
+         navigate("/dashboard");
+       }
+     }, [permsLoading, hasPermission, navigate]);
+
+     if ((loading || permsLoading) && users.length === 0) {
       return (
         <div className="flex h-[50vh] items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />

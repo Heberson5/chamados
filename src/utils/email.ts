@@ -32,7 +32,7 @@
  
      if (!settingsData || !settingsData.value) return { success: false, error: "Templates not found" };
  
-     const templates = settingsData.value as EmailTemplate[];
+     const templates = settingsData.value as unknown as EmailTemplate[];
      const template = templates.find(t => t.id === templateId);
  
      if (!template) return { success: false, error: "Template not found" };

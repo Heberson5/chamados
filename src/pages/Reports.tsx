@@ -19,9 +19,13 @@
      const [loading, setLoading] = useState(true);
  
      const fetchData = async () => {
-       const { data, error } = await supabase
-         .from("chamados")
-         .select(`*, tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome)`);
+      const { data, error } = await supabase
+        .from("chamados")
+        .select(`
+          *, 
+          tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome),
+          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome)
+        `);
        
        if (data) setTickets(data);
        setLoading(false);
@@ -71,30 +75,35 @@
         .eq("key", "report_layout")
         .single();
       
-      const defaultColumns = [
-        { id: 'os', label: 'OS', visible: true },
-        { id: 'titulo', label: 'Título', visible: true },
-        { id: 'descricao', label: 'Descrição', visible: true },
-        { id: 'status', label: 'Status', visible: true },
-        { id: 'prioridade', label: 'Prioridade', visible: true },
-        { id: 'gerado_em', label: 'Data', visible: true },
-        { id: 'tecnico', label: 'Técnico', visible: true },
-      ];
-
       const val = settings?.value as any || {};
-      if (!val.columns) val.columns = defaultColumns;
+      if (!val.columns) {
+        val.columns = [
+          { id: 'os', label: 'OS', visible: true, field: 'os' },
+          { id: 'titulo', label: 'Título', visible: true, field: 'titulo' },
+          { id: 'status', label: 'Status', visible: true, field: 'status' },
+          { id: 'prioridade', label: 'Prioridade', visible: true, field: 'prioridade' },
+          { id: 'gerado_em', label: 'Data de Abertura', visible: true, field: 'gerado_em' },
+          { id: 'tecnico', label: 'Técnico', visible: true, field: 'tecnico' },
+        ];
+      }
       return val;
     };
 
-    const formatCellValue = (ticket: any, colId: string) => {
-      switch (colId) {
+    const formatCellValue = (ticket: any, field: string) => {
+      const f = field || '';
+      switch (f) {
         case 'os': return ticket.os;
         case 'titulo': return ticket.titulo;
         case 'descricao': return ticket.descricao;
         case 'status': return ticket.status;
         case 'prioridade': return getPriorityLabel(ticket.prioridade);
-        case 'gerado_em': return new Date(ticket.gerado_em).toLocaleDateString();
+        case 'gerado_em': return new Date(ticket.gerado_em).toLocaleDateString('pt-BR');
+        case 'encerrado_em': return ticket.encerrado_em ? new Date(ticket.encerrado_em).toLocaleDateString('pt-BR') : '-';
+        case 'atendido_em': return ticket.atendido_em ? new Date(ticket.atendido_em).toLocaleDateString('pt-BR') : '-';
+        case 'sla_deadline': return ticket.sla_deadline ? new Date(ticket.sla_deadline).toLocaleDateString('pt-BR') : '-';
         case 'tecnico': return ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome}` : '-';
+        case 'usuario': return ticket.usuario ? `${ticket.usuario.nome} ${ticket.usuario.sobrenome}` : '-';
+        case 'descricao_encerramento': return ticket.descricao_encerramento || '-';
         default: return '';
       }
     };
@@ -107,7 +116,7 @@
         const dataToExport = tickets.map(t => {
           const row: any = {};
           visibleColumns.forEach((col: any) => {
-            row[col.label] = formatCellValue(t, col.id);
+            row[col.label] = formatCellValue(t, col.field);
           });
           return row;
         });
@@ -137,7 +146,7 @@
         autoTable(doc, {
           startY: 30,
           head: [visibleColumns.map((c: any) => c.label)],
-          body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.id))),
+          body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.field))),
           theme: 'striped',
           headStyles: { fillColor: layout.headerColor || [0, 0, 0] }
         });

@@ -478,35 +478,65 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                      <CardTitle>Layout PDF</CardTitle>
                    </div>
                  </CardHeader>
-                  <CardContent className="space-y-8">
-                     <div className="space-y-4">
-                       <h3 className="text-sm font-bold">Visual do PDF</h3>
-                       <div className="flex items-center justify-between">
-                         <Label>Mostrar Logo</Label>
-                         <Switch checked={reportLayout.showLogo} onCheckedChange={v => setReportLayout({ ...reportLayout, showLogo: v })} />
-                       </div>
-                      <div className="flex items-center gap-4">
-                        <Label>Cor do Cabeçalho</Label>
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden" 
-                            style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
-                          >
-                            <Input 
-                              type="color" 
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
-                              value={reportLayout.headerColor || "#000000"} 
-                              onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
-                            />
+                   <CardContent className="space-y-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-bold">Configurações de Estilo</h3>
+                          <div className="flex items-center justify-between">
+                            <Label>Mostrar Logo</Label>
+                            <Switch checked={reportLayout.showLogo} onCheckedChange={v => setReportLayout({ ...reportLayout, showLogo: v })} />
                           </div>
-                          <span className="text-xs font-mono">{reportLayout.headerColor || "#000000"}</span>
+                          <div className="flex items-center gap-4">
+                            <Label>Cor do Cabeçalho</Label>
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-8 h-8 rounded-full border-2 cursor-pointer shadow-sm relative overflow-hidden" 
+                                style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
+                              >
+                                <Input 
+                                  type="color" 
+                                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150" 
+                                  value={reportLayout.headerColor || "#000000"} 
+                                  onChange={e => setReportLayout({ ...reportLayout, headerColor: e.target.value })} 
+                                />
+                              </div>
+                              <span className="text-xs font-mono">{reportLayout.headerColor || "#000000"}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Texto do Rodapé</Label>
+                            <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-bold">Visualização do Canvas (Cabeçalho)</h3>
+                          <div 
+                            className="border rounded-lg overflow-hidden shadow-sm bg-white min-h-[120px] flex flex-col"
+                            style={{ borderColor: 'hsl(var(--border))' }}
+                          >
+                            <div 
+                              className="h-16 flex items-center px-4 transition-colors duration-300"
+                              style={{ backgroundColor: reportLayout.headerColor || "#000000" }}
+                            >
+                              {reportLayout.showLogo && layoutConfig.companyLogo && (
+                                <img src={layoutConfig.companyLogo} alt="Logo Preview" className="h-10 w-10 object-contain mr-4 rounded bg-white/10 p-1" />
+                              )}
+                              <span className="text-white font-bold text-lg">
+                                {layoutConfig.companyName || "Nome da Empresa"}
+                              </span>
+                            </div>
+                            <div className="flex-1 p-4 bg-muted/5">
+                              <div className="h-2 w-3/4 bg-muted rounded mb-2 animate-pulse" />
+                              <div className="h-2 w-1/2 bg-muted rounded animate-pulse" />
+                            </div>
+                          </div>
+                          <div className="border rounded-lg p-2 bg-muted/10 text-[10px] flex justify-between items-center text-muted-foreground">
+                            <span>{reportLayout.footerText || "Rodapé do relatório..."}</span>
+                            <span>Página 1 de 1</span>
+                          </div>
                         </div>
                       </div>
-                       <div className="space-y-2">
-                         <Label>Texto do Rodapé</Label>
-                         <Input value={reportLayout.footerText || ""} onChange={e => setReportLayout({ ...reportLayout, footerText: e.target.value })} />
-                       </div>
-                     </div>
 
                     <div className="space-y-4 border-t pt-6">
                       <div className="flex justify-between items-center">

@@ -424,12 +424,12 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
         </Dialog>
  
          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-           <DialogContent>
+            <DialogContent className="max-w-lg">
              <DialogHeader>
                <DialogTitle>Editar Usuário</DialogTitle>
              </DialogHeader>
              {editUser && (
-               <div className="space-y-4 py-4">
+                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-1">
                  <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-2">
                      <Label>Nome</Label>
@@ -448,20 +448,34 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                     onChange={e => setEditUser({ ...editUser, email: e.target.value })}
                   />
                  </div>
-                 <div className="space-y-2">
-                   <Label>Permissão</Label>
-                   <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
-                     <SelectTrigger>
-                       <SelectValue />
-                     </SelectTrigger>
-                     <SelectContent>
-                       {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
-                       <SelectItem value="ADMIN">Administrador</SelectItem>
-                       <SelectItem value="TECNICO">Técnico</SelectItem>
-                       <SelectItem value="USUARIO">Usuário</SelectItem>
-                     </SelectContent>
-                   </Select>
-                 </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Telefone</Label>
+                      <Input value={editUser.telefone || ""} onChange={e => setEditUser({...editUser, telefone: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Ramal</Label>
+                      <Input value={editUser.ramal || ""} onChange={e => setEditUser({...editUser, ramal: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cidade</Label>
+                    <Input value={editUser.cidade || ""} onChange={e => setEditUser({...editUser, cidade: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Permissão</Label>
+                    <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
+                        <SelectItem value="ADMIN">Administrador</SelectItem>
+                        <SelectItem value="TECNICO">Técnico</SelectItem>
+                        <SelectItem value="USUARIO">Usuário</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                </div>
              )}
              <DialogFooter>

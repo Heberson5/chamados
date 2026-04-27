@@ -7,7 +7,8 @@
  import * as XLSX from 'xlsx';
  import jsPDF from 'jspdf';
  import autoTable from 'jspdf-autotable';
-  import { useToast } from "@/hooks/use-toast";
+   import { useToast } from "@/hooks/use-toast";
+   import { usePermissions } from "@/hooks/usePermissions";
   import { getPriorityLabel } from "@/lib/utils/priority";
   import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart } from 'recharts';
  
@@ -125,17 +126,13 @@
        }
      };
   
-     useEffect(() => {
-       const checkRole = async () => {
-         const { data: { user } } = await supabase.auth.getUser();
-         if (!user) return;
-         const { data } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
-         if (data && data.regra !== 'ADMIN' && data.regra !== 'MASTER' && !data.is_master) {
-           navigate("/chamados");
-         }
-       };
-       checkRole();
-     }, [navigate]);
+      const { hasPermission, loading: permsLoading } = usePermissions();
+
+      useEffect(() => {
+        if (!permsLoading && !hasPermission("relatorios")) {
+          navigate("/chamados");
+        }
+      }, [permsLoading, hasPermission, navigate]);
   
      const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--destructive))'];
  

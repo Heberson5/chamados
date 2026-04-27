@@ -6,12 +6,23 @@ import { useTheme } from "@/components/ThemeProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { useState, useEffect } from "react";
+ import { useNavigate } from "react-router-dom";
+ import { usePermissions } from "@/hooks/usePermissions";
  import { supabase } from "@/integrations/supabase/client";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
  import { useToast } from "@/hooks/use-toast";
 
- export default function Settings() {
+  export default function Settings() {
+    const navigate = useNavigate();
+    const { hasPermission, loading: permsLoading } = usePermissions();
+
+    useEffect(() => {
+      if (!permsLoading && !hasPermission("configuracoes")) {
+        navigate("/dashboard");
+      }
+    }, [permsLoading, hasPermission, navigate]);
+
    const { theme, setTheme } = useTheme();
    const { toast } = useToast();
    const [loading, setLoading] = useState(false);

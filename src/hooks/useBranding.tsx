@@ -46,9 +46,7 @@ function hexToHsl(hex: string): string | null {
 }
 
 function applyBrandingSideEffects(settings: BrandingSettings) {
-  if (settings.companyName) {
-    document.title = settings.companyName;
-  }
+  document.title = settings.companyName || "Chamados";
   if (settings.companyFavicon) {
     let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
     if (!link) {

@@ -66,10 +66,14 @@
     if (roleDef) {
       setRoleData(roleDef);
       setPermissions((roleDef.permissions as string[]) || []);
-    } else if (profile.is_master || profile.regra === "MASTER") {
-       // Fallback for Master if role_definition not found
-       setPermissions(["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario", "financeiro"]);
-     }
+    } else {
+      if (profile.is_master || profile.regra === "MASTER") {
+        // Fallback for Master if role_definition not found
+        setPermissions(["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario", "financeiro"]);
+      } else {
+        setPermissions([]);
+      }
+    }
  
      setLoading(false);
    };

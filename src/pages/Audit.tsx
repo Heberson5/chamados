@@ -4,10 +4,21 @@
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
  import { Search, History, MousePointer2 } from "lucide-react";
-import { format, addHours } from "date-fns";
+  import { format, addHours } from "date-fns";
+  import { usePermissions } from "@/hooks/usePermissions";
+  import { useNavigate } from "react-router-dom";
  import { ptBR } from "date-fns/locale";
  
- export default function Audit() {
+  export default function Audit() {
+    const navigate = useNavigate();
+    const { hasPermission, loading: permsLoading } = usePermissions();
+
+    useEffect(() => {
+      if (!permsLoading && !hasPermission("audit")) {
+        navigate("/dashboard");
+      }
+    }, [permsLoading, hasPermission, navigate]);
+
    const [logs, setLogs] = useState<any[]>([]);
    const [searchTerm, setSearchTerm] = useState("");
    const [isLoading, setIsLoading] = useState(true);

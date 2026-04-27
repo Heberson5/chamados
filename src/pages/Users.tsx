@@ -1,4 +1,6 @@
- import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { usePermissions } from "@/hooks/usePermissions";
  import { supabase } from "@/integrations/supabase/client";
  import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";

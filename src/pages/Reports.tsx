@@ -8,11 +8,13 @@
  import jsPDF from 'jspdf';
  import autoTable from 'jspdf-autotable';
    import { useToast } from "@/hooks/use-toast";
-   import { usePermissions } from "@/hooks/usePermissions";
+ import { usePermissions } from "@/hooks/usePermissions";
+ import { useBranding } from "@/hooks/useBranding";
   import { getPriorityLabel } from "@/lib/utils/priority";
   import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart } from 'recharts';
  
-   export default function Reports() {
+ export default function Reports() {
+   const { branding } = useBranding();
      const navigate = useNavigate();
      const { toast } = useToast();
      const [tickets, setTickets] = useState<any[]>([]);
@@ -131,43 +133,72 @@
        }
      };
  
-    const exportToPDF = async () => {
-      try {
-        const layout = await getReportSettings();
-        const visibleColumns = layout.columns.filter((c: any) => c.visible);
-        const doc = new jsPDF({ orientation: visibleColumns.length > 5 ? 'landscape' : 'portrait' });
+   const exportToPDF = async () => {
+     try {
+       const layout = await getReportSettings();
+       const visibleColumns = layout.columns.filter((c: any) => c.visible);
+       const orientation = visibleColumns.length > 5 ? 'landscape' : 'portrait';
+       const doc = new jsPDF({ orientation });
  
-         doc.setFillColor(layout.headerColor || "#000000");
-         doc.rect(0, 0, 210, 20, 'F');
-         doc.setTextColor(255, 255, 255);
-         doc.setFontSize(16);
-         doc.text("Relatório de Chamados", 10, 13);
+       const pageWidth = doc.internal.pageSize.getWidth();
+       const pageHeight = doc.internal.pageSize.getHeight();
  
-        autoTable(doc, {
-          startY: 30,
-          head: [visibleColumns.map((c: any) => c.label)],
-          body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.field))),
-          theme: 'striped',
-          headStyles: { fillColor: layout.headerColor || [0, 0, 0] }
-        });
- 
-         const pageCount = (doc as any).internal.getNumberOfPages();
-         for (let i = 1; i <= pageCount; i++) {
-           doc.setPage(i);
-           doc.setFontSize(10);
-           doc.setTextColor(150);
-            const printDate = new Date().toLocaleString('pt-BR');
-            doc.text(layout.footerText || "Chamados", 10, 280);
-            doc.text(`Impresso em: ${printDate}`, 10, 285);
-            doc.text(`Página ${i} de ${pageCount}`, 180, 285);
+       // Header background
+       doc.setFillColor(layout.headerColor || "#000000");
+       doc.rect(0, 0, pageWidth, 25, 'F');
+       
+       // Add Logo if available and showLogo is true
+       let headerTextX = 15;
+       if (layout.showLogo && branding.companyLogo) {
+         try {
+           // Using data URL if possible, otherwise just trying to add image URL
+           doc.addImage(branding.companyLogo, 'PNG', 10, 5, 15, 15);
+           headerTextX = 30;
+         } catch (e) {
+           console.error("Error adding logo to PDF:", e);
          }
- 
-         doc.save("Relatorio_Chamados.pdf");
-         toast({ title: "Sucesso", description: "PDF exportado com sucesso!" });
-       } catch (error: any) {
-         toast({ variant: "destructive", title: "Erro ao exportar PDF", description: error.message });
        }
-     };
+ 
+       doc.setTextColor(255, 255, 255);
+       doc.setFontSize(18);
+       doc.text(branding.companyName || "Relatório de Chamados", headerTextX, 16);
+ 
+       autoTable(doc, {
+         startY: 35,
+         head: [visibleColumns.map((c: any) => c.label)],
+         body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.field))),
+         theme: 'striped',
+         headStyles: { 
+           fillColor: layout.headerColor || [0, 0, 0],
+           fontSize: orientation === 'landscape' ? 10 : 9
+         },
+         styles: {
+           fontSize: orientation === 'landscape' ? 9 : 8,
+           cellPadding: 2
+         }
+       });
+ 
+       const pageCount = (doc as any).internal.getNumberOfPages();
+       for (let i = 1; i <= pageCount; i++) {
+         doc.setPage(i);
+         doc.setFontSize(9);
+         doc.setTextColor(100);
+         const printDate = new Date().toLocaleString('pt-BR');
+         
+         // Footer (Responsive positioning)
+         const footerY = pageHeight - 10;
+         doc.text(layout.footerText || "Relatório gerado pelo sistema", 15, footerY - 5);
+         doc.text(`Impresso em: ${printDate}`, 15, footerY);
+         doc.text(`Página ${i} de ${pageCount}`, pageWidth - 40, footerY);
+       }
+ 
+       doc.save("Relatorio_Chamados.pdf");
+       toast({ title: "Sucesso", description: "PDF exportado com sucesso!" });
+     } catch (error: any) {
+       console.error("PDF Export Error:", error);
+       toast({ variant: "destructive", title: "Erro ao exportar PDF", description: error.message });
+     }
+   };
   
       const { hasPermission, loading: permsLoading } = usePermissions();
 

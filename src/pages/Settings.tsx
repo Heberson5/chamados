@@ -434,7 +434,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                                      </SelectTrigger>
                                      <SelectContent>
                                        <SelectItem value="none">Nenhum (Envio Manual)</SelectItem>
-                                       <SelectItem value="ticket_created">Novo Chamado Aberto</SelectItem>
+                                       <SelectItem value="new_ticket">Novo Chamado Aberto</SelectItem>
                                        <SelectItem value="status_change">Mudança de Status</SelectItem>
                                        <SelectItem value="new_interaction">Novo Comentário/Interação</SelectItem>
                                        <SelectItem value="ticket_closed">Chamado Encerrado</SelectItem>

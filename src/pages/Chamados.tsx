@@ -147,14 +147,15 @@ export default function Chamados() {
  
        // Send email notification
        if (insertedTicket) {
-         import("@/utils/email").then(({ sendTemplatedEmail }) => {
-           sendTemplatedEmail(user.email!, "new_ticket", {
-             user: user.user_metadata?.full_name || user.email!,
-             os: insertedTicket.os || "",
-             titulo: insertedTicket.titulo,
-             descricao: insertedTicket.descricao
-           });
-         });
+          import("@/utils/email").then(({ sendTemplatedEmail }) => {
+            sendTemplatedEmail(user.email!, "new_ticket", {
+              user: user.user_metadata?.full_name || user.email!,
+              os: insertedTicket.os || "",
+              titulo: insertedTicket.titulo,
+              descricao: insertedTicket.descricao,
+              status: "ABERTO"
+            });
+          });
        }
       await fetchTickets();
       setIsDialogOpen(false);

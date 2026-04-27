@@ -245,6 +245,12 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
         } else if (newStatus === "ENCERRADO") {
           updates.encerrado_em = now;
           const ticket = tickets.find(t => t.id === ticketId);
+          if (ticket && !ticket.atendido_em) {
+            // If moving to closed without having attended, set attended_em to now too
+            updates.atendido_em = now;
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) updates.tecnico_id = user.id;
+          }
           // Fallback closure note if dragged
           updates.descricao_encerramento = ticket?.descricao_encerramento || "Encerrado via Kanban";
         } else if (newStatus === "ABERTO") {

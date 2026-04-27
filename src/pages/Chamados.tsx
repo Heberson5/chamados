@@ -132,18 +132,30 @@ export default function Chamados() {
         uploadedUrls.push(publicUrl);
       }
 
-      const { error: insertError } = await supabase.from("chamados").insert({
+       const { data: insertedTicket, error: insertError } = await supabase.from("chamados").insert({
         titulo: newTicket.titulo || "Sem título",
         descricao: newTicket.descricao,
         prioridade: newTicket.prioridade,
         usuario_id: user.id,
         status: "ABERTO",
         anexos: uploadedUrls.length > 0 ? uploadedUrls : null
-      } as any);
+       } as any).select().single();
 
       if (insertError) throw insertError;
 
-      toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
+       toast({ title: "Sucesso", description: "Chamado criado com sucesso!" });
+ 
+       // Send email notification
+       if (insertedTicket) {
+         import("@/utils/email").then(({ sendTemplatedEmail }) => {
+           sendTemplatedEmail(user.email!, "new_ticket", {
+             user: user.user_metadata?.full_name || user.email!,
+             os: insertedTicket.os || "",
+             titulo: insertedTicket.titulo,
+             descricao: insertedTicket.descricao
+           });
+         });
+       }
       await fetchTickets();
       setIsDialogOpen(false);
       setNewTicket({ titulo: "", descricao: "", prioridade: "P3" });

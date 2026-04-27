@@ -258,14 +258,28 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           updates.encerrado_em = null;
         }
 
-        const { error } = await supabase
-          .from("chamados")
-          .update(updates)
-          .eq("id", ticketId);
+       const { data: updatedTicket, error } = await supabase
+         .from("chamados")
+         .update(updates)
+         .eq("id", ticketId)
+         .select(`*, owner:profiles!chamados_usuario_id_fkey(email, nome, sobrenome)`)
+         .single();
  
        if (error) throw error;
        toast({ title: "Status atualizado", description: `Chamado movido para ${newStatus}` });
        onUpdate();
+ 
+       // Send status change email
+       if (updatedTicket && updatedTicket.owner) {
+         import("@/utils/email").then(({ sendTemplatedEmail }) => {
+           sendTemplatedEmail(updatedTicket.owner.email, "status_change", {
+             user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
+             os: updatedTicket.os || "",
+             titulo: updatedTicket.titulo,
+             status: updatedTicket.status
+           });
+         });
+       }
      } catch (error: any) {
        toast({ variant: "destructive", title: "Erro ao mover chamado", description: error.message });
      }
@@ -469,13 +483,30 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
       if (commentError) throw commentError;
 
       const recipientId = user.id === selectedTicket.usuario_id ? selectedTicket.tecnico_id : selectedTicket.usuario_id;
-      if (recipientId) {
+       if (recipientId) {
+         const { data: recipientProfile } = await supabase
+           .from("profiles")
+           .select("email, nome, sobrenome")
+           .eq("id", recipientId)
+           .single();
+ 
         await supabase.from("notificacoes").insert({
           usuario_id: recipientId,
           titulo: `Nova interação no chamado ${selectedTicket.os}`,
           mensagem: `${user.email} incluiu uma nova informação no chamado: ${selectedTicket.titulo}`,
           link: `/chamados?id=${selectedTicket.id}`
-        });
+         });
+ 
+         if (recipientProfile) {
+           import("@/utils/email").then(({ sendTemplatedEmail }) => {
+             sendTemplatedEmail(recipientProfile.email, "new_interaction", {
+               user: `${recipientProfile.nome} ${recipientProfile.sobrenome || ""}`.trim() || recipientProfile.email,
+               os: selectedTicket.os || "",
+               titulo: selectedTicket.titulo,
+               comentario: newComment
+             });
+           });
+         }
       }
 
       setNewComment("");

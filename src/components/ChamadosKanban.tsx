@@ -242,7 +242,7 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
             const { data: { user } } = await supabase.auth.getUser();
             if (user) updates.tecnico_id = user.id;
           }
-        } else if (newStatus === "ENCERRADO") {
+        } else if (newStatus === "ENCERRADO" || newStatus === "CANCELADO") {
           updates.encerrado_em = now;
           const ticket = tickets.find(t => t.id === ticketId);
           if (ticket && !ticket.atendido_em) {

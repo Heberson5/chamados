@@ -242,7 +242,7 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
             const { data: { user } } = await supabase.auth.getUser();
             if (user) updates.tecnico_id = user.id;
           }
-        } else if (newStatus === "ENCERRADO") {
+        } else if (newStatus === "ENCERRADO" || newStatus === "CANCELADO") {
           updates.encerrado_em = now;
           const ticket = tickets.find(t => t.id === ticketId);
           if (ticket && !ticket.atendido_em) {
@@ -668,6 +668,14 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
                 {selectedTicket?.gerado_em && format(new Date(selectedTicket.gerado_em), "dd/MM/yyyy HH:mm", { locale: ptBR })}
               </p>
             </div>
+            {selectedTicket?.encerrado_em && (
+              <div>
+                <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Finalizado em</Label>
+                <p className="text-sm font-medium text-emerald-600">
+                  {format(new Date(selectedTicket.encerrado_em), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

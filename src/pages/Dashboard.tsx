@@ -433,10 +433,7 @@ import { useTheme } from "@/components/ThemeProvider";
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                    <XAxis dataKey="name" fontSize={12} stroke="currentColor" />
                    <YAxis fontSize={12} stroke="currentColor" />
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                     itemStyle={{ color: 'hsl(var(--foreground))' }}
-                   />
+                    <Tooltip {...tooltipStyle} />
                     <Bar 
                       dataKey="valor" 
                       fill="hsl(var(--primary))" 
@@ -476,10 +473,7 @@ import { useTheme } from "@/components/ThemeProvider";
                         return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />;
                       })}
                    </Pie>
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                     itemStyle={{ color: 'hsl(var(--foreground))' }}
-                   />
+                    <Tooltip {...tooltipStyle} />
                    <Legend />
                  </PieChart>
                </ResponsiveContainer>
@@ -507,16 +501,7 @@ import { useTheme } from "@/components/ThemeProvider";
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                     <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
                     <YAxis stroke="currentColor" fontSize={12} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        borderColor: '#e2e8f0',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                        color: '#1a202c'
-                      }}
-                      itemStyle={{ color: '#1a202c' }}
-                    />
+                    <Tooltip {...tooltipStyle} />
                     <Area type="monotone" dataKey="chamados" name="Chamados" stroke="hsl(var(--primary))" fill="url(#colorChamados)" fillOpacity={1} strokeWidth={3} />
                     <Area type="monotone" dataKey="sla" name="Dentro do SLA" stroke="hsl(var(--chart-2, 142 71% 45%))" fill="url(#colorSLA)" fillOpacity={1} strokeWidth={3} />
                   </AreaChart>
@@ -535,10 +520,7 @@ import { useTheme } from "@/components/ThemeProvider";
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                    <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
                    <YAxis stroke="currentColor" fontSize={12} />
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                     itemStyle={{ color: 'hsl(var(--foreground))' }}
-                   />
+                    <Tooltip {...tooltipStyle} />
                    <Legend verticalAlign="top" height={36}/>
                    <Line name="No Prazo" type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
                    <Line name="Total" type="monotone" dataKey="chamados" stroke="hsl(var(--primary))" strokeWidth={1} strokeDasharray="5 5" dot={false} />

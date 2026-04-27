@@ -18,7 +18,7 @@ import {
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
  import { useTheme } from "@/components/ThemeProvider";
- import { supabase } from "@/integrations/supabase/client";
+  import { usePermissions } from "@/hooks/usePermissions";
  import UserMenu from "./UserMenu";
  import { useBranding } from "@/hooks/useBranding";
  
@@ -28,38 +28,21 @@ interface SidebarProps {
 
  export default function Sidebar({ onMobileClose }: SidebarProps) {
    const [collapsed, setCollapsed] = useState(false);
-   const [role, setRole] = useState<string | null>(null);
+    const { hasPermission } = usePermissions();
     const { branding: layout } = useBranding();
    const { theme, setTheme } = useTheme();
    const navigate = useNavigate();
    const location = useLocation();
  
 
-   useEffect(() => {
-     const loadData = async () => {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (user) {
-         const { data } = await supabase
-           .from("profiles")
-           .select("regra, is_master")
-           .eq("id", user.id)
-           .single();
-         if (data) {
-           setRole(data.is_master ? 'MASTER' : data.regra);
-         }
-       }
-     };
-     loadData();
-   }, []);
-
     const defaultMenuItems = [
-      { id: '1', icon: LayoutDashboard, label: "Painel", path: "/dashboard" },
-      { id: '2', icon: Ticket, label: "Chamados", path: "/chamados" },
-      { id: '6', icon: BarChart3, label: "Relatórios", path: "/reports" },
-      { id: '3', icon: Users, label: "Usuários", path: "/usuarios" },
-      { id: '4', icon: Lock, label: "Permissões", path: "/permissions" },
-      { id: '5', icon: History, label: "Auditoria", path: "/audit" },
-      { id: '8', icon: Settings, label: "Configurações", path: "/settings" },
+      { id: '1', icon: LayoutDashboard, label: "Painel", path: "/dashboard", permission: "dashboard" },
+      { id: '2', icon: Ticket, label: "Chamados", path: "/chamados", permission: "chamados" },
+      { id: '6', icon: BarChart3, label: "Relatórios", path: "/reports", permission: "relatorios" },
+      { id: '3', icon: Users, label: "Usuários", path: "/usuarios", permission: "usuarios" },
+      { id: '4', icon: Lock, label: "Permissões", path: "/permissions", permission: "permissoes" },
+      { id: '5', icon: History, label: "Auditoria", path: "/audit", permission: "audit" },
+      { id: '8', icon: Settings, label: "Configurações", path: "/settings", permission: "configuracoes" },
     ];
  
    const menuItems = (layout.menuOrder && layout.menuOrder.length > 0) 
@@ -67,22 +50,13 @@ interface SidebarProps {
          .map((orderItem: any) => {
            const defaultItem = defaultMenuItems.find(i => i.id === orderItem.id || i.label === orderItem.label);
            if (!defaultItem) return null;
-           return { ...defaultItem, label: orderItem.label, visible: orderItem.visible !== false };
+            return { ...defaultItem, label: orderItem.label, visible: orderItem.visible !== false, permission: defaultItem.permission };
          })
          .filter((item: any) => {
            if (!item || !item.visible) return false;
-           // Access control
-           if ((item.path === '/usuarios' || item.path === '/permissions' || item.path === '/audit') && !(role === 'ADMIN' || role === 'MASTER')) {
-             return false;
-           }
-           return true;
+            return hasPermission(item.permission);
          })
-     : defaultMenuItems.filter(item => {
-         if ((item.path === '/usuarios' || item.path === '/permissions' || item.path === '/audit') && !(role === 'ADMIN' || role === 'MASTER')) {
-           return false;
-         }
-         return true;
-       });
+      : defaultMenuItems.filter(item => hasPermission(item.permission));
  
    return (
     <aside className={cn(

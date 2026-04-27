@@ -1,17 +1,41 @@
 import { useState, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "./Sidebar";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 import { useBranding } from "@/hooks/useBranding";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Loader2 } from "lucide-react";
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mustChange, setMustChange] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { branding } = useBranding();
+  const { hasPermission, loading: permissionsLoading } = usePermissions();
+
+  useEffect(() => {
+    if (!permissionsLoading) {
+      const path = location.pathname;
+      const pageToPermission: Record<string, string> = {
+        '/dashboard': 'dashboard',
+        '/chamados': 'chamados',
+        '/reports': 'relatorios',
+        '/usuarios': 'usuarios',
+        '/permissions': 'permissoes',
+        '/audit': 'audit',
+        '/settings': 'configuracoes'
+      };
+
+      const requiredPermission = pageToPermission[path];
+      if (requiredPermission && !hasPermission(requiredPermission)) {
+        navigate('/dashboard');
+      }
+    }
+  }, [location.pathname, permissionsLoading, hasPermission, navigate]);
 
   useEffect(() => {
     const trackNavigation = async () => {
@@ -59,6 +83,14 @@ export default function Layout() {
     };
     checkPasswordChange();
   }, []);
+
+  if (permissionsLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">

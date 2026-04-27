@@ -71,7 +71,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
        accentColor: "#3b82f6", 
        menuOrder: defaultMenuOrder
      });
-    const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+     const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+     const [emailLayout, setEmailLayout] = useState("");
    const [isAdmin, setIsAdmin] = useState(false);
  
      useEffect(() => {
@@ -96,7 +97,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
              const eConfig = data.find(s => s.key === 'email_config');
               const lConfig = data.find(s => s.key === 'layout_settings');
               const sTimeout = data.find(s => s.key === 'session_timeout');
-            const eTemplates = data.find(s => s.key === 'email_templates');
+              const eTemplates = data.find(s => s.key === 'email_templates');
+              const eLayout = data.find(s => s.key === 'email_layout');
             
             if (kConfig && !(profile?.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config)) {
               setKanbanConfig(kConfig.value as any[]);
@@ -130,7 +132,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
               setLayoutConfig(val);
             }
             if (sTimeout) setSessionTimeout(sTimeout.value as string);
-            if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
+             if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
+             if (eLayout) setEmailLayout(eLayout.value as string);
           }
        };
        loadSettings();
@@ -152,7 +155,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
               { key: 'kanban_config', value: kanbanConfig },
                { key: 'report_layout', value: reportLayout },
                { key: 'email_config', value: emailSettings },
-                { key: 'email_templates', value: emailTemplates },
+                 { key: 'email_templates', value: emailTemplates },
+                 { key: 'email_layout', value: emailLayout },
                 { key: 'layout_settings', value: layoutConfig },
                 { key: 'session_timeout', value: sessionTimeout }
             ];
@@ -374,7 +378,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                      <div className="border-t pt-6 space-y-4">
                       <div className="flex justify-between items-center">
                         <Label className="text-lg font-bold">Modelos de E-mail (Templates)</Label>
-                        <Button variant="outline" size="sm" onClick={() => setEmailTemplates([...emailTemplates, { id: Math.random().toString(), name: "Novo Modelo", subject: "", body: "" }])}>
+                       <Button variant="outline" size="sm" onClick={() => setEmailTemplates([...emailTemplates, { id: Math.random().toString(), name: "Novo Modelo", subject: "", body: "", trigger: "" }])}>
                           <Plus size={14} className="mr-1" /> Adicionar
                         </Button>
                       </div>
@@ -382,47 +386,89 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         Tags disponíveis: <code className="bg-muted px-1 rounded">{"{os}"}</code>, <code className="bg-muted px-1 rounded">{"{user}"}</code>, <code className="bg-muted px-1 rounded">{"{titulo}"}</code>, <code className="bg-muted px-1 rounded">{"{status}"}</code>, <code className="bg-muted px-1 rounded">{"{descricao}"}</code>
                       </div>
                       
-                      {emailTemplates.map((template, idx) => (
-                        <div key={template.id} className="p-4 border rounded-md space-y-4 relative">
-                          <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => setEmailTemplates(emailTemplates.filter((_, i) => i !== idx))}>
-                            <Trash2 size={14} />
-                          </Button>
-                          <div className="space-y-2">
-                            <Label>Nome da Situação</Label>
-                            <Input 
-                              value={template.name} 
-                              onChange={e => {
-                                const nt = [...emailTemplates];
-                                nt[idx].name = e.target.value;
-                                setEmailTemplates(nt);
-                              }}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Assunto do E-mail</Label>
-                            <Input 
-                              value={template.subject} 
-                              onChange={e => {
-                                const nt = [...emailTemplates];
-                                nt[idx].subject = e.target.value;
-                                setEmailTemplates(nt);
-                              }}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Corpo do Texto</Label>
-                            <textarea 
-                              className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                              value={template.body} 
-                              onChange={e => {
-                                const nt = [...emailTemplates];
-                                nt[idx].body = e.target.value;
-                                setEmailTemplates(nt);
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                       <div className="space-y-6">
+                         <div className="space-y-2">
+                           <Label className="text-sm font-semibold">Layout Global de E-mail (HTML)</Label>
+                           <div className="text-xs text-muted-foreground mb-2">
+                             Use <code className="bg-muted px-1 rounded">{"{corpo}"}</code> para indicar onde o texto do modelo será inserido. Você pode usar tags HTML e CSS inline.
+                           </div>
+                           <textarea 
+                             className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+                             placeholder="<html><body><div style='...'> {corpo} </div></body></html>"
+                             value={emailLayout} 
+                             onChange={e => setEmailLayout(e.target.value)}
+                           />
+                         </div>
+
+                         <div className="space-y-4">
+                           <Label className="text-sm font-semibold">Modelos de E-mail</Label>
+                           {emailTemplates.map((template, idx) => (
+                             <div key={template.id} className="p-4 border rounded-md space-y-4 relative bg-card/50">
+                               <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => setEmailTemplates(emailTemplates.filter((_, i) => i !== idx))}>
+                                 <Trash2 size={14} />
+                               </Button>
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 <div className="space-y-2">
+                                   <Label>Nome do Modelo</Label>
+                                   <Input 
+                                     value={template.name} 
+                                     onChange={e => {
+                                       const nt = [...emailTemplates];
+                                       nt[idx].name = e.target.value;
+                                       setEmailTemplates(nt);
+                                     }}
+                                   />
+                                 </div>
+                                 <div className="space-y-2">
+                                   <Label>Gatilho (Ação Automática)</Label>
+                                   <Select 
+                                     value={template.trigger} 
+                                     onValueChange={val => {
+                                       const nt = [...emailTemplates];
+                                       nt[idx].trigger = val;
+                                       setEmailTemplates(nt);
+                                     }}
+                                   >
+                                     <SelectTrigger>
+                                       <SelectValue placeholder="Selecione um gatilho..." />
+                                     </SelectTrigger>
+                                     <SelectContent>
+                                       <SelectItem value="none">Nenhum (Envio Manual)</SelectItem>
+                                       <SelectItem value="ticket_created">Novo Chamado Aberto</SelectItem>
+                                       <SelectItem value="status_change">Mudança de Status</SelectItem>
+                                       <SelectItem value="new_interaction">Novo Comentário/Interação</SelectItem>
+                                       <SelectItem value="ticket_closed">Chamado Encerrado</SelectItem>
+                                     </SelectContent>
+                                   </Select>
+                                 </div>
+                               </div>
+                               <div className="space-y-2">
+                                 <Label>Assunto do E-mail</Label>
+                                 <Input 
+                                   value={template.subject} 
+                                   onChange={e => {
+                                     const nt = [...emailTemplates];
+                                     nt[idx].subject = e.target.value;
+                                     setEmailTemplates(nt);
+                                   }}
+                                 />
+                               </div>
+                               <div className="space-y-2">
+                                 <Label>Corpo do Texto</Label>
+                                 <textarea 
+                                   className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                   value={template.body} 
+                                   onChange={e => {
+                                     const nt = [...emailTemplates];
+                                     nt[idx].body = e.target.value;
+                                     setEmailTemplates(nt);
+                                   }}
+                                 />
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
                     </div>
                  </CardContent>
                </Card>

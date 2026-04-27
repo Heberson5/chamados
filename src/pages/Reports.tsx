@@ -161,7 +161,7 @@
  
        doc.setTextColor(255, 255, 255);
        doc.setFontSize(18);
-       doc.text(layout.companyName || "Relatório de Chamados", headerTextX, 16);
+       doc.text(branding.companyName || "Relatório de Chamados", headerTextX, 16);
  
        autoTable(doc, {
          startY: 35,

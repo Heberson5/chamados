@@ -523,24 +523,24 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
            </Card>
  
            <Card>
-             <CardHeader>
-               <CardTitle>Distribuição por Prioridade</CardTitle>
-               <CardDescription>Volume de chamados por nível crítico</CardDescription>
-             </CardHeader>
-             <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={stats.byPriority} layout="vertical">
-                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--muted))" />
-                   <XAxis type="number" stroke="currentColor" fontSize={12} />
-                   <YAxis dataKey="name" type="category" stroke="currentColor" fontSize={12} />
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                     itemStyle={{ color: 'hsl(var(--foreground))' }}
-                   />
-                   <Bar dataKey="value" name="Quantidade" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
-                 </BarChart>
-               </ResponsiveContainer>
-             </CardContent>
+              <CardHeader>
+                <CardTitle>Distribuição por Prioridade</CardTitle>
+                <CardDescription>Volume de chamados por nível crítico</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.byPriority} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                    <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
+                    <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Bar dataKey="value" name="Quantidade" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
            </Card>
 
            <Card className="lg:col-span-2">

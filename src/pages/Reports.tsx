@@ -173,7 +173,15 @@
          headerTextX = (pageWidth / 2);
        }
  
-       doc.setTextColor(255, 255, 255);
+        if (layout.headerTextColor) {
+          const hex = layout.headerTextColor.replace('#', '');
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          doc.setTextColor(r, g, b);
+        } else {
+          doc.setTextColor(255, 255, 255);
+        }
        doc.setFontSize(18);
        
        if (alignment === 'center') {

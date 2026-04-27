@@ -173,7 +173,15 @@
          headerTextX = (pageWidth / 2);
        }
  
-       doc.setTextColor(255, 255, 255);
+        if (layout.headerTextColor) {
+          const hex = layout.headerTextColor.replace('#', '');
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          doc.setTextColor(r, g, b);
+        } else {
+          doc.setTextColor(255, 255, 255);
+        }
        doc.setFontSize(18);
        
        if (alignment === 'center') {
@@ -187,10 +195,11 @@
          head: [visibleColumns.map((c: any) => c.label)],
          body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.field))),
          theme: 'striped',
-         headStyles: { 
-           fillColor: layout.headerColor || [0, 0, 0],
-           fontSize: orientation === 'landscape' ? 10 : 9
-         },
+          headStyles: { 
+            fillColor: layout.headerColor || [0, 0, 0],
+            textColor: layout.headerTextColor || "#ffffff",
+            fontSize: orientation === 'landscape' ? 10 : 9
+          },
          styles: {
            fontSize: orientation === 'landscape' ? 9 : 8,
            cellPadding: 2

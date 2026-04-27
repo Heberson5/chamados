@@ -63,10 +63,10 @@
        .ilike("name", roleName)
        .maybeSingle();
  
-     if (roleDef) {
-       setRoleData(roleDef);
-       setPermissions(roleDef.permissions || []);
-     } else if (profile.is_master || profile.regra === "MASTER") {
+    if (roleDef) {
+      setRoleData(roleDef);
+      setPermissions((roleDef.permissions as string[]) || []);
+    } else if (profile.is_master || profile.regra === "MASTER") {
        // Fallback for Master if role_definition not found
        setPermissions(["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario", "financeiro"]);
      }

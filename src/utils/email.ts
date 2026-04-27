@@ -5,6 +5,7 @@
    name: string;
    subject: string;
    body: string;
+   trigger?: string;
  }
  
  export const sendEmail = async (to: string, subject: string, html: string) => {
@@ -22,18 +23,26 @@
    }
  };
  
- export const sendTemplatedEmail = async (to: string, templateId: string, variables: Record<string, string>) => {
+ export const sendTemplatedEmail = async (to: string, templateIdOrTrigger: string, variables: Record<string, string>) => {
    try {
      const { data: settingsData } = await supabase
        .from("system_settings")
-       .select("value")
-       .eq("key", "email_templates")
-       .single();
+       .select("key, value");
  
-     if (!settingsData || !settingsData.value) return { success: false, error: "Templates not found" };
+     if (!settingsData) return { success: false, error: "Settings not found" };
  
-     const templates = settingsData.value as unknown as EmailTemplate[];
-     const template = templates.find(t => t.id === templateId);
+     const templatesData = settingsData.find(s => s.key === "email_templates");
+     const layoutData = settingsData.find(s => s.key === "email_layout");
+ 
+     if (!templatesData || !templatesData.value) return { success: false, error: "Templates not found" };
+ 
+     const templates = templatesData.value as unknown as EmailTemplate[];
+     
+     // Try to find by ID first, then by trigger
+     let template = templates.find(t => t.id === templateIdOrTrigger);
+     if (!template) {
+       template = templates.find(t => t.trigger === templateIdOrTrigger);
+     }
  
      if (!template) return { success: false, error: "Template not found" };
  
@@ -47,9 +56,23 @@
      });
  
      // Convert newlines to <br> for HTML
-     const html = body.replace(/\n/g, '<br>');
+     const htmlBody = body.replace(/\n/g, '<br>');
  
-     return await sendEmail(to, subject, html);
+     let finalHtml = htmlBody;
+     const layout = layoutData?.value as string;
+ 
+     if (layout && layout.trim()) {
+       // Replace standard tags in layout too
+       finalHtml = layout;
+       Object.entries(variables).forEach(([key, value]) => {
+         const regex = new RegExp(`{${key}}`, 'g');
+         finalHtml = finalHtml.replace(regex, value || "");
+       });
+       // Replace the body placeholder
+       finalHtml = finalHtml.replace(/{corpo}|{{corpo}}|{body}|{{body}}/gi, htmlBody);
+     }
+ 
+     return await sendEmail(to, subject, finalHtml);
    } catch (error) {
      console.error("Error sending templated email:", error);
      return { success: false, error };

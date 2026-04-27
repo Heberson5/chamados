@@ -37,7 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
      const [layoutConfig, setLayoutConfig] = useState({ 
        companyLogo: "", 
        companyFavicon: "",
-       companyName: "Help-Me System", 
+       companyName: "Chamados", 
        sidebarColor: "bg-slate-900", 
        accentColor: "#3b82f6", 
        menuOrder: defaultMenuOrder

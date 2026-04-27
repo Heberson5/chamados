@@ -86,7 +86,7 @@ export default function Layout() {
               />
             )}
             <span className="font-bold text-lg truncate bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              {branding.companyName || "Help-Me"}
+              {branding.companyName || "Chamados"}
             </span>
           </div>
           <Button 

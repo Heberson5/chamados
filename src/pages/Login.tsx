@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/components/ThemeProvider";
 import { Sun, Moon, Monitor } from "lucide-react";
+import { useBranding } from "@/hooks/useBranding";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,6 +15,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { branding } = useBranding();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +51,17 @@ export default function Login() {
           )}
         </Button>
       </div>
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Entrar no Help-Me</CardTitle>
-          <CardDescription>Acesse sua conta para gerenciar chamados.</CardDescription>
+      <Card className="w-full max-w-md border-none shadow-2xl bg-card/50 backdrop-blur-sm">
+        <CardHeader className="space-y-4 flex flex-col items-center justify-center pb-8">
+          <div className="flex items-center gap-3">
+            {branding.companyLogo && (
+              <img src={branding.companyLogo} alt="Logo" className="w-12 h-12 object-contain" />
+            )}
+            <CardTitle className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              {branding.companyName || "Chamados"}
+            </CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">Acesse sua conta para gerenciar chamados</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">

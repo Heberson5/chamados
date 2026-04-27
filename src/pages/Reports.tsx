@@ -97,7 +97,7 @@
          doc.rect(0, 0, 210, 20, 'F');
          doc.setTextColor(255, 255, 255);
          doc.setFontSize(16);
-         doc.text("Relatório de Chamados - Help-Me", 10, 13);
+         doc.text("Relatório de Chamados", 10, 13);
  
          autoTable(doc, {
            startY: 30,
@@ -113,7 +113,7 @@
            doc.setFontSize(10);
            doc.setTextColor(150);
             const printDate = new Date().toLocaleString('pt-BR');
-            doc.text(layout.footerText || "Help-Me System", 10, 280);
+            doc.text(layout.footerText || "Chamados", 10, 280);
             doc.text(`Impresso em: ${printDate}`, 10, 285);
             doc.text(`Página ${i} de ${pageCount}`, 180, 285);
          }

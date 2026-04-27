@@ -1,10 +1,22 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Ticket, Shield, Clock, LayoutGrid, Sun, Moon, Monitor, Package } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useBranding } from "@/hooks/useBranding";
 
 export default function Index() {
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard");
+      }
+    };
+    checkSession();
+  }, []);
+
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { branding } = useBranding();

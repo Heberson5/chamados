@@ -3,7 +3,7 @@
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
- import { Search, History, MousePointer2 } from "lucide-react";
+import { Search, History, MousePointer2, User as UserIcon } from "lucide-react";
   import { format, addHours } from "date-fns";
   import { usePermissions } from "@/hooks/usePermissions";
   import { useNavigate } from "react-router-dom";
@@ -31,7 +31,8 @@
             *,
             profiles!audit_logs_user_id_fkey (
               nome,
-              sobrenome
+              sobrenome,
+              avatar_url
             )
           `)
           .order("created_at", { ascending: false });
@@ -109,12 +110,21 @@
              <TableBody>
                {filteredLogs.map((log) => (
                  <TableRow key={log.id}>
-                    <TableCell className="font-medium text-xs">
-                      <div className="flex flex-col">
-                        <span>{log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : '-'}</span>
-                        <span className="text-[10px] text-muted-foreground">{log.user_email}</span>
-                      </div>
-                    </TableCell>
+                     <TableCell className="font-medium text-xs">
+                       <div className="flex items-center gap-2">
+                         <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden border shrink-0">
+                           {log.profiles?.avatar_url ? (
+                             <img src={log.profiles.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                           ) : (
+                             <UserIcon size={12} />
+                           )}
+                         </div>
+                         <div className="flex flex-col">
+                           <span>{log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : '-'}</span>
+                           <span className="text-[10px] text-muted-foreground">{log.user_email}</span>
+                         </div>
+                       </div>
+                     </TableCell>
                    <TableCell>
                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                        log.action === 'INSERT' ? 'bg-green-100 text-green-700' :

@@ -175,7 +175,8 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
           if (t.encerrado_em && t.status === 'ENCERRADO') {
             const start = t.atendido_em ? new Date(t.atendido_em) : new Date(t.gerado_em || t.atendido_em);
             const totalElapsed = (new Date(t.encerrado_em).getTime() - start.getTime()) / (1000 * 60);
-            const pauses = (t.tempo_total_pausado || 0) + (t.tempo_total_aguardando_usuario || 0);
+            // convert pauses (stored in seconds) to minutes
+            const pauses = ((t.tempo_total_pausado || 0) + (t.tempo_total_aguardando_usuario || 0)) / 60;
             const netTime = totalElapsed - pauses;
             
             // Use net time if positive, otherwise fall back to total elapsed if that's positive

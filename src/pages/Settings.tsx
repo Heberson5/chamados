@@ -198,7 +198,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                  <CardTitle>Segurança</CardTitle>
                </div>
              </CardHeader>
-             <CardContent>
+              <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Autenticação de Dois Fatores</Label>
@@ -206,45 +206,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                   </div>
                   <Switch />
                 </div>
+
                 {isAdmin && (
-                  <div className="flex items-center justify-between border-t pt-4 mt-4">
-                    <div className="space-y-0.5">
-                      <Label>Política de Senhas</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Defina regras de complexidade, expiração e troca obrigatória.
-                      </p>
+                  <>
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <div className="space-y-0.5">
+                        <Label>Política de Senhas</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Defina regras de complexidade, expiração e troca obrigatória.
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => (window.location.href = "/configuracoes/senhas")}
+                      >
+                        Configurar
+                      </Button>
                     </div>
-                    <>
-                      <div className="flex items-center justify-between border-t pt-4 mt-4">
-                        <div className="space-y-0.5">
-                          <Label>Política de Senhas</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Defina regras de complexidade, expiração e troca obrigatória.
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => (window.location.href = "/configuracoes/senhas")}
-                        >
-                          Configurar
-                        </Button>
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <div className="space-y-0.5">
+                        <Label>Tempo Limite de Sessão (minutos)</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Tempo de inatividade antes do logoff automático (ex: 300 para 5h).
+                        </p>
                       </div>
-                      <div className="flex items-center justify-between border-t pt-4 mt-4">
-                        <div className="space-y-0.5">
-                          <Label>Tempo Limite de Sessão (minutos)</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Tempo de inatividade antes do logoff automático (ex: 300 para 5h).
-                          </p>
-                        </div>
-                        <div className="w-24">
-                          <Input 
-                            type="number" 
-                            value={sessionTimeout} 
-                            onChange={(e) => setSessionTimeout(e.target.value)}
-                          />
-                        </div>
+                      <div className="w-24">
+                        <Input 
+                          type="number" 
+                          value={sessionTimeout} 
+                          onChange={(e) => setSessionTimeout(e.target.value)}
+                        />
                       </div>
-                    </>
+                    </div>
+                  </>
                 )}
              </CardContent>
            </Card>

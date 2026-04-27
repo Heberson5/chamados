@@ -237,8 +237,9 @@ import { Ticket, AlertCircle, CheckCircle2, Clock, Users, Filter, Calendar as Ca
         else if (filters.period === "1y") startDate = subDays(new Date(), 365);
       }
 
-      if (filters.period === "1d") {
-        const hours = eachHourOfInterval({ start: startOfDay(new Date()), end: endOfDay(new Date()) });
+      if (filters.period === "1d" || filters.period === "yesterday") {
+        const baseDate = filters.period === "1d" ? new Date() : subDays(new Date(), 1);
+        const hours = eachHourOfInterval({ start: startOfDay(baseDate), end: endOfDay(baseDate) });
         return hours.map(hour => {
           const hourTickets = filteredTickets.filter(t => isSameHour(new Date(t.gerado_em), hour));
           return {

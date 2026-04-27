@@ -1,40 +1,25 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
- import { Ticket, Shield, Clock, LayoutGrid, Sun, Moon, Monitor, Package } from "lucide-react";
+import { Ticket, Shield, Clock, LayoutGrid, Sun, Moon, Monitor, Package } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import { useBranding } from "@/hooks/useBranding";
 
 export default function Index() {
-  const [layout, setLayout] = useState<any>({ companyName: "Help-Me", companyLogo: "" });
-  useEffect(() => {
-    const loadBranding = async () => {
-      const { data } = await supabase
-        .from("system_settings")
-        .select("value")
-        .eq("key", "layout_settings")
-        .single();
-      if (data) {
-        setLayout(data.value as any);
-      }
-    };
-    loadBranding();
-  }, []);
-
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { branding } = useBranding();
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Hero Section */}
       <header className="px-6 py-4 border-b flex justify-between items-center">
         <div className="flex items-center gap-2" onClick={() => navigate("/")} style={{ cursor: 'pointer' }}>
-          {layout.companyLogo ? (
-            <img src={layout.companyLogo} alt="Logo" className="w-8 h-8 object-contain" />
+          {branding.companyLogo ? (
+            <img src={branding.companyLogo} alt="Logo" className="w-8 h-8 object-contain" />
           ) : (
-            <Ticket className="text-blue-600" size={24} />
+            <Ticket className="text-primary" size={24} />
           )}
-          <span className="font-bold text-xl">{layout.companyName || "Help-Me"}</span>
+          <span className="font-bold text-xl">{branding.companyName || "Chamados"}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -65,8 +50,7 @@ export default function Index() {
             Gestão de Atendimento <span className="text-blue-600">Inteligente</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-10">
-            Sistema completo de Help Desk com controle de SLA, quadro Kanban para técnicos e gestão centralizada. 
-            Inspirado na arquitetura do repositório Help-Me.
+            Sistema completo de Help Desk com controle de SLA, quadro Kanban para técnicos e gestão centralizada.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="px-8" onClick={() => navigate("/login")}>
@@ -122,7 +106,7 @@ export default function Index() {
       </main>
 
       <footer className="py-12 border-t text-center text-muted-foreground text-sm">
-        <p>&copy; {new Date().getFullYear()} {layout.companyName || "Help-Me System"}. Todos os direitos reservados.</p>
+        <p>&copy; {new Date().getFullYear()} {branding.companyName || "Chamados"}. Todos os direitos reservados.</p>
         <p className="mt-2">Contato: hebersohas@gmail.com</p>
       </footer>
     </div>

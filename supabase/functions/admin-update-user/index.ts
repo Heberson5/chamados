@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
       telefone,
       ramal,
       cidade,
+      avatar_url,
     } = body;
 
     if (!user_id) {
@@ -124,6 +125,7 @@ Deno.serve(async (req) => {
     if (telefone !== undefined) profilePayload.telefone = telefone;
     if (ramal !== undefined) profilePayload.ramal = ramal;
     if (cidade !== undefined) profilePayload.cidade = cidade;
+    if (avatar_url !== undefined) profilePayload.avatar_url = avatar_url;
 
     if (Object.keys(profilePayload).length > 0) {
       const { error: profErr } = await admin

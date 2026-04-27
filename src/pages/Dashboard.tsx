@@ -11,6 +11,7 @@ import { Ticket, CheckCircle2, Clock, Users, Filter, Loader2, User as UserIcon, 
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/ThemeProvider";
+import { usePermissions } from "@/hooks/usePermissions";
  
   function formatMinutes(min: number): string {
     if (!min || min <= 0) return "0 min";
@@ -54,17 +55,13 @@ import { useTheme } from "@/components/ThemeProvider";
         byUser: [] as any[]
      });
  
-   useEffect(() => {
-     const checkRole = async () => {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (!user) return;
-       const { data: profile } = await supabase.from("profiles").select("regra, is_master").eq("id", user.id).single();
-       if (profile && profile.regra !== 'ADMIN' && profile.regra !== 'MASTER' && !profile.is_master) {
-         navigate("/chamados");
-       }
-     };
-     checkRole();
-   }, [navigate]);
+    const { hasPermission, loading: permsLoading } = usePermissions();
+
+    useEffect(() => {
+      if (!permsLoading && !hasPermission("dashboard")) {
+        navigate("/chamados");
+      }
+    }, [permsLoading, hasPermission, navigate]);
  
   const tooltipStyle = useMemo(() => {
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -547,37 +544,39 @@ import { useTheme } from "@/components/ThemeProvider";
               </CardContent>
            </Card>
 
-           <Card className="lg:col-span-2">
-             <CardHeader>
-               <CardTitle>Chamados por Usuário</CardTitle>
-               <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
-             </CardHeader>
-             <CardContent className="h-[360px]">
-               {stats.byUser.length === 0 ? (
-                 <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                   Sem chamados no período selecionado.
-                 </div>
-               ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats.byUser} margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                      <XAxis 
-                        dataKey="name" 
-                        stroke="currentColor" 
-                        fontSize={10} 
-                        interval={0}
-                        angle={-45}
-                        textAnchor="end"
-                        height={60}
-                      />
-                      <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
-                      <Tooltip {...tooltipStyle} />
-                      <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-               )}
-             </CardContent>
-           </Card>
+            {hasPermission("dashboard:ver_chamados_por_usuario") && (
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Chamados por Usuário</CardTitle>
+                  <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[360px]">
+                  {stats.byUser.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                      Sem chamados no período selecionado.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.byUser} margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                        <XAxis 
+                          dataKey="name" 
+                          stroke="currentColor" 
+                          fontSize={10} 
+                          interval={0}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
+                        <Tooltip {...tooltipStyle} />
+                        <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+            )}
          </div>
  
        <Card className="bg-primary/5 border-primary/20">

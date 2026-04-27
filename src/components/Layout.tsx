@@ -32,7 +32,12 @@ export default function Layout() {
 
       const requiredPermission = pageToPermission[path];
       if (requiredPermission && !hasPermission(requiredPermission)) {
-        navigate('/dashboard');
+        if (path !== '/dashboard') {
+          navigate('/dashboard');
+        } else {
+          // If even dashboard is blocked
+          navigate('/unauthorized');
+        }
       }
     }
   }, [location.pathname, permissionsLoading, hasPermission, navigate]);

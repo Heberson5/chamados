@@ -89,17 +89,17 @@ export default function Permissions() {
      { name: "History", icon: History },
    ];
  
-   const availableMenus = [
-     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-     { id: "chamados", label: "Chamados", icon: Ticket },
-     { id: "inventario", label: "Inventário", icon: Box },
-     { id: "financeiro", label: "Financeiro", icon: DollarSign },
-     { id: "usuarios", label: "Usuários", icon: Users },
-     { id: "permissoes", label: "Permissões", icon: Key },
-     { id: "relatorios", label: "Relatórios", icon: FileText },
-     { id: "configuracoes", label: "Configurações", icon: Settings },
-     { id: "audit", label: "Auditoria", icon: History },
-   ];
+    const availableMenus = [
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["Visualizar", "Exportar"] },
+      { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Reabrir", "Excluir"] },
+      { id: "inventario", label: "Inventário", icon: Box, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
+      { id: "financeiro", label: "Financeiro", icon: DollarSign, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
+      { id: "usuarios", label: "Usuários", icon: Users, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Alterar Senha"] },
+      { id: "permissoes", label: "Permissões", icon: Key, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
+      { id: "relatorios", label: "Relatórios", icon: FileText, actions: ["Visualizar", "Exportar PDF", "Exportar Excel"] },
+      { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Layout", "E-mail", "Segurança"] },
+      { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar"] },
+    ];
  
    const getIcon = (iconName: string) => {
      const IconComp = availableIcons.find(i => i.name === iconName)?.icon || User;
@@ -314,10 +314,10 @@ export default function Permissions() {
                          />
                        </div>
                        
-                       {(selectedRole.permissions || []).includes(menu.id) && (
-                         <div className="pl-6 grid grid-cols-2 gap-2 border-t pt-2">
-                           {["Visualizar", "Exportar", "Ações Especiais"].map(func => {
-                             const funcKey = `${menu.id}:${func.toLowerCase().replace(" ", "_")}`;
+                        {(selectedRole.permissions || []).includes(menu.id) && menu.actions && (
+                          <div className="pl-6 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t pt-2">
+                            {menu.actions.map(func => {
+                              const funcKey = `${menu.id}:${func.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_")}`;
                              return (
                                <div key={funcKey} className="flex items-center gap-2">
                                  <Switch 

@@ -151,24 +151,25 @@
        let headerTextX = 15;
        const alignment = layout.logoAlignment || 'left';
  
-       if (layout.showLogo && branding.companyLogo) {
-         try {
-           const logoSize = 18;
-           const logoY = 3.5;
-           let logoX = 10;
-           
-           if (alignment === 'center') {
-             logoX = (pageWidth / 2) - (logoSize / 2);
-             headerTextX = (pageWidth / 2);
-           } else {
-             headerTextX = 32;
-           }
- 
-           doc.addImage(branding.companyLogo, 'PNG', logoX, logoY, logoSize, logoSize, undefined, 'FAST');
-         } catch (e) {
-           console.error("Error adding logo to PDF:", e);
-         }
-       } else if (alignment === 'center') {
+        if (layout.showLogo && branding.companyLogo) {
+          try {
+            const logoW = layout.logoWidth || 18;
+            const logoH = layout.logoHeight || 18;
+            const logoY = (25 - logoH) / 2;
+            let logoX = 10;
+            
+            if (alignment === 'center') {
+              logoX = (pageWidth / 2) - (logoW / 2);
+              headerTextX = (pageWidth / 2);
+            } else {
+              headerTextX = 15 + logoW + 2;
+            }
+  
+            doc.addImage(branding.companyLogo, 'PNG', logoX, logoY, logoW, logoH, undefined, 'FAST');
+          } catch (e) {
+            console.error("Error adding logo to PDF:", e);
+          }
+        } else if (alignment === 'center') {
          headerTextX = (pageWidth / 2);
        }
  

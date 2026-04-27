@@ -571,10 +571,7 @@ import { useTheme } from "@/components/ThemeProvider";
                         height={60}
                       />
                       <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
-                        itemStyle={{ color: 'hsl(var(--foreground))' }}
-                      />
+                      <Tooltip {...tooltipStyle} />
                       <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>

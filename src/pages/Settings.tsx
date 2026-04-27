@@ -34,6 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981" },
     ]);
      const [reportLayout, setReportLayout] = useState<any>({ headerColor: "#000000", footerText: "", showLogo: true });
+     const [sessionTimeout, setSessionTimeout] = useState("300");
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
     const defaultMenuOrder = [
       { id: '1', label: "Painel", path: "/dashboard", visible: true },
@@ -76,7 +77,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
             const kConfig = data.find(s => s.key === 'kanban_config');
              const rLayout = data.find(s => s.key === 'report_layout');
              const eConfig = data.find(s => s.key === 'email_config');
-             const lConfig = data.find(s => s.key === 'layout_settings');
+              const lConfig = data.find(s => s.key === 'layout_settings');
+              const sTimeout = data.find(s => s.key === 'session_timeout');
             const eTemplates = data.find(s => s.key === 'email_templates');
             
             if (kConfig && !(profile?.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config)) {
@@ -84,7 +86,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
             }
              if (rLayout) setReportLayout(rLayout.value as any);
              if (eConfig) setEmailSettings(eConfig.value as any);
-              if (lConfig) {
+               if (lConfig) {
+                 const val = lConfig.value as any;
+                 if (!val.menuOrder || val.menuOrder.length === 0) {
+                   val.menuOrder = defaultMenuOrder;
+                 }
+                 setLayoutConfig(val);
+               }
+               if (sTimeout) setSessionTimeout(sTimeout.value as string);
                 const val = lConfig.value as any;
                 if (!val.menuOrder || val.menuOrder.length === 0) {
                   val.menuOrder = defaultMenuOrder;
@@ -113,8 +122,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
               { key: 'kanban_config', value: kanbanConfig },
                { key: 'report_layout', value: reportLayout },
                { key: 'email_config', value: emailSettings },
-               { key: 'email_templates', value: emailTemplates },
-               { key: 'layout_settings', value: layoutConfig }
+                { key: 'email_templates', value: emailTemplates },
+                { key: 'layout_settings', value: layoutConfig },
+                { key: 'session_timeout', value: sessionTimeout }
             ];
   
             for (const setting of settings) {
@@ -210,13 +220,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         Defina regras de complexidade, expiração e troca obrigatória.
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => (window.location.href = "/configuracoes/senhas")}
-                    >
-                      Configurar
-                    </Button>
-                  </div>
+                    <>
+                      <div className="flex items-center justify-between border-t pt-4 mt-4">
+                        <div className="space-y-0.5">
+                          <Label>Política de Senhas</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Defina regras de complexidade, expiração e troca obrigatória.
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => (window.location.href = "/configuracoes/senhas")}
+                        >
+                          Configurar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-4 mt-4">
+                        <div className="space-y-0.5">
+                          <Label>Tempo Limite de Sessão (minutos)</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Tempo de inatividade antes do logoff automático (ex: 300 para 5h).
+                          </p>
+                        </div>
+                        <div className="w-24">
+                          <Input 
+                            type="number" 
+                            value={sessionTimeout} 
+                            onChange={(e) => setSessionTimeout(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </>
                 )}
              </CardContent>
            </Card>

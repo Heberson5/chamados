@@ -44,10 +44,14 @@ import { Search, History, MousePointer2, User as UserIcon } from "lucide-react";
     }, []);
  
     const filteredLogs = logs.filter(log => {
-      const userName = log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : log.user_email;
-      return userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             log.table_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const userName = log.profiles 
+        ? `${log.profiles.nome} ${log.profiles.sobrenome}` 
+        : (log.user_email || "Sistema");
+      
+      const search = searchTerm.toLowerCase();
+      return userName.toLowerCase().includes(search) ||
+             (log.action?.toLowerCase() || "").includes(search) ||
+             (log.table_name?.toLowerCase() || "").includes(search);
     });
 
     const translateAction = (action: string) => {
@@ -120,7 +124,7 @@ import { Search, History, MousePointer2, User as UserIcon } from "lucide-react";
                            )}
                          </div>
                          <div className="flex flex-col">
-                           <span>{log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : '-'}</span>
+                         <span>{log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : (log.user_email || 'Sistema')}</span>
                            <span className="text-[10px] text-muted-foreground">{log.user_email}</span>
                          </div>
                        </div>

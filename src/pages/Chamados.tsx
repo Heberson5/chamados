@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List } from "lucide-react";
+import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon } from "lucide-react";
 import ChamadosKanban from "@/components/ChamadosKanban";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -39,8 +39,8 @@ export default function Chamados() {
         .from("chamados")
         .select(`
           *, 
-          tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome), 
-          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome), 
+          tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome, avatar_url), 
+          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome, avatar_url), 
           chamado_pai:chamado_pai_id(os),
           comentarios_chamado(count)
         `)
@@ -344,9 +344,18 @@ export default function Chamados() {
                         </div>
                       </TableCell>
                       <TableCell className="max-w-xs md:max-w-md truncate">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-1">
                           <span className="truncate">{ticket.descricao}</span>
-                          <span className="text-[11px] text-muted-foreground">Solicitante: {ticket.usuario?.nome}</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden border shrink-0">
+                              {ticket.usuario?.avatar_url ? (
+                                <img src={ticket.usuario.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                              ) : (
+                                <UserIcon size={8} />
+                              )}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground uppercase font-semibold">Solicitante: {ticket.usuario?.nome}</span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -381,11 +390,20 @@ export default function Chamados() {
                           </Badge>
                         </TableCell>
                       <TableCell className="text-sm">
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome}` : 'Não atribuído'}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden border shrink-0">
+                              {ticket.tecnico?.avatar_url ? (
+                                <img src={ticket.tecnico.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                              ) : (
+                                <UserIcon size={12} />
+                              )}
+                            </div>
+                            <span className="font-medium">
+                              {ticket.tecnico ? `${ticket.tecnico.nome} ${ticket.tecnico.sobrenome}` : 'Não atribuído'}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground ml-8">
                             {ticket.comentarios_chamado?.[0]?.count || 0} interações
                           </span>
                         </div>

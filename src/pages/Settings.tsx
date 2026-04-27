@@ -113,12 +113,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                    { id: 'tecnico', label: 'Técnico', visible: true, field: 'tecnico' },
                  ];
                }
-                setReportLayout({
-                  logoWidth: 18,
-                  logoHeight: 18,
-                  headerTextColor: "#ffffff",
-                  ...val
-                });
+                 setReportLayout({
+                   logoWidth: 18,
+                   logoHeight: 18,
+                   headerTextColor: "#ffffff",
+                   headerText: "Relatório de Chamados",
+                   ...val
+                 });
              }
              if (eConfig) setEmailSettings(eConfig.value as any);
             if (lConfig) {

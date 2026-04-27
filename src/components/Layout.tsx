@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Outlet, useLocation, useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "./Sidebar";
 import { Button } from "./ui/button";
@@ -7,13 +7,36 @@ import { Menu, X } from "lucide-react";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 import { useBranding } from "@/hooks/useBranding";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { Loader2 } from "lucide-react";
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mustChange, setMustChange] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Inactivity timer
+  useSessionTimeout();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setIsAuthenticated(false);
+      } else {
+        setIsAuthenticated(true);
+      }
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   const { branding } = useBranding();
   const { hasPermission, loading: permissionsLoading } = usePermissions();
 

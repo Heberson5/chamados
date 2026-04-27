@@ -195,10 +195,11 @@
          head: [visibleColumns.map((c: any) => c.label)],
          body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.field))),
          theme: 'striped',
-         headStyles: { 
-           fillColor: layout.headerColor || [0, 0, 0],
-           fontSize: orientation === 'landscape' ? 10 : 9
-         },
+          headStyles: { 
+            fillColor: layout.headerColor || [0, 0, 0],
+            textColor: layout.headerTextColor || "#ffffff",
+            fontSize: orientation === 'landscape' ? 10 : 9
+          },
          styles: {
            fontSize: orientation === 'landscape' ? 9 : 8,
            cellPadding: 2

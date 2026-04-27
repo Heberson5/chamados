@@ -1,5 +1,5 @@
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
- import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+ import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
  
  const corsHeaders = {
    "Access-Control-Allow-Origin": "*",
@@ -39,24 +39,26 @@
        throw new Error("Configurações SMTP incompletas.");
      }
  
-     const client = new SmtpClient();
-     
      const port = parseInt(config.smtp_port) || 587;
-     const isSSL = port === 465;
+     const isImplicitTLS = port === 465;
  
-     await client.connect({
-       hostname: config.smtp_host,
-       port: port,
-       username: config.smtp_user,
-       password: config.smtp_pass,
-       tls: isSSL,
+     const client = new SMTPClient({
+       connection: {
+         hostname: config.smtp_host,
+         port: port,
+         tls: isImplicitTLS,
+         auth: {
+           username: config.smtp_user,
+           password: config.smtp_pass,
+         },
+       },
      });
  
      await client.send({
        from: config.sender || config.smtp_user,
        to: to,
        subject: subject,
-       content: html,
+       content: html.replace(/<[^>]*>/g, ''),
        html: html,
      });
  

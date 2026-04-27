@@ -19,7 +19,8 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
  
  type Regra = Database["public"]["Enums"]["regra"];
  
- export default function Users() {
+  export default function Users() {
+    const navigate = useNavigate();
    const [users, setUsers] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const { toast } = useToast();

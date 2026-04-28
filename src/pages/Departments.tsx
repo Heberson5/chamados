@@ -165,29 +165,37 @@
                <TableHead className="text-right">Ações</TableHead>
              </TableRow>
            </TableHeader>
-           <TableBody>
-             {departments.map((dept) => (
-               <TableRow key={dept.id}>
-                 <TableCell className="font-medium">
-                   <div className="flex items-center gap-2">
-                     <Building2 size={16} className="text-muted-foreground" />
-                     {dept.nome}
-                   </div>
-                 </TableCell>
-                 <TableCell>{dept.descricao || "-"}</TableCell>
-                 <TableCell className="text-right">
-                   <div className="flex justify-end gap-2">
-                     <Button variant="ghost" size="icon" onClick={() => { setEditDept(dept); setIsEditDialogOpen(true); }}>
-                       <Pencil size={18} />
-                     </Button>
-                     <Button variant="ghost" size="icon" onClick={() => handleDeleteDept(dept.id)} className="text-destructive">
-                       <Trash2 size={18} />
-                     </Button>
-                   </div>
-                 </TableCell>
-               </TableRow>
-             ))}
-           </TableBody>
+            <TableBody>
+              {departments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
+                    Nenhum departamento encontrado.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                departments.map((dept) => (
+                  <TableRow key={dept.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <Building2 size={16} className="text-muted-foreground" />
+                        {dept.nome}
+                      </div>
+                    </TableCell>
+                    <TableCell>{dept.descricao || "-"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => { setEditDept(dept); setIsEditDialogOpen(true); }}>
+                          <Pencil size={18} />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteDept(dept.id)} className="text-destructive">
+                          <Trash2 size={18} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
          </Table>
        </div>
  

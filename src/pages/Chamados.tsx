@@ -18,7 +18,9 @@ import { useToast } from "@/hooks/use-toast";
 export default function Chamados() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("todos");
+   const [statusFilter, setStatusFilter] = useState<string>("todos");
+   const [viewFilter, setViewFilter] = useState<string>("todos");
+   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -69,6 +71,9 @@ export default function Chamados() {
     useEffect(() => {
       fetchTickets();
       fetchAgents();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) setCurrentUserId(data.user.id);
+      });
      
      const channel = supabase
        .channel('schema-db-changes')
@@ -208,14 +213,21 @@ export default function Chamados() {
     return { label: "NO PRAZO", color: "bg-green-500" };
   };
 
-  const filteredTickets = tickets.filter(t => {
-    const matchesSearch = 
-      (t.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+    const filteredTickets = tickets.filter(t => {
+      const matchesSearch = 
+        (t.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
+      
+      const matchesView = 
+        viewFilter === "todos" || 
+        (viewFilter === "meus" && t.usuario_id === currentUserId) ||
+        (viewFilter === "designados" && t.tecnico_id === currentUserId);
+        
+      return matchesSearch && matchesStatus && matchesView;
+    });
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -225,18 +237,29 @@ export default function Chamados() {
           <p className="text-muted-foreground">Visualize, gerencie e vincule atendimentos técnicos.</p>
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os status</SelectItem>
-              <SelectItem value="ABERTO">Aberto</SelectItem>
-              <SelectItem value="EM_ATENDIMENTO">Em Atendimento</SelectItem>
-              <SelectItem value="ENCERRADO">Encerrado</SelectItem>
-              <SelectItem value="CANCELADO">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
+           <Select value={viewFilter} onValueChange={setViewFilter}>
+             <SelectTrigger className="w-[180px]">
+               <SelectValue placeholder="Visão" />
+             </SelectTrigger>
+             <SelectContent>
+               <SelectItem value="todos">Todos os Chamados</SelectItem>
+               <SelectItem value="meus">Meus Chamados (Solicitante)</SelectItem>
+               <SelectItem value="designados">Designados a Mim (Técnico)</SelectItem>
+             </SelectContent>
+           </Select>
+
+           <Select value={statusFilter} onValueChange={setStatusFilter}>
+             <SelectTrigger className="w-[180px]">
+               <SelectValue placeholder="Filtrar por status" />
+             </SelectTrigger>
+             <SelectContent>
+               <SelectItem value="todos">Todos os status</SelectItem>
+               <SelectItem value="ABERTO">Aberto</SelectItem>
+               <SelectItem value="EM_ATENDIMENTO">Em Atendimento</SelectItem>
+               <SelectItem value="ENCERRADO">Encerrado</SelectItem>
+               <SelectItem value="CANCELADO">Cancelado</SelectItem>
+             </SelectContent>
+           </Select>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

@@ -71,9 +71,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
        accentColor: "#3b82f6", 
        menuOrder: defaultMenuOrder
      });
-     const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
-     const [emailLayout, setEmailLayout] = useState("");
-   const [isAdmin, setIsAdmin] = useState(false);
+      const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+      const [emailLayout, setEmailLayout] = useState("");
+      const [priorities, setPriorities] = useState<any[]>([]);
+    const [isAdmin, setIsAdmin] = useState(false);
  
      useEffect(() => {
        const loadSettings = async () => {
@@ -97,10 +98,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
              const eConfig = data.find(s => s.key === 'email_config');
               const lConfig = data.find(s => s.key === 'layout_settings');
               const sTimeout = data.find(s => s.key === 'session_timeout');
-              const eTemplates = data.find(s => s.key === 'email_templates');
-              const eLayout = data.find(s => s.key === 'email_layout');
-            
-            if (kConfig && !(profile?.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config)) {
+               const eTemplates = data.find(s => s.key === 'email_templates');
+               const eLayout = data.find(s => s.key === 'email_layout');
+             
+             // Fetch priorities
+             const { data: prioData } = await supabase.from("chamados_prioridades").select("*").order("ordem");
+             if (prioData) setPriorities(prioData);
+ 
+             if (kConfig && !(profile?.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config)) {
               setKanbanConfig(kConfig.value as any[]);
             }
              if (rLayout) {
@@ -169,11 +174,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
               });
               if (error) throw error;
             }
-            // Notify BrandingProvider immediately for instant in-tab updates
-            window.dispatchEvent(new CustomEvent("branding:updated", { detail: layoutConfig }));
-          }
-    
-          toast({ title: "Sucesso", description: "Configurações salvas com sucesso!" });
+             // Notify BrandingProvider immediately for instant in-tab updates
+             window.dispatchEvent(new CustomEvent("branding:updated", { detail: layoutConfig }));
+ 
+             // Save Priorities
+             for (const prio of priorities) {
+               if (prio.id) {
+                 await supabase.from("chamados_prioridades").update({
+                   nome: prio.nome,
+                   cor: prio.cor,
+                   ordem: prio.ordem
+                 }).eq("id", prio.id);
+               } else {
+                 // Create new priority if needed
+                 const { data: user } = await supabase.auth.getUser();
+                 const { data: profile } = await supabase.from("profiles").select("organization_id").eq("id", user.user?.id).single();
+                 await supabase.from("chamados_prioridades").insert({
+                   nome: prio.nome,
+                   cor: prio.cor,
+                   ordem: prio.ordem,
+                   organization_id: profile?.organization_id
+                 });
+               }
+             }
+           }
+     
+           toast({ title: "Sucesso", description: "Configurações salvas com sucesso!" });
         } catch (error: any) {
           toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
         } finally {

@@ -53,13 +53,6 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const isUserMaster = !!profile.is_master || profile.regra === "MASTER";
-      const isUserAdmin = profile.regra === "ADMIN" || isUserMaster;
-      
-      setIsMaster(isUserMaster);
-      setIsAdmin(isUserAdmin);
-
-      // Map regra enum to role_definitions name
       const regraToName: Record<string, string> = {
         'MASTER': 'Master',
         'ADMIN': 'Administrador',
@@ -69,23 +62,38 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
 
       const roleName = regraToName[profile.regra as string] || profile.regra;
 
-      const { data: roleDef } = await supabase
-        .from("role_definitions")
-        .select("*")
-        .ilike("name", roleName)
-        .maybeSingle();
-
-      if (roleDef) {
-        setRoleData(roleDef);
-        setPermissions((roleDef.permissions as string[]) || []);
-      } else {
-        if (isUserMaster) {
-          // Fallback for Master if role_definition not found
-          setPermissions(["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario", "financeiro"]);
-        } else {
-          setPermissions([]);
-        }
-      }
+       const isUserMaster = !!profile.is_master || profile.regra === "MASTER";
+       const isUserAdmin = profile.regra === "ADMIN" || isUserMaster;
+ 
+       const regraToName: Record<string, string> = {
+         'MASTER': 'Master',
+         'ADMIN': 'Administrador',
+         'TECNICO': 'Técnico',
+         'USUARIO': 'Usuário'
+       };
+ 
+       const roleName = regraToName[profile.regra as string] || profile.regra;
+ 
+       const { data: roleDef } = await supabase
+         .from("role_definitions")
+         .select("*")
+         .ilike("name", roleName)
+         .maybeSingle();
+ 
+       // Batch all state updates together to avoid inconsistent intermediate states
+       setIsMaster(isUserMaster);
+       setIsAdmin(isUserAdmin);
+ 
+       if (roleDef) {
+         setRoleData(roleDef);
+         setPermissions((roleDef.permissions as string[]) || []);
+       } else {
+         if (isUserMaster) {
+           setPermissions(["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario", "financeiro"]);
+         } else {
+           setPermissions([]);
+         }
+       }
     } catch (err) {
       console.error("Unexpected error loading permissions:", err);
     } finally {

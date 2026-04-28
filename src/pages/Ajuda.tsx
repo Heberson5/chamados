@@ -103,7 +103,7 @@
          </Card>
        ) : (
          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-           <TabsList className={`grid w-full grid-cols-${visibleManuals.length}`}>
+           <TabsList className="flex w-full overflow-x-auto justify-start md:grid md:grid-cols-4">
              {visibleManuals.map((m) => (
                <TabsTrigger key={m.role_key} value={m.role_key}>
                  {m.role_key.charAt(0) + m.role_key.slice(1).toLowerCase()}

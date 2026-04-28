@@ -53,15 +53,6 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const regraToName: Record<string, string> = {
-        'MASTER': 'Master',
-        'ADMIN': 'Administrador',
-        'TECNICO': 'Técnico',
-        'USUARIO': 'Usuário'
-      };
-
-      const roleName = regraToName[profile.regra as string] || profile.regra;
-
        const isUserMaster = !!profile.is_master || profile.regra === "MASTER";
        const isUserAdmin = profile.regra === "ADMIN" || isUserMaster;
  

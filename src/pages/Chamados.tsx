@@ -494,13 +494,19 @@ export default function Chamados() {
                         </Badge>
                       </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={
-                            ticket.prioridade === 'P1' ? 'border-destructive text-destructive bg-destructive/10' :
-                            ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-600 bg-orange-500/10' :
-                            'border-muted-foreground'
-                          }>
-                            {getPriorityLabel(ticket.prioridade)}
-                          </Badge>
+                          {ticket.prioridade && typeof ticket.prioridade === 'object' ? (
+                            <Badge variant="outline" className="border-none" style={{ backgroundColor: `${ticket.prioridade.cor}20`, color: ticket.prioridade.cor }}>
+                              {ticket.prioridade.nome}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className={
+                              ticket.prioridade === 'P1' ? 'border-destructive text-destructive bg-destructive/10' :
+                              ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-600 bg-orange-500/10' :
+                              'border-muted-foreground'
+                            }>
+                              {getPriorityLabel(ticket.prioridade)}
+                            </Badge>
+                          )}
                         </TableCell>
                       <TableCell className="text-sm">
                         <div className="flex flex-col gap-1">

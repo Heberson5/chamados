@@ -13,11 +13,12 @@ import Settings from "./pages/Settings";
  import Profile from "./pages/Profile";
   import Users from "./pages/Users";
   import Reports from "./pages/Reports";
-  import Permissions from "./pages/Permissions";
- import Audit from "./pages/Audit";
- import PasswordPolicyPage from "./pages/PasswordPolicy";
- import NotAuthorized from "./pages/NotAuthorized";
- import Departments from "./pages/Departments";
+   import Permissions from "./pages/Permissions";
+  import Audit from "./pages/Audit";
+  import Ajuda from "./pages/Ajuda";
+  import PasswordPolicyPage from "./pages/PasswordPolicy";
+  import NotAuthorized from "./pages/NotAuthorized";
+  import Departments from "./pages/Departments";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,9 +45,10 @@ const App = () => {
                 <Route path="/chamados" element={<Chamados />} />
                  <Route path="/reports" element={<Reports />} />
                 <Route path="/usuarios" element={<Users />} />
-                <Route path="/permissions" element={<Permissions />} />
-                 <Route path="/audit" element={<Audit />} />
-                 <Route path="/departamentos" element={<Departments />} />
+                 <Route path="/permissions" element={<Permissions />} />
+                  <Route path="/audit" element={<Audit />} />
+                  <Route path="/ajuda" element={<Ajuda />} />
+                  <Route path="/departamentos" element={<Departments />} />
                 <Route path="/perfil" element={<Profile />} />
               <Route path="/configuracoes/senhas" element={<PasswordPolicyPage />} />
               <Route path="/settings" element={<Settings />} />

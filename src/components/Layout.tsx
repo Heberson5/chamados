@@ -41,7 +41,12 @@ export default function Layout() {
   const { hasPermission, loading: permissionsLoading } = usePermissions();
 
   useEffect(() => {
-    if (!permissionsLoading) {
+    if (isAuthenticated === false) {
+      navigate('/login');
+      return;
+    }
+
+    if (isAuthenticated === true && !permissionsLoading) {
       const path = location.pathname;
       const pageToPermission: Record<string, string> = {
         '/dashboard': 'dashboard',
@@ -63,7 +68,7 @@ export default function Layout() {
         }
       }
     }
-  }, [location.pathname, permissionsLoading, hasPermission, navigate]);
+  }, [location.pathname, isAuthenticated, permissionsLoading, hasPermission, navigate]);
 
   useEffect(() => {
     const trackNavigation = async () => {
@@ -112,7 +117,7 @@ export default function Layout() {
     checkPasswordChange();
   }, []);
 
-  if (permissionsLoading) {
+  if (isAuthenticated === null || permissionsLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

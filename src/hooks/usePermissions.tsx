@@ -114,18 +114,18 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     };
   }, []);
  
-   const hasPermission = (permission: string) => {
-     // Master users always have full access as per business rules
-     if (isMaster) return true;
-     
-     if (permissions.includes("Acesso Total")) return true;
-     
-     // If checking a main menu permission (e.g., 'chamados')
-     if (permissions.includes(permission)) return true;
-     
-     // If checking a granular permission (e.g., 'chamados:editar')
-     return permissions.includes(permission);
-   };
+  const hasPermission = useCallback((permission: string) => {
+    // Master users always have full access as per business rules
+    if (isMaster) return true;
+    
+    if (permissions.includes("Acesso Total")) return true;
+    
+    // If checking a main menu permission (e.g., 'chamados')
+    if (permissions.includes(permission)) return true;
+    
+    // If checking a granular permission (e.g., 'chamados:editar')
+    return permissions.includes(permission);
+  }, [isMaster, permissions]);
  
    return (
      <PermissionContext.Provider value={{ permissions, roleData, loading, hasPermission, isMaster, isAdmin }}>

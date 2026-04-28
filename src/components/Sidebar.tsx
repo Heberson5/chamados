@@ -13,7 +13,8 @@ import {
   Package,
    History,
    Users,
-   Lock
+   Lock,
+   Building2
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
@@ -39,8 +40,9 @@ interface SidebarProps {
       { id: '1', icon: LayoutDashboard, label: "Painel", path: "/dashboard", permission: "dashboard" },
       { id: '2', icon: Ticket, label: "Chamados", path: "/chamados", permission: "chamados" },
       { id: '6', icon: BarChart3, label: "Relatórios", path: "/reports", permission: "relatorios" },
-      { id: '3', icon: Users, label: "Usuários", path: "/usuarios", permission: "usuarios" },
-      { id: '4', icon: Lock, label: "Permissões", path: "/permissions", permission: "permissoes" },
+       { id: '3', icon: Users, label: "Usuários", path: "/usuarios", permission: "usuarios" },
+       { id: '9', icon: Building2, label: "Departamentos", path: "/departamentos", permission: "configuracoes" },
+       { id: '4', icon: Lock, label: "Permissões", path: "/permissions", permission: "permissoes" },
       { id: '5', icon: History, label: "Auditoria", path: "/audit", permission: "audit" },
       { id: '8', icon: Settings, label: "Configurações", path: "/settings", permission: "configuracoes" },
     ];

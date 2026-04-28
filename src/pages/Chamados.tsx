@@ -155,7 +155,7 @@ export default function Chamados() {
           anexos: uploadedUrls.length > 0 ? uploadedUrls : null
         };
         
-        if (newTicket.tecnico_id) {
+         if (newTicket.tecnico_id && newTicket.tecnico_id !== "none") {
           insertData.tecnico_id = newTicket.tecnico_id;
           insertData.status = "EM_ATENDIMENTO";
           insertData.atendido_em = new Date().toISOString();

@@ -94,12 +94,10 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
           isMaster: isUserMaster,
           isAdmin: isUserAdmin,
         });
-    } catch (err) {
-      console.error("Unexpected error loading permissions:", err);
-    } catch (err) {
-      console.error("Unexpected error loading permissions:", err);
-      setState(prev => ({ ...prev, loading: false }));
-    }
+     } catch (err) {
+       console.error("Unexpected error loading permissions:", err);
+       setState(prev => ({ ...prev, loading: false }));
+     }
   };
 
   useEffect(() => {

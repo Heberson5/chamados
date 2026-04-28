@@ -337,7 +337,8 @@ interface ChamadosKanbanProps {
         const { data } = await supabase
           .from("profiles")
           .select("id, nome, sobrenome")
-          .or("regra.in.(ADMIN,TECNICO,MASTER),is_master.eq.true,pode_receber_chamados.eq.true")
+          .eq("pode_receber_chamados", true)
+          .neq("is_master", true)
           .eq("ativo", true);
         if (data) setAgents(data);
       }, []);

@@ -1,43 +1,11 @@
-   const handleTransfer = async () => {
-     if (!transferToId || !selectedTicket) return;
-     try {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (!user) return;
- 
-       const { error } = await supabase
-         .from("chamados")
-         .update({ tecnico_id: transferToId, status: 'EM_ATENDIMENTO' })
-         .eq("id", selectedTicket.id);
- 
-       if (error) throw error;
- 
-       // Create audit or comment for transfer
-       await supabase.from("comentarios_chamado").insert({
-         chamado_id: selectedTicket.id,
-         autor_id: user.id,
-         comentario: `[TRANSFERÊNCIA] Chamado transferido para o técnico.`
-       });
- 
-       toast({ title: "Chamado transferido", description: "O responsável pelo chamado foi atualizado." });
-       onUpdate();
-       setIsTransferDialogOpen(false);
-       setIsDetailsOpen(false);
-     } catch (error: any) {
-       toast({ variant: "destructive", title: "Erro ao transferir", description: error.message });
-     }
-   };
- 
-import { Badge } from "@/components/ui/badge";
+ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { getPriorityLabel } from "@/lib/utils/priority";
  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History, ArrowRightLeft } from "lucide-react";
-   const [agents, setAgents] = useState<any[]>([]);
-   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
-   const [transferToId, setTransferToId] = useState("");
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
   import { useState, useEffect, useCallback } from "react";
   import { 
@@ -241,8 +209,40 @@ interface ChamadosKanbanProps {
   onUpdate: () => void;
 }
 
-export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProps) {
-   const { toast } = useToast();
+ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProps) {
+    const { toast } = useToast();
+    const [agents, setAgents] = useState<any[]>([]);
+    const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+    const [transferToId, setTransferToId] = useState("");
+
+    const handleTransfer = async () => {
+      if (!transferToId || !selectedTicket) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+  
+        const { error } = await supabase
+          .from("chamados")
+          .update({ tecnico_id: transferToId, status: 'EM_ATENDIMENTO' })
+          .eq("id", selectedTicket.id);
+  
+        if (error) throw error;
+  
+        // Create audit or comment for transfer
+        await supabase.from("comentarios_chamado").insert({
+          chamado_id: selectedTicket.id,
+          autor_id: user.id,
+          comentario: `[TRANSFERÊNCIA] Chamado transferido para o técnico.`
+        });
+  
+        toast({ title: "Chamado transferido", description: "O responsável pelo chamado foi atualizado." });
+        onUpdate();
+        setIsTransferDialogOpen(false);
+        setIsDetailsOpen(false);
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Erro ao transferir", description: error.message });
+      }
+    };
    const sensors = useSensors(
      useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
      useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })

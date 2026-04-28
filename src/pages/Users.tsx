@@ -216,7 +216,7 @@ import { usePermissions } from "@/hooks/usePermissions";
            .from("profiles")
            .select(`
              *,
-             department:department_id(id, nome)
+             department:departamentos!department_id(id, nome)
            `)
            .order("nome");
         

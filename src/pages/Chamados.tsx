@@ -34,7 +34,7 @@ export default function Chamados() {
      titulo: "",
      descricao: "",
      prioridade: "P3",
-     tecnico_id: ""
+      tecnico_id: "none"
    });
    const [agents, setAgents] = useState<any[]>([]);
   const { toast } = useToast();
@@ -157,15 +157,11 @@ export default function Chamados() {
           descricao: newTicket.descricao,
           prioridade: newTicket.prioridade,
           usuario_id: user.id,
-          status: "ABERTO",
-          anexos: uploadedUrls.length > 0 ? uploadedUrls : null
+          status: "EM_ATENDIMENTO",
+          anexos: uploadedUrls.length > 0 ? uploadedUrls : null,
+          tecnico_id: newTicket.tecnico_id,
+          atendido_em: new Date().toISOString()
         };
-        
-         if (newTicket.tecnico_id && newTicket.tecnico_id !== "none") {
-          insertData.tecnico_id = newTicket.tecnico_id;
-          insertData.status = "EM_ATENDIMENTO";
-          insertData.atendido_em = new Date().toISOString();
-        }
 
         const { data: insertedTicket, error: insertError } = await supabase
           .from("chamados")
@@ -314,23 +310,29 @@ export default function Chamados() {
                    </Select>
                  </div>
                  <div className="space-y-2">
-                   <Label htmlFor="tecnico">Designar para (Opcional)</Label>
-                   <Select 
-                     value={newTicket.tecnico_id} 
-                     onValueChange={v => setNewTicket({...newTicket, tecnico_id: v})}
-                   >
-                     <SelectTrigger>
-                       <SelectValue placeholder="Selecione um atendente" />
-                     </SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value="none">Deixar em aberto</SelectItem>
-                        {agents.map(agent => (
-                          <SelectItem key={agent.id} value={agent.id}>
-                            {agent.nome} {agent.sobrenome}
-                          </SelectItem>
-                        ))}
-                     </SelectContent>
-                   </Select>
+                   <Label htmlFor="tecnico">Designar para (Obrigatório)</Label>
+                   {agents.length > 0 ? (
+                     <Select 
+                       value={newTicket.tecnico_id === "none" ? "" : newTicket.tecnico_id} 
+                       onValueChange={v => setNewTicket({...newTicket, tecnico_id: v})}
+                     >
+                       <SelectTrigger>
+                         <SelectValue placeholder="Selecione um atendente" />
+                       </SelectTrigger>
+                       <SelectContent>
+                          {agents.map(agent => (
+                             <SelectItem key={agent.id} value={agent.id}>
+                               {agent.nome} {agent.sobrenome}
+                             </SelectItem>
+                           ))}
+                        </SelectContent>
+                      </Select>
+                   ) : (
+                     <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-start gap-2 text-destructive text-xs">
+                       <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                       <p>Não há atendentes ativos disponíveis. Por favor, contate o administrador.</p>
+                     </div>
+                   )}
                  </div>
                 <div className="space-y-2">
                   <Label htmlFor="anexos">Anexos (Texto, PDF, Imagens)</Label>
@@ -360,12 +362,15 @@ export default function Chamados() {
                     </div>
                   )}
                 </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Criar Chamado
-                  </Button>
-                </DialogFooter>
+                 <DialogFooter>
+                   <Button 
+                    type="submit" 
+                    disabled={isLoading || agents.length === 0 || !newTicket.tecnico_id || newTicket.tecnico_id === "none"}
+                  >
+                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Criar Chamado
+                   </Button>
+                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>

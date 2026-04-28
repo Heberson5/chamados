@@ -6,7 +6,8 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera } from "lucide-react";
+ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones } from "lucide-react";
+ import { Switch } from "@/components/ui/switch";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
@@ -28,7 +29,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
    const [reassignToId, setReassignToId] = useState("");
-    const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "", avatar_url: "" });
+   const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "", avatar_url: "", pode_receber_chamados: false });
      const [createMode, setCreateMode] = useState<"password" | "invite">("password");
      const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

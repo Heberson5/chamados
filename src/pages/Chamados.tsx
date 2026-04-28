@@ -146,14 +146,26 @@ export default function Chamados() {
         uploadedUrls.push(publicUrl);
       }
 
-       const { data: insertedTicket, error: insertError } = await supabase.from("chamados").insert({
-        titulo: newTicket.titulo || "Sem título",
-        descricao: newTicket.descricao,
-        prioridade: newTicket.prioridade,
-        usuario_id: user.id,
-        status: "ABERTO",
-        anexos: uploadedUrls.length > 0 ? uploadedUrls : null
-       } as any).select().single();
+        const insertData: any = {
+          titulo: newTicket.titulo || "Sem título",
+          descricao: newTicket.descricao,
+          prioridade: newTicket.prioridade,
+          usuario_id: user.id,
+          status: "ABERTO",
+          anexos: uploadedUrls.length > 0 ? uploadedUrls : null
+        };
+        
+        if (newTicket.tecnico_id) {
+          insertData.tecnico_id = newTicket.tecnico_id;
+          insertData.status = "EM_ATENDIMENTO";
+          insertData.atendido_em = new Date().toISOString();
+        }
+
+        const { data: insertedTicket, error: insertError } = await supabase
+          .from("chamados")
+          .insert(insertData)
+          .select()
+          .single();
 
       if (insertError) throw insertError;
 
@@ -173,7 +185,7 @@ export default function Chamados() {
        }
       await fetchTickets();
       setIsDialogOpen(false);
-      setNewTicket({ titulo: "", descricao: "", prioridade: "P3" });
+       setNewTicket({ titulo: "", descricao: "", prioridade: "P3", tecnico_id: "" });
       setFiles([]);
       setPreviews([]);
     } catch (error: any) {

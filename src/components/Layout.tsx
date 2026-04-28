@@ -38,7 +38,7 @@ export default function Layout() {
     return () => subscription.unsubscribe();
   }, []);
   const { branding } = useBranding();
-  const { hasPermission, loading: permissionsLoading } = usePermissions();
+   const { hasPermission, loading: permissionsLoading, isMaster } = usePermissions();
 
   useEffect(() => {
     if (isAuthenticated === false) {
@@ -46,8 +46,10 @@ export default function Layout() {
       return;
     }
 
-    if (isAuthenticated === true && !permissionsLoading) {
-      const path = location.pathname;
+     if (isAuthenticated === true && !permissionsLoading) {
+       if (isMaster) return;
+ 
+       const path = location.pathname;
       const pageToPermission: Record<string, string> = {
         '/dashboard': 'dashboard',
         '/chamados': 'chamados',

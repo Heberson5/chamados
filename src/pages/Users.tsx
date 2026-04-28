@@ -104,7 +104,7 @@ import { usePermissions } from "@/hooks/usePermissions";
           : "Usuário criado com senha temporária. Será solicitada a troca no primeiro login.",
       });
       setIsAddDialogOpen(false);
-      setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "", avatar_url: "" });
+       setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "", avatar_url: "", pode_receber_chamados: false });
       fetchUsers();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
@@ -373,20 +373,35 @@ import { usePermissions } from "@/hooks/usePermissions";
                 <Label>Cidade</Label>
                 <Input value={newUser.cidade} onChange={e => setNewUser({...newUser, cidade: e.target.value})} />
               </div>
-              <div className="space-y-2">
-                <Label>Permissão</Label>
-                <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
-                    <SelectItem value="ADMIN">Administrador</SelectItem>
-                    <SelectItem value="TECNICO">Técnico</SelectItem>
-                    <SelectItem value="USUARIO">Usuário</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+               <div className="flex items-center justify-between space-x-2 p-2 rounded-lg border bg-muted/20">
+                 <div className="space-y-0.5">
+                   <Label className="text-sm font-semibold flex items-center gap-2">
+                     <Headphones className="h-4 w-4 text-primary" />
+                     Gerenciar Chamados
+                   </Label>
+                   <p className="text-[10px] text-muted-foreground">
+                     Permitir que este usuário receba chamados designados.
+                   </p>
+                 </div>
+                 <Switch
+                   checked={newUser.pode_receber_chamados}
+                   onCheckedChange={(checked) => setNewUser({ ...newUser, pode_receber_chamados: checked })}
+                 />
+               </div>
+               <div className="space-y-2">
+                 <Label>Permissão</Label>
+                 <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
+                   <SelectTrigger>
+                     <SelectValue />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
+                     <SelectItem value="ADMIN">Administrador</SelectItem>
+                     <SelectItem value="TECNICO">Técnico</SelectItem>
+                     <SelectItem value="USUARIO">Usuário</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
               {createMode === "password" && policy && (
                 <div className="space-y-2">
                   <Label>Senha temporária</Label>
@@ -528,20 +543,35 @@ import { usePermissions } from "@/hooks/usePermissions";
                     <Label>Cidade</Label>
                     <Input value={editUser.cidade || ""} onChange={e => setEditUser({...editUser, cidade: e.target.value})} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Permissão</Label>
-                    <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
-                        <SelectItem value="ADMIN">Administrador</SelectItem>
-                        <SelectItem value="TECNICO">Técnico</SelectItem>
-                        <SelectItem value="USUARIO">Usuário</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                   <div className="flex items-center justify-between space-x-2 p-3 rounded-lg border bg-muted/20">
+                     <div className="space-y-0.5">
+                       <Label className="text-sm font-semibold flex items-center gap-2">
+                         <Headphones className="h-4 w-4 text-primary" />
+                         Gerenciar Chamados
+                       </Label>
+                       <p className="text-[10px] text-muted-foreground">
+                         Permitir que este usuário receba chamados designados.
+                       </p>
+                     </div>
+                     <Switch
+                       checked={editUser.pode_receber_chamados}
+                       onCheckedChange={(checked) => setEditUser({ ...editUser, pode_receber_chamados: checked })}
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label>Permissão</Label>
+                     <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                       <SelectTrigger>
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
+                         <SelectItem value="ADMIN">Administrador</SelectItem>
+                         <SelectItem value="TECNICO">Técnico</SelectItem>
+                         <SelectItem value="USUARIO">Usuário</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
                </div>
              )}
              <DialogFooter>

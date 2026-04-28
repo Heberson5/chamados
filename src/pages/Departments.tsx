@@ -20,30 +20,56 @@
    const [newDept, setNewDept] = useState({ nome: "", descricao: "" });
    const [editDept, setEditDept] = useState<any>(null);
  
-   const fetchDepartments = async () => {
-     setLoading(true);
-     const { data: { user } } = await supabase.auth.getUser();
-     if (!user) return;
- 
-     const { data: profile } = await supabase
-       .from("profiles")
-       .select("organization_id")
-       .eq("id", user.id)
-       .single();
- 
-     const { data, error } = await supabase
-       .from("departamentos")
-       .select("*")
-       .eq("organization_id", profile?.organization_id)
-       .order("nome");
-     
-     if (error) {
-       toast({ variant: "destructive", title: "Erro ao buscar departamentos", description: error.message });
-     } else {
-       setDepartments(data || []);
-     }
-     setLoading(false);
-   };
+    const fetchDepartments = async () => {
+      setLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id, is_master, regra")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const isMaster = !!profile?.is_master || profile?.regra === "MASTER";
+        
+        let query = supabase.from("departamentos").select("*");
+        
+        // Se for Master, vê todos os departamentos. 
+        // Se não for Master, vê apenas os da sua organização.
+        if (!isMaster) {
+          if (profile?.organization_id) {
+            query = query.eq("organization_id", profile.organization_id);
+          } else {
+            // Se não tem organização e não é master, só vê os globais
+            query = query.is("organization_id", null);
+          }
+        }
+
+        const { data, error } = await query.order("nome");
+        
+        if (error) {
+          console.error("Error fetching departments:", error);
+          toast({ 
+            variant: "destructive", 
+            title: "Erro ao buscar departamentos", 
+            description: error.message 
+          });
+        } else {
+          setDepartments(data || []);
+        }
+      } catch (err: any) {
+        console.error("Unexpected error fetching departments:", err);
+        toast({ 
+          variant: "destructive", 
+          title: "Erro inesperado", 
+          description: err.message 
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
  
    useEffect(() => {
      fetchDepartments();
@@ -139,29 +165,37 @@
                <TableHead className="text-right">Ações</TableHead>
              </TableRow>
            </TableHeader>
-           <TableBody>
-             {departments.map((dept) => (
-               <TableRow key={dept.id}>
-                 <TableCell className="font-medium">
-                   <div className="flex items-center gap-2">
-                     <Building2 size={16} className="text-muted-foreground" />
-                     {dept.nome}
-                   </div>
-                 </TableCell>
-                 <TableCell>{dept.descricao || "-"}</TableCell>
-                 <TableCell className="text-right">
-                   <div className="flex justify-end gap-2">
-                     <Button variant="ghost" size="icon" onClick={() => { setEditDept(dept); setIsEditDialogOpen(true); }}>
-                       <Pencil size={18} />
-                     </Button>
-                     <Button variant="ghost" size="icon" onClick={() => handleDeleteDept(dept.id)} className="text-destructive">
-                       <Trash2 size={18} />
-                     </Button>
-                   </div>
-                 </TableCell>
-               </TableRow>
-             ))}
-           </TableBody>
+            <TableBody>
+              {departments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
+                    Nenhum departamento encontrado.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                departments.map((dept) => (
+                  <TableRow key={dept.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <Building2 size={16} className="text-muted-foreground" />
+                        {dept.nome}
+                      </div>
+                    </TableCell>
+                    <TableCell>{dept.descricao || "-"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => { setEditDept(dept); setIsEditDialogOpen(true); }}>
+                          <Pencil size={18} />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteDept(dept.id)} className="text-destructive">
+                          <Trash2 size={18} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
          </Table>
        </div>
  

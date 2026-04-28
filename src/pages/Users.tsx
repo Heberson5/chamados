@@ -84,8 +84,14 @@ import { usePermissions } from "@/hooks/usePermissions";
       }
     };
    const handleAddUser = async () => {
-    if (!newUser.email || !newUser.nome) {
-      toast({ variant: "destructive", title: "Campos obrigatórios", description: "Nome e e-mail são obrigatórios." });
+     if (!newUser.email || !newUser.nome || (newUser.regra !== 'MASTER' && !newUser.department_id)) {
+       toast({ 
+         variant: "destructive", 
+         title: "Campos obrigatórios", 
+         description: newUser.regra !== 'MASTER' && !newUser.department_id 
+           ? "O departamento é obrigatório para este nível de acesso." 
+           : "Nome e e-mail são obrigatórios." 
+       });
       return;
     }
     if (createMode === "password") {
@@ -441,19 +447,21 @@ import { usePermissions } from "@/hooks/usePermissions";
                  />
                </div>
  
-               <div className="space-y-2">
-                 <Label>Departamento (Obrigatório)</Label>
-                 <Select value={newUser.department_id} onValueChange={v => setNewUser({...newUser, department_id: v})}>
-                   <SelectTrigger>
-                     <SelectValue placeholder="Selecione um departamento" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     {departments.map(d => (
-                       <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
-                     ))}
-                   </SelectContent>
-                 </Select>
-               </div>
+               {(newUser.regra !== 'MASTER') && (
+                 <div className="space-y-2">
+                   <Label>Departamento (Obrigatório)</Label>
+                   <Select value={newUser.department_id} onValueChange={v => setNewUser({...newUser, department_id: v})}>
+                     <SelectTrigger>
+                       <SelectValue placeholder="Selecione um departamento" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {departments.map(d => (
+                         <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
+               )}
  
                <div className="space-y-2">
                  <Label>Permissão</Label>

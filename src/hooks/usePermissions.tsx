@@ -92,19 +92,18 @@
      };
    }, []);
  
-  const hasPermission = (permission: string) => {
-    // Special case: if permissions array is empty but user is Master, they might be testing or have no role def.
-    // However, to satisfy the user's request that disabling all perms should block access:
-    if (permissions.includes("Acesso Total")) return true;
-    
-    // If checking a main menu permission (e.g., 'chamados')
-    if (permissions.includes(permission)) return true;
-    
-    // If checking a granular permission (e.g., 'chamados:editar')
-    // Check if the user has the specific permission or if it's implicitly allowed by main permission
-    // (Though we want granular control, if they have 'chamados', they usually see the menu)
-    return permissions.includes(permission);
-  };
+   const hasPermission = (permission: string) => {
+     // Master users always have full access as per business rules
+     if (isMaster) return true;
+     
+     if (permissions.includes("Acesso Total")) return true;
+     
+     // If checking a main menu permission (e.g., 'chamados')
+     if (permissions.includes(permission)) return true;
+     
+     // If checking a granular permission (e.g., 'chamados:editar')
+     return permissions.includes(permission);
+   };
  
    return (
      <PermissionContext.Provider value={{ permissions, roleData, loading, hasPermission, isMaster, isAdmin }}>

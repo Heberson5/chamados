@@ -182,10 +182,18 @@
                        </div>
                      </div>
                    ) : (
-                     <div 
-                       className="prose prose-slate dark:prose-invert max-w-none"
-                       dangerouslySetInnerHTML={{ __html: manual.content }}
-                     />
+                       <div className="relative">
+                         <div 
+                           className="prose prose-slate dark:prose-invert max-w-none 
+                                     prose-headings:font-bold prose-headings:tracking-tight
+                                     prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:text-primary
+                                     prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3
+                                     prose-p:text-muted-foreground prose-p:leading-relaxed
+                                     prose-li:text-muted-foreground prose-strong:text-foreground
+                                     prose-hr:my-8"
+                           dangerouslySetInnerHTML={{ __html: manual.content }}
+                         />
+                       </div>
                    )}
                  </CardContent>
                </Card>

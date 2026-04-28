@@ -23,15 +23,18 @@ export default function Chamados() {
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [newTicket, setNewTicket] = useState<{
-    titulo: string;
-    descricao: string;
-    prioridade: "P1" | "P2" | "P3" | "P4" | "P5"
-  }>({
-    titulo: "",
-    descricao: "",
-    prioridade: "P3"
-  });
+   const [newTicket, setNewTicket] = useState<{
+     titulo: string;
+     descricao: string;
+     prioridade: "P1" | "P2" | "P3" | "P4" | "P5";
+     tecnico_id: string;
+   }>({
+     titulo: "",
+     descricao: "",
+     prioridade: "P3",
+     tecnico_id: ""
+   });
+   const [agents, setAgents] = useState<any[]>([]);
   const { toast } = useToast();
 
    const fetchTickets = useCallback(async () => {
@@ -53,8 +56,19 @@ export default function Chamados() {
      if (data) setTickets(data);
    }, [toast]);
 
-   useEffect(() => {
-     fetchTickets();
+    const fetchAgents = useCallback(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, nome, sobrenome")
+        .or("regra.in.(ADMIN,TECNICO,MASTER),is_master.eq.true,pode_receber_chamados.eq.true")
+        .eq("ativo", true);
+      
+      if (data) setAgents(data);
+    }, []);
+
+    useEffect(() => {
+      fetchTickets();
+      fetchAgents();
      
      const channel = supabase
        .channel('schema-db-changes')

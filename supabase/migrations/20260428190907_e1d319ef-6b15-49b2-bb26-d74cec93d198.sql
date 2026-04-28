@@ -1,0 +1,1 @@
+ALTER TABLE public.chamados RENAME COLUMN prioridade_new_id TO prioridade_id;

@@ -6,7 +6,7 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { useToast } from "@/hooks/use-toast";
- import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones } from "lucide-react";
+  import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones, Building2 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Input } from "@/components/ui/input";
@@ -29,33 +29,49 @@ import { usePermissions } from "@/hooks/usePermissions";
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
    const [reassignToId, setReassignToId] = useState("");
-   const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "", avatar_url: "", pode_receber_chamados: false });
+    const [newUser, setNewUser] = useState({ 
+      nome: "", 
+      sobrenome: "", 
+      email: "", 
+      regra: "USUARIO" as Regra, 
+      telefone: "", 
+      ramal: "", 
+      cidade: "", 
+      password: "", 
+      avatar_url: "", 
+      pode_receber_chamados: false,
+      department_id: "",
+      admin_departments: [] as string[]
+    });
      const [createMode, setCreateMode] = useState<"password" | "invite">("password");
      const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editUser, setEditUser] = useState<any>(null);
-    const [currentRole, setCurrentRole] = useState<{ regra: string; is_master: boolean } | null>(null);
+     const [currentRole, setCurrentRole] = useState<{ regra: string; is_master: boolean } | null>(null);
+     const [departments, setDepartments] = useState<any[]>([]);
 
     const isCurrentMaster = !!currentRole && (currentRole.is_master || currentRole.regra === "MASTER");
 
     const handleEditUser = async () => {
       if (!editUser) return;
       setLoading(true);
-      try {
-        const { data, error } = await supabase.functions.invoke("admin-update-user", {
-          body: {
-            user_id: editUser.id,
-            nome: editUser.nome,
-            sobrenome: editUser.sobrenome,
-            email: editUser.email,
-            regra: editUser.regra,
-            telefone: editUser.telefone,
-            ramal: editUser.ramal,
-            cidade: editUser.cidade,
-            avatar_url: editUser.avatar_url,
-            pode_receber_chamados: editUser.pode_receber_chamados,
-          },
-        });
+       try {
+         const { data, error } = await supabase.functions.invoke("admin-update-user", {
+           body: {
+             user_id: editUser.id,
+             nome: editUser.nome,
+             sobrenome: editUser.sobrenome,
+             email: editUser.email,
+             regra: editUser.regra,
+             telefone: editUser.telefone,
+             ramal: editUser.ramal,
+             cidade: editUser.cidade,
+             avatar_url: editUser.avatar_url,
+             pode_receber_chamados: editUser.pode_receber_chamados,
+             department_id: editUser.department_id || null,
+             admin_departments: editUser.admin_departments || [],
+           },
+         });
         if (error) throw error;
         if ((data as any)?.error) throw new Error((data as any).error);
         toast({ title: "Sucesso", description: "Usuário atualizado com sucesso." });
@@ -81,22 +97,24 @@ import { usePermissions } from "@/hooks/usePermissions";
       }
     }
     setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("admin-create-user", {
-        body: {
-          mode: createMode,
-          email: newUser.email,
-          password: createMode === "password" ? newUser.password : undefined,
-          nome: newUser.nome,
-          sobrenome: newUser.sobrenome,
-          regra: newUser.regra,
-          telefone: newUser.telefone || undefined,
-          ramal: newUser.ramal || undefined,
-          cidade: newUser.cidade || undefined,
-          avatar_url: newUser.avatar_url || undefined,
-          pode_receber_chamados: newUser.pode_receber_chamados,
-        },
-      });
+       try {
+         const { data, error } = await supabase.functions.invoke("admin-create-user", {
+           body: {
+             mode: createMode,
+             email: newUser.email,
+             password: createMode === "password" ? newUser.password : undefined,
+             nome: newUser.nome,
+             sobrenome: newUser.sobrenome,
+             regra: newUser.regra,
+             telefone: newUser.telefone || undefined,
+             ramal: newUser.ramal || undefined,
+             cidade: newUser.cidade || undefined,
+             avatar_url: newUser.avatar_url || undefined,
+             pode_receber_chamados: newUser.pode_receber_chamados,
+             department_id: newUser.department_id || undefined,
+             admin_departments: newUser.admin_departments || [],
+           },
+         });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({
@@ -105,9 +123,22 @@ import { usePermissions } from "@/hooks/usePermissions";
           ? "Convite enviado por e-mail."
           : "Usuário criado com senha temporária. Será solicitada a troca no primeiro login.",
       });
-      setIsAddDialogOpen(false);
-       setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "", avatar_url: "", pode_receber_chamados: false });
-      fetchUsers();
+       setIsAddDialogOpen(false);
+       setNewUser({ 
+         nome: "", 
+         sobrenome: "", 
+         email: "", 
+         regra: "USUARIO", 
+         telefone: "", 
+         ramal: "", 
+         cidade: "", 
+         password: "", 
+         avatar_url: "", 
+         pode_receber_chamados: false,
+         department_id: "",
+         admin_departments: []
+       });
+       fetchUsers();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
     } finally {
@@ -168,12 +199,15 @@ import { usePermissions } from "@/hooks/usePermissions";
    };
  
  
-   const fetchUsers = async () => {
-     setLoading(true);
-     const { data, error } = await supabase
-       .from("profiles")
-       .select("*")
-       .order("nome");
+    const fetchUsers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(`
+          *,
+          department:departamentos(id, nome)
+        `)
+        .order("nome");
      
      if (error) {
        toast({ variant: "destructive", title: "Erro ao buscar usuários", description: error.message });
@@ -184,8 +218,13 @@ import { usePermissions } from "@/hooks/usePermissions";
    };
  
    useEffect(() => {
-     fetchUsers();
+      fetchUsers();
       getPasswordPolicy().then(setPolicy);
+      
+      // Fetch departments
+      supabase.from("departamentos").select("id, nome").order("nome").then(({ data }) => {
+        if (data) setDepartments(data);
+      });
      (async () => {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;
@@ -269,14 +308,18 @@ import { usePermissions } from "@/hooks/usePermissions";
                           user.nome?.[0] || <UserIcon size={14} />
                         )}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="flex items-center gap-2">
-                          {user.nome} {user.sobrenome}
-                          {user.pode_receber_chamados && (
-                            <Headphones className="h-3 w-3 text-primary" />
-                          )}
-                        </span>
-                      </div>
+                       <div className="flex flex-col">
+                         <span className="flex items-center gap-2">
+                           {user.nome} {user.sobrenome}
+                           {user.pode_receber_chamados && (
+                             <Headphones className="h-3 w-3 text-primary" />
+                           )}
+                         </span>
+                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                           <Building2 size={10} />
+                           {user.department?.nome || "Sem departamento"}
+                         </span>
+                       </div>
                    </div>
                  </TableCell>
                  <TableCell>{user.email}</TableCell>
@@ -397,6 +440,21 @@ import { usePermissions } from "@/hooks/usePermissions";
                    onCheckedChange={(checked) => setNewUser({ ...newUser, pode_receber_chamados: checked })}
                  />
                </div>
+ 
+               <div className="space-y-2">
+                 <Label>Departamento (Obrigatório)</Label>
+                 <Select value={newUser.department_id} onValueChange={v => setNewUser({...newUser, department_id: v})}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="Selecione um departamento" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {departments.map(d => (
+                       <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+ 
                <div className="space-y-2">
                  <Label>Permissão</Label>
                  <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
@@ -411,6 +469,30 @@ import { usePermissions } from "@/hooks/usePermissions";
                    </SelectContent>
                  </Select>
                </div>
+ 
+               {newUser.regra === 'ADMIN' && (
+                 <div className="space-y-2 p-2 border rounded bg-muted/10">
+                   <Label>Administrar Departamentos</Label>
+                   <p className="text-[10px] text-muted-foreground mb-2">Selecione quais departamentos este admin pode visualizar.</p>
+                   <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-2">
+                     {departments.map(d => (
+                       <div key={d.id} className="flex items-center space-x-2">
+                         <Switch 
+                           id={`new-dept-${d.id}`}
+                           checked={newUser.admin_departments.includes(d.id)}
+                           onCheckedChange={(checked) => {
+                             const depts = checked 
+                               ? [...newUser.admin_departments, d.id]
+                               : newUser.admin_departments.filter(id => id !== d.id);
+                             setNewUser({...newUser, admin_departments: depts});
+                           }}
+                         />
+                         <Label htmlFor={`new-dept-${d.id}`} className="text-xs truncate">{d.nome}</Label>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
               {createMode === "password" && policy && (
                 <div className="space-y-2">
                   <Label>Senha temporária</Label>
@@ -567,20 +649,60 @@ import { usePermissions } from "@/hooks/usePermissions";
                        onCheckedChange={(checked) => setEditUser({ ...editUser, pode_receber_chamados: checked })}
                      />
                    </div>
+ 
                    <div className="space-y-2">
-                     <Label>Permissão</Label>
-                     <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                     <Label>Departamento</Label>
+                     <Select value={editUser.department_id || ""} onValueChange={v => setEditUser({...editUser, department_id: v})}>
                        <SelectTrigger>
-                         <SelectValue />
+                         <SelectValue placeholder="Selecione um departamento" />
                        </SelectTrigger>
                        <SelectContent>
-                         {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
-                         <SelectItem value="ADMIN">Administrador</SelectItem>
-                         <SelectItem value="TECNICO">Técnico</SelectItem>
-                         <SelectItem value="USUARIO">Usuário</SelectItem>
+                         {departments.map(d => (
+                           <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
+                         ))}
                        </SelectContent>
                      </Select>
                    </div>
+ 
+                    <div className="space-y-2">
+                      <Label>Permissão</Label>
+                      <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
+                          <SelectItem value="ADMIN">Administrador</SelectItem>
+                          <SelectItem value="TECNICO">Técnico</SelectItem>
+                          <SelectItem value="USUARIO">Usuário</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+ 
+                    {editUser.regra === 'ADMIN' && (
+                     <div className="space-y-2 p-2 border rounded bg-muted/10">
+                       <Label>Administrar Departamentos</Label>
+                       <p className="text-[10px] text-muted-foreground mb-2">Selecione quais departamentos este admin pode visualizar.</p>
+                       <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-2">
+                         {departments.map(d => (
+                           <div key={d.id} className="flex items-center space-x-2">
+                             <Switch 
+                               id={`edit-dept-${d.id}`}
+                               checked={(editUser.admin_departments || []).includes(d.id)}
+                               onCheckedChange={(checked) => {
+                                 const currentDepts = editUser.admin_departments || [];
+                                 const depts = checked 
+                                   ? [...currentDepts, d.id]
+                                   : currentDepts.filter((id: string) => id !== d.id);
+                                 setEditUser({...editUser, admin_departments: depts});
+                               }}
+                             />
+                             <Label htmlFor={`edit-dept-${d.id}`} className="text-xs truncate">{d.nome}</Label>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
                </div>
              )}
              <DialogFooter>

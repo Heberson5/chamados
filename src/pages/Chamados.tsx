@@ -205,7 +205,12 @@ export default function Chamados() {
        }
       await fetchTickets();
       setIsDialogOpen(false);
-        setNewTicket({ titulo: "", descricao: "", prioridade: "P3", tecnico_id: "none" });
+      setNewTicket({ 
+        titulo: "", 
+        descricao: "", 
+        prioridade_id: priorities[0]?.id || "", 
+        tecnico_id: "none" 
+      });
       setFiles([]);
       setPreviews([]);
     } catch (error: any) {

@@ -792,6 +792,7 @@ export type Database = {
           nome: string | null
           organization_id: string | null
           password_changed_at: string | null
+          pode_receber_chamados: boolean | null
           position_id: string | null
           ramal: string | null
           regra: Database["public"]["Enums"]["regra"]
@@ -818,6 +819,7 @@ export type Database = {
           nome?: string | null
           organization_id?: string | null
           password_changed_at?: string | null
+          pode_receber_chamados?: boolean | null
           position_id?: string | null
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]
@@ -844,6 +846,7 @@ export type Database = {
           nome?: string | null
           organization_id?: string | null
           password_changed_at?: string | null
+          pode_receber_chamados?: boolean | null
           position_id?: string | null
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]

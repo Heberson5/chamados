@@ -1,11 +1,12 @@
-import { Badge } from "@/components/ui/badge";
+ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { getPriorityLabel } from "@/lib/utils/priority";
-  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+ import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History, ArrowRightLeft } from "lucide-react";
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
   import { useState, useEffect, useCallback } from "react";
   import { 
@@ -209,8 +210,40 @@ interface ChamadosKanbanProps {
   onUpdate: () => void;
 }
 
-export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProps) {
-   const { toast } = useToast();
+ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProps) {
+    const { toast } = useToast();
+    const [agents, setAgents] = useState<any[]>([]);
+    const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+    const [transferToId, setTransferToId] = useState("");
+
+    const handleTransfer = async () => {
+      if (!transferToId || !selectedTicket) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+  
+        const { error } = await supabase
+          .from("chamados")
+          .update({ tecnico_id: transferToId, status: 'EM_ATENDIMENTO' })
+          .eq("id", selectedTicket.id);
+  
+        if (error) throw error;
+  
+        // Create audit or comment for transfer
+        await supabase.from("comentarios_chamado").insert({
+          chamado_id: selectedTicket.id,
+          autor_id: user.id,
+          comentario: `[TRANSFERÊNCIA] Chamado transferido para o técnico.`
+        });
+  
+        toast({ title: "Chamado transferido", description: "O responsável pelo chamado foi atualizado." });
+        onUpdate();
+        setIsTransferDialogOpen(false);
+        setIsDetailsOpen(false);
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Erro ao transferir", description: error.message });
+      }
+    };
    const sensors = useSensors(
      useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
      useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -300,8 +333,18 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
    ]);
 
-     useEffect(() => {
-       const loadData = async () => {
+      const fetchAgents = useCallback(async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, nome, sobrenome")
+          .or("regra.in.(ADMIN,TECNICO,MASTER),is_master.eq.true,pode_receber_chamados.eq.true")
+          .eq("ativo", true);
+        if (data) setAgents(data);
+      }, []);
+
+      useEffect(() => {
+        const loadData = async () => {
+         fetchAgents();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: profile } = await supabase
@@ -652,9 +695,40 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
-
-    <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+     </Dialog>
+ 
+     <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+       <DialogContent>
+         <DialogHeader>
+           <DialogTitle>Transferir Chamado: {selectedTicket?.os}</DialogTitle>
+         </DialogHeader>
+         <div className="space-y-4 py-4">
+           <div className="space-y-2">
+             <Label>Selecione o novo responsável</Label>
+             <Select value={transferToId} onValueChange={setTransferToId}>
+               <SelectTrigger>
+                 <SelectValue placeholder="Selecione um atendente" />
+               </SelectTrigger>
+               <SelectContent>
+                 {agents.map(agent => (
+                   <SelectItem key={agent.id} value={agent.id}>
+                     {agent.nome} {agent.sobrenome}
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
+         </div>
+         <DialogFooter>
+           <Button variant="outline" onClick={() => setIsTransferDialogOpen(false)}>Cancelar</Button>
+           <Button onClick={handleTransfer} disabled={!transferToId}>
+             Transferir Responsabilidade
+           </Button>
+         </DialogFooter>
+       </DialogContent>
+     </Dialog>
+ 
+     <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2 shrink-0 border-b">
           <DialogTitle className="flex items-center justify-between gap-2">
@@ -662,12 +736,24 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
               <span className="truncate">{selectedTicket?.titulo}</span>
               <Badge variant="outline" className="font-mono text-[10px]">{selectedTicket?.os}</Badge>
             </div>
-            <Badge variant={
-              selectedTicket?.status === 'ABERTO' ? 'default' : 
-              selectedTicket?.status === 'EM_ATENDIMENTO' ? 'secondary' : 'outline'
-            }>
-              {selectedTicket?.status}
-            </Badge>
+               <div className="flex items-center gap-2">
+                 {userRole !== 'USUARIO' && (
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     className="h-7 gap-1 text-[10px]" 
+                     onClick={() => setIsTransferDialogOpen(true)}
+                   >
+                     <ArrowRightLeft size={12} /> Transferir
+                   </Button>
+                 )}
+                 <Badge variant={
+                   selectedTicket?.status === 'ABERTO' ? 'default' : 
+                   selectedTicket?.status === 'EM_ATENDIMENTO' ? 'secondary' : 'outline'
+                 }>
+                   {selectedTicket?.status}
+                 </Badge>
+               </div>
           </DialogTitle>
         </DialogHeader>
 

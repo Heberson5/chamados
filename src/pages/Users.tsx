@@ -6,7 +6,8 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera } from "lucide-react";
+ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones } from "lucide-react";
+ import { Switch } from "@/components/ui/switch";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
@@ -28,7 +29,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
    const [reassignToId, setReassignToId] = useState("");
-    const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "", avatar_url: "" });
+   const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "", avatar_url: "", pode_receber_chamados: false });
      const [createMode, setCreateMode] = useState<"password" | "invite">("password");
      const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -103,7 +104,7 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
           : "Usuário criado com senha temporária. Será solicitada a troca no primeiro login.",
       });
       setIsAddDialogOpen(false);
-      setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "", avatar_url: "" });
+       setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "", avatar_url: "", pode_receber_chamados: false });
       fetchUsers();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
@@ -266,7 +267,14 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                           user.nome?.[0] || <UserIcon size={14} />
                         )}
                       </div>
-                     <span>{user.nome} {user.sobrenome}</span>
+                      <div className="flex flex-col">
+                        <span className="flex items-center gap-2">
+                          {user.nome} {user.sobrenome}
+                          {user.pode_receber_chamados && (
+                            <Headphones className="h-3 w-3 text-primary" />
+                          )}
+                        </span>
+                      </div>
                    </div>
                  </TableCell>
                  <TableCell>{user.email}</TableCell>
@@ -372,20 +380,35 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                 <Label>Cidade</Label>
                 <Input value={newUser.cidade} onChange={e => setNewUser({...newUser, cidade: e.target.value})} />
               </div>
-              <div className="space-y-2">
-                <Label>Permissão</Label>
-                <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
-                    <SelectItem value="ADMIN">Administrador</SelectItem>
-                    <SelectItem value="TECNICO">Técnico</SelectItem>
-                    <SelectItem value="USUARIO">Usuário</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+               <div className="flex items-center justify-between space-x-2 p-2 rounded-lg border bg-muted/20">
+                 <div className="space-y-0.5">
+                   <Label className="text-sm font-semibold flex items-center gap-2">
+                     <Headphones className="h-4 w-4 text-primary" />
+                     Gerenciar Chamados
+                   </Label>
+                   <p className="text-[10px] text-muted-foreground">
+                     Permitir que este usuário receba chamados designados.
+                   </p>
+                 </div>
+                 <Switch
+                   checked={newUser.pode_receber_chamados}
+                   onCheckedChange={(checked) => setNewUser({ ...newUser, pode_receber_chamados: checked })}
+                 />
+               </div>
+               <div className="space-y-2">
+                 <Label>Permissão</Label>
+                 <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
+                   <SelectTrigger>
+                     <SelectValue />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
+                     <SelectItem value="ADMIN">Administrador</SelectItem>
+                     <SelectItem value="TECNICO">Técnico</SelectItem>
+                     <SelectItem value="USUARIO">Usuário</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
               {createMode === "password" && policy && (
                 <div className="space-y-2">
                   <Label>Senha temporária</Label>
@@ -527,20 +550,35 @@ import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power,
                     <Label>Cidade</Label>
                     <Input value={editUser.cidade || ""} onChange={e => setEditUser({...editUser, cidade: e.target.value})} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Permissão</Label>
-                    <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
-                        <SelectItem value="ADMIN">Administrador</SelectItem>
-                        <SelectItem value="TECNICO">Técnico</SelectItem>
-                        <SelectItem value="USUARIO">Usuário</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                   <div className="flex items-center justify-between space-x-2 p-3 rounded-lg border bg-muted/20">
+                     <div className="space-y-0.5">
+                       <Label className="text-sm font-semibold flex items-center gap-2">
+                         <Headphones className="h-4 w-4 text-primary" />
+                         Gerenciar Chamados
+                       </Label>
+                       <p className="text-[10px] text-muted-foreground">
+                         Permitir que este usuário receba chamados designados.
+                       </p>
+                     </div>
+                     <Switch
+                       checked={editUser.pode_receber_chamados}
+                       onCheckedChange={(checked) => setEditUser({ ...editUser, pode_receber_chamados: checked })}
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label>Permissão</Label>
+                     <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                       <SelectTrigger>
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
+                         <SelectItem value="ADMIN">Administrador</SelectItem>
+                         <SelectItem value="TECNICO">Técnico</SelectItem>
+                         <SelectItem value="USUARIO">Usuário</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
                </div>
              )}
              <DialogFooter>

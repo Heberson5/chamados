@@ -4,7 +4,7 @@
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { Loader2, Save, Edit3, Eye } from "lucide-react";
+ import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight } from "lucide-react";
  import { useToast } from "@/hooks/use-toast";
  import { Textarea } from "@/components/ui/textarea";
  import { Input } from "@/components/ui/input";
@@ -74,7 +74,17 @@
    const canEdit = isMaster || isAdmin;
    
    // Note: RLS already handles filtering by role.
-   const visibleManuals = manuals; 
+   const visibleManuals = manuals;
+ 
+   const getRoleIcon = (role: string) => {
+     switch (role.toUpperCase()) {
+       case "MASTER": return <Crown className="h-4 w-4" />;
+       case "ADMIN": return <Shield className="h-4 w-4" />;
+       case "TECNICO": return <Wrench className="h-4 w-4" />;
+       case "USUARIO": return <User className="h-4 w-4" />;
+       default: return <BookOpen className="h-4 w-4" />;
+     }
+   };
  
    return (
      <div className="p-4 md:p-8 max-w-5xl mx-auto w-full space-y-6 animate-fade-in">
@@ -104,11 +114,17 @@
        ) : (
          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
            <TabsList className="flex w-full overflow-x-auto justify-start md:grid md:grid-cols-4">
-             {visibleManuals.map((m) => (
-               <TabsTrigger key={m.role_key} value={m.role_key}>
-                 {m.role_key.charAt(0) + m.role_key.slice(1).toLowerCase()}
-               </TabsTrigger>
-             ))}
+             {visibleManuals.map((m) => {
+               const label = m.role_key === "TECNICO" ? "Técnico" : 
+                            m.role_key === "USUARIO" ? "Usuário" : 
+                            m.role_key.charAt(0) + m.role_key.slice(1).toLowerCase();
+               return (
+                 <TabsTrigger key={m.role_key} value={m.role_key} className="gap-2">
+                   {getRoleIcon(m.role_key)}
+                   {label}
+                 </TabsTrigger>
+               );
+             })}
            </TabsList>
  
            {visibleManuals.map((manual) => (
@@ -133,7 +149,19 @@
                      Última atualização: {new Date(manual.updated_at).toLocaleDateString()}
                    </CardDescription>
                  </CardHeader>
-                 <CardContent className="space-y-4">
+                   <CardContent className="space-y-6">
+                     {!isEditing && (
+                       <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg border border-primary/10 mb-2">
+                         <div className="bg-primary/10 p-2 rounded-full">
+                           <HelpCircle className="h-5 w-5 text-primary" />
+                         </div>
+                         <div>
+                           <h4 className="font-semibold text-sm">Instruções de Uso</h4>
+                           <p className="text-xs text-muted-foreground">Siga os passos abaixo para extrair o máximo do sistema.</p>
+                         </div>
+                       </div>
+                     )}
+                     
                    {isEditing ? (
                      <div className="space-y-4">
                        <Textarea 

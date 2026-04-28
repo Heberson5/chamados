@@ -29,33 +29,49 @@ import { usePermissions } from "@/hooks/usePermissions";
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
    const [reassignToId, setReassignToId] = useState("");
-   const [newUser, setNewUser] = useState({ nome: "", sobrenome: "", email: "", regra: "USUARIO" as Regra, telefone: "", ramal: "", cidade: "", password: "", avatar_url: "", pode_receber_chamados: false });
+    const [newUser, setNewUser] = useState({ 
+      nome: "", 
+      sobrenome: "", 
+      email: "", 
+      regra: "USUARIO" as Regra, 
+      telefone: "", 
+      ramal: "", 
+      cidade: "", 
+      password: "", 
+      avatar_url: "", 
+      pode_receber_chamados: false,
+      department_id: "",
+      admin_departments: [] as string[]
+    });
      const [createMode, setCreateMode] = useState<"password" | "invite">("password");
      const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editUser, setEditUser] = useState<any>(null);
-    const [currentRole, setCurrentRole] = useState<{ regra: string; is_master: boolean } | null>(null);
+     const [currentRole, setCurrentRole] = useState<{ regra: string; is_master: boolean } | null>(null);
+     const [departments, setDepartments] = useState<any[]>([]);
 
     const isCurrentMaster = !!currentRole && (currentRole.is_master || currentRole.regra === "MASTER");
 
     const handleEditUser = async () => {
       if (!editUser) return;
       setLoading(true);
-      try {
-        const { data, error } = await supabase.functions.invoke("admin-update-user", {
-          body: {
-            user_id: editUser.id,
-            nome: editUser.nome,
-            sobrenome: editUser.sobrenome,
-            email: editUser.email,
-            regra: editUser.regra,
-            telefone: editUser.telefone,
-            ramal: editUser.ramal,
-            cidade: editUser.cidade,
-            avatar_url: editUser.avatar_url,
-            pode_receber_chamados: editUser.pode_receber_chamados,
-          },
-        });
+       try {
+         const { data, error } = await supabase.functions.invoke("admin-update-user", {
+           body: {
+             user_id: editUser.id,
+             nome: editUser.nome,
+             sobrenome: editUser.sobrenome,
+             email: editUser.email,
+             regra: editUser.regra,
+             telefone: editUser.telefone,
+             ramal: editUser.ramal,
+             cidade: editUser.cidade,
+             avatar_url: editUser.avatar_url,
+             pode_receber_chamados: editUser.pode_receber_chamados,
+             department_id: editUser.department_id || null,
+             admin_departments: editUser.admin_departments || [],
+           },
+         });
         if (error) throw error;
         if ((data as any)?.error) throw new Error((data as any).error);
         toast({ title: "Sucesso", description: "Usuário atualizado com sucesso." });
@@ -81,22 +97,24 @@ import { usePermissions } from "@/hooks/usePermissions";
       }
     }
     setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("admin-create-user", {
-        body: {
-          mode: createMode,
-          email: newUser.email,
-          password: createMode === "password" ? newUser.password : undefined,
-          nome: newUser.nome,
-          sobrenome: newUser.sobrenome,
-          regra: newUser.regra,
-          telefone: newUser.telefone || undefined,
-          ramal: newUser.ramal || undefined,
-          cidade: newUser.cidade || undefined,
-          avatar_url: newUser.avatar_url || undefined,
-          pode_receber_chamados: newUser.pode_receber_chamados,
-        },
-      });
+       try {
+         const { data, error } = await supabase.functions.invoke("admin-create-user", {
+           body: {
+             mode: createMode,
+             email: newUser.email,
+             password: createMode === "password" ? newUser.password : undefined,
+             nome: newUser.nome,
+             sobrenome: newUser.sobrenome,
+             regra: newUser.regra,
+             telefone: newUser.telefone || undefined,
+             ramal: newUser.ramal || undefined,
+             cidade: newUser.cidade || undefined,
+             avatar_url: newUser.avatar_url || undefined,
+             pode_receber_chamados: newUser.pode_receber_chamados,
+             department_id: newUser.department_id || undefined,
+             admin_departments: newUser.admin_departments || [],
+           },
+         });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({
@@ -168,12 +186,15 @@ import { usePermissions } from "@/hooks/usePermissions";
    };
  
  
-   const fetchUsers = async () => {
-     setLoading(true);
-     const { data, error } = await supabase
-       .from("profiles")
-       .select("*")
-       .order("nome");
+    const fetchUsers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(`
+          *,
+          department:departamentos(id, nome)
+        `)
+        .order("nome");
      
      if (error) {
        toast({ variant: "destructive", title: "Erro ao buscar usuários", description: error.message });
@@ -184,8 +205,13 @@ import { usePermissions } from "@/hooks/usePermissions";
    };
  
    useEffect(() => {
-     fetchUsers();
+      fetchUsers();
       getPasswordPolicy().then(setPolicy);
+      
+      // Fetch departments
+      supabase.from("departamentos").select("id, nome").order("nome").then(({ data }) => {
+        if (data) setDepartments(data);
+      });
      (async () => {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;

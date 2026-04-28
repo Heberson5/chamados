@@ -755,7 +755,7 @@ interface ChamadosKanbanProps {
               <Badge variant="outline" className="font-mono text-[10px]">{selectedTicket?.os}</Badge>
             </div>
                <div className="flex items-center gap-2">
-                 {userRole !== 'USUARIO' && (
+                  {userRole !== 'USUARIO' && selectedTicket?.status !== 'ENCERRADO' && (
                    <Button 
                      variant="outline" 
                      size="sm" 

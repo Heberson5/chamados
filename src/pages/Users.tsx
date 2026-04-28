@@ -53,6 +53,7 @@ import { usePermissions } from "@/hooks/usePermissions";
             ramal: editUser.ramal,
             cidade: editUser.cidade,
             avatar_url: editUser.avatar_url,
+            pode_receber_chamados: editUser.pode_receber_chamados,
           },
         });
         if (error) throw error;
@@ -93,6 +94,7 @@ import { usePermissions } from "@/hooks/usePermissions";
           ramal: newUser.ramal || undefined,
           cidade: newUser.cidade || undefined,
           avatar_url: newUser.avatar_url || undefined,
+          pode_receber_chamados: newUser.pode_receber_chamados,
         },
       });
       if (error) throw error;

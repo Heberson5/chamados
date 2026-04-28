@@ -77,7 +77,7 @@ export default function Layout() {
         }
       }
     }
-  }, [location.pathname, isAuthenticated, permissionsLoading, hasPermission, navigate]);
+  }, [location.pathname, isAuthenticated, permissionsLoading, hasPermission, isMaster, navigate]);
 
   useEffect(() => {
     const trackNavigation = async () => {

@@ -62,7 +62,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-       const isUserMaster = !!profile.is_master || profile.regra === "MASTER";
+        const isUserMaster = !!profile.is_master || String(profile.regra).toUpperCase() === "MASTER";
        const isUserAdmin = profile.regra === "ADMIN" || isUserMaster;
  
        const regraToName: Record<string, string> = {

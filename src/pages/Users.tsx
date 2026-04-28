@@ -271,7 +271,7 @@ import { usePermissions } from "@/hooks/usePermissions";
                         <span className="flex items-center gap-2">
                           {user.nome} {user.sobrenome}
                           {user.pode_receber_chamados && (
-                            <Headphones className="h-3 w-3 text-primary" title="Pode atender chamados" />
+                            <Headphones className="h-3 w-3 text-primary" />
                           )}
                         </span>
                       </div>

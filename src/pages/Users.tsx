@@ -345,7 +345,7 @@ import { usePermissions } from "@/hooks/usePermissions";
                          </span>
                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                            <Building2 size={10} />
-                           {user.department?.nome || "Sem departamento"}
+                            {(Array.isArray(user.department) ? user.department[0]?.nome : user.department?.nome) || "Sem departamento"}
                          </span>
                        </div>
                    </div>

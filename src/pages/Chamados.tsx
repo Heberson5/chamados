@@ -285,10 +285,29 @@ export default function Chamados() {
                        <SelectItem value="P2">{getPriorityLabel("P2")}</SelectItem>
                        <SelectItem value="P3">{getPriorityLabel("P3")}</SelectItem>
                        <SelectItem value="P4">{getPriorityLabel("P4")}</SelectItem>
-                       <SelectItem value="P5">{getPriorityLabel("P5")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                        <SelectItem value="P5">{getPriorityLabel("P5")}</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="tecnico">Designar para (Opcional)</Label>
+                   <Select 
+                     value={newTicket.tecnico_id} 
+                     onValueChange={v => setNewTicket({...newTicket, tecnico_id: v})}
+                   >
+                     <SelectTrigger>
+                       <SelectValue placeholder="Selecione um atendente" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="none">Deixar em aberto</SelectItem>
+                        {agents.map(agent => (
+                          <SelectItem key={agent.id} value={agent.id}>
+                            {agent.nome} {agent.sobrenome}
+                          </SelectItem>
+                        ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="anexos">Anexos (Texto, PDF, Imagens)</Label>
                   <Input 

@@ -123,9 +123,22 @@ import { usePermissions } from "@/hooks/usePermissions";
           ? "Convite enviado por e-mail."
           : "Usuário criado com senha temporária. Será solicitada a troca no primeiro login.",
       });
-      setIsAddDialogOpen(false);
-       setNewUser({ nome: "", sobrenome: "", email: "", regra: "USUARIO", telefone: "", ramal: "", cidade: "", password: "", avatar_url: "", pode_receber_chamados: false });
-      fetchUsers();
+       setIsAddDialogOpen(false);
+       setNewUser({ 
+         nome: "", 
+         sobrenome: "", 
+         email: "", 
+         regra: "USUARIO", 
+         telefone: "", 
+         ramal: "", 
+         cidade: "", 
+         password: "", 
+         avatar_url: "", 
+         pode_receber_chamados: false,
+         department_id: "",
+         admin_departments: []
+       });
+       fetchUsers();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
     } finally {
@@ -423,6 +436,21 @@ import { usePermissions } from "@/hooks/usePermissions";
                    onCheckedChange={(checked) => setNewUser({ ...newUser, pode_receber_chamados: checked })}
                  />
                </div>
+ 
+               <div className="space-y-2">
+                 <Label>Departamento (Obrigatório)</Label>
+                 <Select value={newUser.department_id} onValueChange={v => setNewUser({...newUser, department_id: v})}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="Selecione um departamento" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {departments.map(d => (
+                       <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+ 
                <div className="space-y-2">
                  <Label>Permissão</Label>
                  <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
@@ -437,6 +465,30 @@ import { usePermissions } from "@/hooks/usePermissions";
                    </SelectContent>
                  </Select>
                </div>
+ 
+               {newUser.regra === 'ADMIN' && (
+                 <div className="space-y-2 p-2 border rounded bg-muted/10">
+                   <Label>Administrar Departamentos</Label>
+                   <p className="text-[10px] text-muted-foreground mb-2">Selecione quais departamentos este admin pode visualizar.</p>
+                   <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-2">
+                     {departments.map(d => (
+                       <div key={d.id} className="flex items-center space-x-2">
+                         <Switch 
+                           id={`new-dept-${d.id}`}
+                           checked={newUser.admin_departments.includes(d.id)}
+                           onCheckedChange={(checked) => {
+                             const depts = checked 
+                               ? [...newUser.admin_departments, d.id]
+                               : newUser.admin_departments.filter(id => id !== d.id);
+                             setNewUser({...newUser, admin_departments: depts});
+                           }}
+                         />
+                         <Label htmlFor={`new-dept-${d.id}`} className="text-xs truncate">{d.nome}</Label>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
               {createMode === "password" && policy && (
                 <div className="space-y-2">
                   <Label>Senha temporária</Label>

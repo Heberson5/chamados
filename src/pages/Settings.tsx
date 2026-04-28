@@ -58,9 +58,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       { id: '2', label: "Chamados", path: "/chamados", visible: true },
       { id: '6', label: "Relatórios", path: "/reports", visible: true },
       { id: '3', label: "Usuários", path: "/usuarios", visible: true },
-      { id: '4', label: "Permissões", path: "/permissions", visible: true },
-      { id: '5', label: "Auditoria", path: "/audit", visible: true },
-      { id: '8', label: "Configurações", path: "/settings", visible: true },
+       { id: '4', label: "Permissões", path: "/permissions", visible: true },
+       { id: '9', label: "Departamentos", path: "/departamentos", visible: true },
+       { id: '5', label: "Auditoria", path: "/audit", visible: true },
+       { id: '10', label: "Ajuda", path: "/ajuda", visible: true },
+       { id: '8', label: "Configurações", path: "/settings", visible: true },
     ];
 
      const [layoutConfig, setLayoutConfig] = useState({ 

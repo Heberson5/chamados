@@ -74,8 +74,10 @@ Deno.serve(async (req) => {
       telefone,
       ramal,
        cidade,
-       setor,
-       pode_receber_chamados,
+        setor,
+        pode_receber_chamados,
+        department_id,
+        admin_departments,
     } = body;
 
     if (!email || !nome) {
@@ -129,8 +131,10 @@ Deno.serve(async (req) => {
     if (telefone !== undefined) profilePayload.telefone = telefone;
     if (ramal !== undefined) profilePayload.ramal = ramal;
      if (cidade !== undefined) profilePayload.cidade = cidade;
-     if (setor !== undefined && setor) profilePayload.setor = setor;
-     if (pode_receber_chamados !== undefined) profilePayload.pode_receber_chamados = pode_receber_chamados;
+      if (setor !== undefined && setor) profilePayload.setor = setor;
+      if (pode_receber_chamados !== undefined) profilePayload.pode_receber_chamados = pode_receber_chamados;
+      if (department_id !== undefined) profilePayload.department_id = department_id;
+      if (admin_departments !== undefined) profilePayload.admin_departments = admin_departments;
 
     const { error: profileErr } = await admin
       .from("profiles")

@@ -25,18 +25,20 @@ export default function Chamados() {
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
-   const [newTicket, setNewTicket] = useState<{
-     titulo: string;
-     descricao: string;
-     prioridade: "P1" | "P2" | "P3" | "P4" | "P5";
-     tecnico_id: string;
-   }>({
-     titulo: "",
-     descricao: "",
-     prioridade: "P3",
-      tecnico_id: "none"
-   });
-   const [agents, setAgents] = useState<any[]>([]);
+    const [newTicket, setNewTicket] = useState<{
+      titulo: string;
+      descricao: string;
+      prioridade_id: string;
+      tecnico_id: string;
+    }>({
+      titulo: "",
+      descricao: "",
+      prioridade_id: "",
+       tecnico_id: "none"
+    });
+    const [agents, setAgents] = useState<any[]>([]);
+    const [priorities, setPriorities] = useState<any[]>([]);
+    const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
 
    const fetchTickets = useCallback(async () => {
@@ -73,7 +75,22 @@ export default function Chamados() {
       fetchTickets();
       fetchAgents();
       supabase.auth.getUser().then(({ data }) => {
-        if (data?.user) setCurrentUserId(data.user.id);
+        if (data?.user) {
+          setCurrentUserId(data.user.id);
+          supabase.from("profiles").select("*").eq("id", data.user.id).single().then(({ data: prof }) => {
+            if (prof) setUserProfile(prof);
+          });
+        }
+      });
+ 
+      // Fetch priorities
+      supabase.from("chamados_prioridades").select("*").order("ordem").then(({ data }) => {
+        if (data) {
+          setPriorities(data);
+          if (data.length > 0) {
+            setNewTicket(prev => ({ ...prev, prioridade_id: data[0].id }));
+          }
+        }
       });
      
      const channel = supabase
@@ -152,16 +169,17 @@ export default function Chamados() {
         uploadedUrls.push(publicUrl);
       }
 
-        const insertData: any = {
-          titulo: newTicket.titulo || "Sem título",
-          descricao: newTicket.descricao,
-          prioridade: newTicket.prioridade,
-          usuario_id: user.id,
-          status: "EM_ATENDIMENTO",
-          anexos: uploadedUrls.length > 0 ? uploadedUrls : null,
-          tecnico_id: newTicket.tecnico_id,
-          atendido_em: new Date().toISOString()
-        };
+         const insertData: any = {
+           titulo: newTicket.titulo || "Sem título",
+           descricao: newTicket.descricao,
+           prioridade_id: newTicket.prioridade_id,
+           usuario_id: user.id,
+           department_id: userProfile?.department_id,
+           status: "EM_ATENDIMENTO",
+           anexos: uploadedUrls.length > 0 ? uploadedUrls : null,
+           tecnico_id: newTicket.tecnico_id,
+           atendido_em: new Date().toISOString()
+         };
 
         const { data: insertedTicket, error: insertError } = await supabase
           .from("chamados")
@@ -187,7 +205,12 @@ export default function Chamados() {
        }
       await fetchTickets();
       setIsDialogOpen(false);
-        setNewTicket({ titulo: "", descricao: "", prioridade: "P3", tecnico_id: "none" });
+      setNewTicket({ 
+        titulo: "", 
+        descricao: "", 
+        prioridade_id: priorities[0]?.id || "", 
+        tecnico_id: "none" 
+      });
       setFiles([]);
       setPreviews([]);
     } catch (error: any) {
@@ -294,21 +317,24 @@ export default function Chamados() {
                 <div className="space-y-2">
                   <Label htmlFor="prioridade">Prioridade</Label>
                   <Select 
-                    value={newTicket.prioridade} 
-                    onValueChange={v => setNewTicket({...newTicket, prioridade: v as any})}
+                    value={newTicket.prioridade_id} 
+                    onValueChange={v => setNewTicket({...newTicket, prioridade_id: v})}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione a prioridade" />
                     </SelectTrigger>
                     <SelectContent>
-                       <SelectItem value="P1">{getPriorityLabel("P1")}</SelectItem>
-                       <SelectItem value="P2">{getPriorityLabel("P2")}</SelectItem>
-                       <SelectItem value="P3">{getPriorityLabel("P3")}</SelectItem>
-                       <SelectItem value="P4">{getPriorityLabel("P4")}</SelectItem>
-                        <SelectItem value="P5">{getPriorityLabel("P5")}</SelectItem>
+                       {priorities.map(p => (
+                         <SelectItem key={p.id} value={p.id}>
+                           <div className="flex items-center gap-2">
+                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.cor }} />
+                             {p.nome}
+                           </div>
+                         </SelectItem>
+                       ))}
                      </SelectContent>
-                   </Select>
-                 </div>
+                    </Select>
+                  </div>
                  <div className="space-y-2">
                    <Label htmlFor="tecnico">Designar para (Obrigatório)</Label>
                    {agents.length > 0 ? (
@@ -468,13 +494,19 @@ export default function Chamados() {
                         </Badge>
                       </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={
-                            ticket.prioridade === 'P1' ? 'border-destructive text-destructive bg-destructive/10' :
-                            ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-600 bg-orange-500/10' :
-                            'border-muted-foreground'
-                          }>
-                            {getPriorityLabel(ticket.prioridade)}
-                          </Badge>
+                          {ticket.prioridade && typeof ticket.prioridade === 'object' ? (
+                            <Badge variant="outline" className="border-none" style={{ backgroundColor: `${ticket.prioridade.cor}20`, color: ticket.prioridade.cor }}>
+                              {ticket.prioridade.nome}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className={
+                              ticket.prioridade === 'P1' ? 'border-destructive text-destructive bg-destructive/10' :
+                              ticket.prioridade === 'P2' ? 'border-orange-500 text-orange-600 bg-orange-500/10' :
+                              'border-muted-foreground'
+                            }>
+                              {getPriorityLabel(ticket.prioridade)}
+                            </Badge>
+                          )}
                         </TableCell>
                       <TableCell className="text-sm">
                         <div className="flex flex-col gap-1">

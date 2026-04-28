@@ -54,7 +54,7 @@ import { Label } from "@/components/ui/label";
    } = useSortable({
      id: ticket.id,
      data: { ticket, columnId },
-     disabled: ticket.status === "ENCERRADO"
+      disabled: ticket.status === "ENCERRADO" || userRole === "USUARIO"
    });
  
    const style = {
@@ -63,14 +63,20 @@ import { Label } from "@/components/ui/label";
      opacity: isDragging ? 0.5 : 1,
    };
  
-     const getPriorityColor = (priority: string) => {
-       switch (priority) {
-         case "P1": return "text-destructive bg-destructive/10 border-destructive/20";
-         case "P2": return "text-orange-600 bg-orange-500/10 border-orange-500/20";
-         case "P3": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
-         default: return "text-muted-foreground bg-muted border-border";
-       }
-     };
+      const getPriorityStyle = (ticket: any) => {
+        if (ticket.prioridade && typeof ticket.prioridade === 'object') {
+          return {
+            backgroundColor: `${ticket.prioridade.cor}20`,
+            color: ticket.prioridade.cor
+          };
+        }
+        switch (ticket.prioridade) {
+          case "P1": return { color: "var(--destructive)", backgroundColor: "var(--destructive-foreground)" };
+          case "P2": return { color: "#ea580c", backgroundColor: "#fff7ed" };
+          case "P3": return { color: "#d97706", backgroundColor: "#fffbeb" };
+          default: return {};
+        }
+      };
  
    const [slaInfo, setSlaInfo] = useState({ label: "Calculando...", color: "bg-gray-400" });
  
@@ -86,9 +92,12 @@ import { Label } from "@/components/ui/label";
          <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" ? "cursor-default grayscale-[0.3]" : ""}`}>
            <CardHeader className="p-4 pb-2">
            <div className="flex justify-between items-start mb-2">
-             <Badge className={`${getPriorityColor(ticket.prioridade)} border-none text-[10px] px-1.5 py-0`}>
-               {getPriorityLabel(ticket.prioridade)}
-             </Badge>
+            <Badge 
+                className="border-none text-[10px] px-1.5 py-0"
+                style={getPriorityStyle(ticket)}
+              >
+                {ticket.prioridade?.nome || getPriorityLabel(ticket.prioridade)}
+              </Badge>
                <div className="flex items-center gap-1">
                  {ticket.reaberto && (
                    <Badge variant="outline" className="text-[9px] bg-yellow-100 text-yellow-700 border-yellow-200 px-1 py-0">
@@ -249,9 +258,10 @@ interface ChamadosKanbanProps {
      useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
    );
  
-   const handleDragEnd = async (event: any) => {
-     const { active, over } = event;
-     if (!over) return;
+    const handleDragEnd = async (event: any) => {
+      if (userRole === "USUARIO") return;
+      const { active, over } = event;
+      if (!over) return;
  
      const ticketId = active.id;
      const newStatus = over.id;

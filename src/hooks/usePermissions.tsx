@@ -20,22 +20,32 @@
  });
  
 export function PermissionProvider({ children }: { children: ReactNode }) {
-  const [permissions, setPermissions] = useState<string[]>([]);
-  const [roleData, setRoleData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isMaster, setIsMaster] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [state, setState] = useState<{
+    permissions: string[];
+    roleData: any;
+    loading: boolean;
+    isMaster: boolean;
+    isAdmin: boolean;
+  }>({
+    permissions: [],
+    roleData: null,
+    loading: true,
+    isMaster: false,
+    isAdmin: false,
+  });
 
   const loadPermissions = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
     
     if (!user) {
-      setPermissions([]);
-      setRoleData(null);
-      setIsMaster(false);
-      setIsAdmin(false);
-      setLoading(false);
+      setState({
+        permissions: [],
+        roleData: null,
+        loading: false,
+        isMaster: false,
+        isAdmin: false,
+      });
       return;
     }
 
@@ -48,12 +58,11 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
 
       if (profileError || !profile) {
         console.error("Error loading profile permissions:", profileError);
-        setPermissions([]);
-        setLoading(false);
+        setState(prev => ({ ...prev, permissions: [], loading: false }));
         return;
       }
 
-       const isUserMaster = !!profile.is_master || profile.regra === "MASTER";
+        const isUserMaster = !!profile.is_master || String(profile.regra).toUpperCase() === "MASTER";
        const isUserAdmin = profile.regra === "ADMIN" || isUserMaster;
  
        const regraToName: Record<string, string> = {
@@ -71,25 +80,24 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
          .ilike("name", roleName)
          .maybeSingle();
  
-       // Batch all state updates together to avoid inconsistent intermediate states
-       setIsMaster(isUserMaster);
-       setIsAdmin(isUserAdmin);
- 
-       if (roleDef) {
-         setRoleData(roleDef);
-         setPermissions((roleDef.permissions as string[]) || []);
-       } else {
-         if (isUserMaster) {
-           setPermissions(["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario", "financeiro"]);
-         } else {
-           setPermissions([]);
-         }
-       }
-    } catch (err) {
-      console.error("Unexpected error loading permissions:", err);
-    } finally {
-      setLoading(false);
-    }
+        let newPermissions: string[] = [];
+        if (roleDef) {
+          newPermissions = (roleDef.permissions as string[]) || [];
+        } else if (isUserMaster) {
+          newPermissions = ["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario", "financeiro"];
+        }
+
+        setState({
+          permissions: newPermissions,
+          roleData: roleDef || null,
+          loading: false,
+          isMaster: isUserMaster,
+          isAdmin: isUserAdmin,
+        });
+     } catch (err) {
+       console.error("Unexpected error loading permissions:", err);
+       setState(prev => ({ ...prev, loading: false }));
+     }
   };
 
   useEffect(() => {
@@ -97,7 +105,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setLoading(true);
+      setState(prev => ({ ...prev, loading: true }));
       loadPermissions();
     });
 
@@ -115,22 +123,29 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
  
   const hasPermission = useCallback((permission: string) => {
     // Master users always have full access as per business rules
-    if (isMaster) return true;
+    if (state.isMaster) return true;
     
-    if (permissions.includes("Acesso Total")) return true;
+    if (state.permissions.includes("Acesso Total")) return true;
     
     // If checking a main menu permission (e.g., 'chamados')
-    if (permissions.includes(permission)) return true;
+    if (state.permissions.includes(permission)) return true;
     
     // If checking a granular permission (e.g., 'chamados:editar')
-    return permissions.includes(permission);
-  }, [isMaster, permissions]);
+    return state.permissions.includes(permission);
+  }, [state.isMaster, state.permissions]);
  
-   return (
-     <PermissionContext.Provider value={{ permissions, roleData, loading, hasPermission, isMaster, isAdmin }}>
-       {children}
-     </PermissionContext.Provider>
-   );
+    return (
+      <PermissionContext.Provider value={{ 
+        permissions: state.permissions, 
+        roleData: state.roleData, 
+        loading: state.loading, 
+        hasPermission, 
+        isMaster: state.isMaster, 
+        isAdmin: state.isAdmin 
+      }}>
+        {children}
+      </PermissionContext.Provider>
+    );
  }
  
  export const usePermissions = () => useContext(PermissionContext);

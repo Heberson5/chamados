@@ -49,18 +49,31 @@ interface SidebarProps {
         { id: '8', icon: Settings, label: "Configurações", path: "/settings", permission: "configuracoes" },
      ];
  
-   const menuItems = (layout.menuOrder && layout.menuOrder.length > 0) 
-     ? layout.menuOrder
-         .map((orderItem: any) => {
-           const defaultItem = defaultMenuItems.find(i => i.id === orderItem.id || i.label === orderItem.label);
-           if (!defaultItem) return null;
-            return { ...defaultItem, label: orderItem.label, visible: orderItem.visible !== false, permission: defaultItem.permission };
-         })
-         .filter((item: any) => {
-           if (!item || !item.visible) return false;
-            return hasPermission(item.permission);
-         })
-      : defaultMenuItems.filter(item => hasPermission(item.permission));
+    const getMenuItems = () => {
+      if (!layout.menuOrder || layout.menuOrder.length === 0) {
+        return defaultMenuItems.filter(item => hasPermission(item.permission));
+      }
+
+      // Map existing order
+      const orderedItems = layout.menuOrder
+        .map((orderItem: any) => {
+          const defaultItem = defaultMenuItems.find(i => i.id === orderItem.id || i.label === orderItem.label);
+          if (!defaultItem) return null;
+          return { ...defaultItem, label: orderItem.label, visible: orderItem.visible !== false };
+        })
+        .filter(item => item !== null) as any[];
+
+      // Add missing default items (like new menus)
+      defaultMenuItems.forEach(defaultItem => {
+        if (!orderedItems.some(item => item.id === defaultItem.id)) {
+          orderedItems.push({ ...defaultItem, visible: true });
+        }
+      });
+
+      return orderedItems.filter(item => item.visible && hasPermission(item.permission));
+    };
+
+    const menuItems = getMenuItems();
  
    return (
     <aside className={cn(

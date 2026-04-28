@@ -52,8 +52,12 @@ import { usePermissions } from "@/hooks/usePermissions";
 
     const isCurrentMaster = !!currentRole && (currentRole.is_master || currentRole.regra === "MASTER");
 
-    const handleEditUser = async () => {
-      if (!editUser) return;
+     const handleEditUser = async () => {
+       if (!editUser) return;
+       if (editUser.regra !== 'MASTER' && !editUser.department_id) {
+         toast({ variant: "destructive", title: "Erro", description: "O departamento é obrigatório para este nível de acesso." });
+         return;
+       }
       setLoading(true);
        try {
          const { data, error } = await supabase.functions.invoke("admin-update-user", {
@@ -658,19 +662,21 @@ import { usePermissions } from "@/hooks/usePermissions";
                      />
                    </div>
  
-                   <div className="space-y-2">
-                     <Label>Departamento</Label>
-                     <Select value={editUser.department_id || ""} onValueChange={v => setEditUser({...editUser, department_id: v})}>
-                       <SelectTrigger>
-                         <SelectValue placeholder="Selecione um departamento" />
-                       </SelectTrigger>
-                       <SelectContent>
-                         {departments.map(d => (
-                           <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
-                         ))}
-                       </SelectContent>
-                     </Select>
-                   </div>
+                   {editUser.regra !== 'MASTER' && (
+                     <div className="space-y-2">
+                       <Label>Departamento (Obrigatório)</Label>
+                       <Select value={editUser.department_id || ""} onValueChange={v => setEditUser({...editUser, department_id: v})}>
+                         <SelectTrigger>
+                           <SelectValue placeholder="Selecione um departamento" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           {departments.map(d => (
+                             <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
+                   )}
  
                     <div className="space-y-2">
                       <Label>Permissão</Label>

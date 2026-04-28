@@ -18,20 +18,25 @@ import { useToast } from "@/hooks/use-toast";
 export default function Chamados() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("todos");
+   const [statusFilter, setStatusFilter] = useState<string>("todos");
+   const [viewFilter, setViewFilter] = useState<string>("todos");
+   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [newTicket, setNewTicket] = useState<{
-    titulo: string;
-    descricao: string;
-    prioridade: "P1" | "P2" | "P3" | "P4" | "P5"
-  }>({
-    titulo: "",
-    descricao: "",
-    prioridade: "P3"
-  });
+   const [newTicket, setNewTicket] = useState<{
+     titulo: string;
+     descricao: string;
+     prioridade: "P1" | "P2" | "P3" | "P4" | "P5";
+     tecnico_id: string;
+   }>({
+     titulo: "",
+     descricao: "",
+     prioridade: "P3",
+     tecnico_id: ""
+   });
+   const [agents, setAgents] = useState<any[]>([]);
   const { toast } = useToast();
 
    const fetchTickets = useCallback(async () => {
@@ -53,8 +58,22 @@ export default function Chamados() {
      if (data) setTickets(data);
    }, [toast]);
 
-   useEffect(() => {
-     fetchTickets();
+    const fetchAgents = useCallback(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, nome, sobrenome")
+        .or("regra.in.(ADMIN,TECNICO,MASTER),is_master.eq.true,pode_receber_chamados.eq.true")
+        .eq("ativo", true);
+      
+      if (data) setAgents(data);
+    }, []);
+
+    useEffect(() => {
+      fetchTickets();
+      fetchAgents();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) setCurrentUserId(data.user.id);
+      });
      
      const channel = supabase
        .channel('schema-db-changes')
@@ -132,14 +151,26 @@ export default function Chamados() {
         uploadedUrls.push(publicUrl);
       }
 
-       const { data: insertedTicket, error: insertError } = await supabase.from("chamados").insert({
-        titulo: newTicket.titulo || "Sem título",
-        descricao: newTicket.descricao,
-        prioridade: newTicket.prioridade,
-        usuario_id: user.id,
-        status: "ABERTO",
-        anexos: uploadedUrls.length > 0 ? uploadedUrls : null
-       } as any).select().single();
+        const insertData: any = {
+          titulo: newTicket.titulo || "Sem título",
+          descricao: newTicket.descricao,
+          prioridade: newTicket.prioridade,
+          usuario_id: user.id,
+          status: "ABERTO",
+          anexos: uploadedUrls.length > 0 ? uploadedUrls : null
+        };
+        
+         if (newTicket.tecnico_id && newTicket.tecnico_id !== "none") {
+          insertData.tecnico_id = newTicket.tecnico_id;
+          insertData.status = "EM_ATENDIMENTO";
+          insertData.atendido_em = new Date().toISOString();
+        }
+
+        const { data: insertedTicket, error: insertError } = await supabase
+          .from("chamados")
+          .insert(insertData)
+          .select()
+          .single();
 
       if (insertError) throw insertError;
 
@@ -159,7 +190,7 @@ export default function Chamados() {
        }
       await fetchTickets();
       setIsDialogOpen(false);
-      setNewTicket({ titulo: "", descricao: "", prioridade: "P3" });
+       setNewTicket({ titulo: "", descricao: "", prioridade: "P3", tecnico_id: "" });
       setFiles([]);
       setPreviews([]);
     } catch (error: any) {
@@ -182,14 +213,21 @@ export default function Chamados() {
     return { label: "NO PRAZO", color: "bg-green-500" };
   };
 
-  const filteredTickets = tickets.filter(t => {
-    const matchesSearch = 
-      (t.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+    const filteredTickets = tickets.filter(t => {
+      const matchesSearch = 
+        (t.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
+      
+      const matchesView = 
+        viewFilter === "todos" || 
+        (viewFilter === "meus" && t.usuario_id === currentUserId) ||
+        (viewFilter === "designados" && t.tecnico_id === currentUserId);
+        
+      return matchesSearch && matchesStatus && matchesView;
+    });
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -199,18 +237,29 @@ export default function Chamados() {
           <p className="text-muted-foreground">Visualize, gerencie e vincule atendimentos técnicos.</p>
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os status</SelectItem>
-              <SelectItem value="ABERTO">Aberto</SelectItem>
-              <SelectItem value="EM_ATENDIMENTO">Em Atendimento</SelectItem>
-              <SelectItem value="ENCERRADO">Encerrado</SelectItem>
-              <SelectItem value="CANCELADO">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
+           <Select value={viewFilter} onValueChange={setViewFilter}>
+             <SelectTrigger className="w-[180px]">
+               <SelectValue placeholder="Visão" />
+             </SelectTrigger>
+             <SelectContent>
+               <SelectItem value="todos">Todos os Chamados</SelectItem>
+               <SelectItem value="meus">Meus Chamados (Solicitante)</SelectItem>
+               <SelectItem value="designados">Designados a Mim (Técnico)</SelectItem>
+             </SelectContent>
+           </Select>
+
+           <Select value={statusFilter} onValueChange={setStatusFilter}>
+             <SelectTrigger className="w-[180px]">
+               <SelectValue placeholder="Filtrar por status" />
+             </SelectTrigger>
+             <SelectContent>
+               <SelectItem value="todos">Todos os status</SelectItem>
+               <SelectItem value="ABERTO">Aberto</SelectItem>
+               <SelectItem value="EM_ATENDIMENTO">Em Atendimento</SelectItem>
+               <SelectItem value="ENCERRADO">Encerrado</SelectItem>
+               <SelectItem value="CANCELADO">Cancelado</SelectItem>
+             </SelectContent>
+           </Select>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -259,10 +308,29 @@ export default function Chamados() {
                        <SelectItem value="P2">{getPriorityLabel("P2")}</SelectItem>
                        <SelectItem value="P3">{getPriorityLabel("P3")}</SelectItem>
                        <SelectItem value="P4">{getPriorityLabel("P4")}</SelectItem>
-                       <SelectItem value="P5">{getPriorityLabel("P5")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                        <SelectItem value="P5">{getPriorityLabel("P5")}</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="tecnico">Designar para (Opcional)</Label>
+                   <Select 
+                     value={newTicket.tecnico_id} 
+                     onValueChange={v => setNewTicket({...newTicket, tecnico_id: v})}
+                   >
+                     <SelectTrigger>
+                       <SelectValue placeholder="Selecione um atendente" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="none">Deixar em aberto</SelectItem>
+                        {agents.map(agent => (
+                          <SelectItem key={agent.id} value={agent.id}>
+                            {agent.nome} {agent.sobrenome}
+                          </SelectItem>
+                        ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="anexos">Anexos (Texto, PDF, Imagens)</Label>
                   <Input 

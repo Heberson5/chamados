@@ -469,7 +469,17 @@ import { usePermissions } from "@/hooks/usePermissions";
  
                <div className="space-y-2">
                  <Label>Permissão</Label>
-                 <Select value={newUser.regra} onValueChange={v => setNewUser({...newUser, regra: v as Regra})}>
+                  <Select 
+                    value={newUser.regra} 
+                    onValueChange={v => {
+                      const regra = v as Regra;
+                      setNewUser({
+                        ...newUser, 
+                        regra,
+                        department_id: regra === 'MASTER' ? "" : newUser.department_id
+                      });
+                    }}
+                  >
                    <SelectTrigger>
                      <SelectValue />
                    </SelectTrigger>
@@ -680,7 +690,17 @@ import { usePermissions } from "@/hooks/usePermissions";
  
                     <div className="space-y-2">
                       <Label>Permissão</Label>
-                      <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                       <Select 
+                         value={editUser.regra} 
+                         onValueChange={v => {
+                           const regra = v as Regra;
+                           setEditUser({
+                             ...editUser, 
+                             regra,
+                             department_id: regra === 'MASTER' ? null : editUser.department_id
+                           });
+                         }}
+                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>

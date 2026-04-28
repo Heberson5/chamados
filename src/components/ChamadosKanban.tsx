@@ -694,9 +694,40 @@ interface ChamadosKanbanProps {
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
-
-    <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+     </Dialog>
+ 
+     <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+       <DialogContent>
+         <DialogHeader>
+           <DialogTitle>Transferir Chamado: {selectedTicket?.os}</DialogTitle>
+         </DialogHeader>
+         <div className="space-y-4 py-4">
+           <div className="space-y-2">
+             <Label>Selecione o novo responsável</Label>
+             <Select value={transferToId} onValueChange={setTransferToId}>
+               <SelectTrigger>
+                 <SelectValue placeholder="Selecione um atendente" />
+               </SelectTrigger>
+               <SelectContent>
+                 {agents.map(agent => (
+                   <SelectItem key={agent.id} value={agent.id}>
+                     {agent.nome} {agent.sobrenome}
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
+         </div>
+         <DialogFooter>
+           <Button variant="outline" onClick={() => setIsTransferDialogOpen(false)}>Cancelar</Button>
+           <Button onClick={handleTransfer} disabled={!transferToId}>
+             Transferir Responsabilidade
+           </Button>
+         </DialogFooter>
+       </DialogContent>
+     </Dialog>
+ 
+     <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2 shrink-0 border-b">
           <DialogTitle className="flex items-center justify-between gap-2">

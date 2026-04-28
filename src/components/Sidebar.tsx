@@ -12,9 +12,10 @@ import {
   BarChart3,
   Package,
    History,
-   Users,
-   Lock,
-   Building2
+    Users,
+    Lock,
+    Building2,
+    HelpCircle
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
@@ -42,10 +43,11 @@ interface SidebarProps {
       { id: '6', icon: BarChart3, label: "Relatórios", path: "/reports", permission: "relatorios" },
        { id: '3', icon: Users, label: "Usuários", path: "/usuarios", permission: "usuarios" },
        { id: '9', icon: Building2, label: "Departamentos", path: "/departamentos", permission: "configuracoes" },
-       { id: '4', icon: Lock, label: "Permissões", path: "/permissions", permission: "permissoes" },
-      { id: '5', icon: History, label: "Auditoria", path: "/audit", permission: "audit" },
-      { id: '8', icon: Settings, label: "Configurações", path: "/settings", permission: "configuracoes" },
-    ];
+        { id: '4', icon: Lock, label: "Permissões", path: "/permissions", permission: "permissoes" },
+        { id: '5', icon: History, label: "Auditoria", path: "/audit", permission: "audit" },
+        { id: '10', icon: HelpCircle, label: "Ajuda", path: "/ajuda", permission: "ajuda" },
+        { id: '8', icon: Settings, label: "Configurações", path: "/settings", permission: "configuracoes" },
+     ];
  
    const menuItems = (layout.menuOrder && layout.menuOrder.length > 0) 
      ? layout.menuOrder

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
- import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2, Loader2, Save, LayoutDashboard, Ticket, Box, DollarSign, Users, Key, FileText, Settings, History, Search } from "lucide-react";
+ import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2, Loader2, Save, LayoutDashboard, Ticket, Box, DollarSign, Users, Key, FileText, Settings, History, Search, HelpCircle, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -96,20 +96,24 @@ export default function Permissions() {
      { name: "Users", icon: Users },
      { name: "Key", icon: Key },
      { name: "FileText", icon: FileText },
-     { name: "Settings", icon: Settings },
-     { name: "History", icon: History },
-   ];
- 
-    const availableMenus = [
-       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["Visualizar", "Exportar", "Ver Chamados por Usuário", "Ver Conformidade SLA"] },
-       { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Reabrir", "Excluir", "Ver Interações", "Assumir Chamado", "Transferir"] },
-        { id: "inventario", label: "Inventário", icon: Box, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Vincular Ativos"] },
-       { id: "usuarios", label: "Usuários", icon: Users, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Alterar Senha", "Gerenciar Roles"] },
-       { id: "permissoes", label: "Permissões", icon: Key, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Visualizar Roles"] },
-       { id: "relatorios", label: "Relatórios", icon: FileText, actions: ["Visualizar", "Exportar PDF", "Exportar Excel", "Ver Desempenho Técnico"] },
-        { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Layout", "E-mail", "Segurança", "Kanban", "Departamentos"] },
-       { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar", "Limpar Logs"] },
+      { name: "Settings", icon: Settings },
+      { name: "History", icon: History },
+      { name: "HelpCircle", icon: HelpCircle },
+      { name: "Building2", icon: Building2 },
     ];
+ 
+     const availableMenus = [
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["Visualizar", "Exportar", "Ver Chamados por Usuário", "Ver Conformidade SLA"] },
+        { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Reabrir", "Excluir", "Ver Interações", "Assumir Chamado", "Transferir"] },
+         { id: "inventario", label: "Inventário", icon: Box, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Vincular Ativos"] },
+        { id: "usuarios", label: "Usuários", icon: Users, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Alterar Senha", "Gerenciar Roles"] },
+        { id: "permissoes", label: "Permissões", icon: Key, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Visualizar Roles"] },
+        { id: "relatorios", label: "Relatórios", icon: FileText, actions: ["Visualizar", "Exportar PDF", "Exportar Excel", "Ver Desempenho Técnico"] },
+        { id: "departamentos", label: "Departamentos", icon: Building2, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
+        { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Layout", "E-mail", "Segurança", "Kanban"] },
+        { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar", "Limpar Logs"] },
+        { id: "ajuda", label: "Ajuda", icon: HelpCircle, actions: ["Visualizar", "Editar Manuais"] },
+     ];
  
    const getIcon = (iconName: string) => {
      const IconComp = availableIcons.find(i => i.name === iconName)?.icon || User;

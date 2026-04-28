@@ -84,7 +84,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         if (roleDef) {
           newPermissions = (roleDef.permissions as string[]) || [];
         } else if (isUserMaster) {
-          newPermissions = ["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario", "financeiro"];
+          newPermissions = ["Acesso Total", "dashboard", "chamados", "usuarios", "permissoes", "relatorios", "configuracoes", "audit", "inventario"];
         }
 
         setState({

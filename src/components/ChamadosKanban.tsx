@@ -1,3 +1,32 @@
+   const handleTransfer = async () => {
+     if (!transferToId || !selectedTicket) return;
+     try {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) return;
+ 
+       const { error } = await supabase
+         .from("chamados")
+         .update({ tecnico_id: transferToId, status: 'EM_ATENDIMENTO' })
+         .eq("id", selectedTicket.id);
+ 
+       if (error) throw error;
+ 
+       // Create audit or comment for transfer
+       await supabase.from("comentarios_chamado").insert({
+         chamado_id: selectedTicket.id,
+         autor_id: user.id,
+         comentario: `[TRANSFERÊNCIA] Chamado transferido para o técnico.`
+       });
+ 
+       toast({ title: "Chamado transferido", description: "O responsável pelo chamado foi atualizado." });
+       onUpdate();
+       setIsTransferDialogOpen(false);
+       setIsDetailsOpen(false);
+     } catch (error: any) {
+       toast({ variant: "destructive", title: "Erro ao transferir", description: error.message });
+     }
+   };
+ 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

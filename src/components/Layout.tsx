@@ -46,10 +46,17 @@ export default function Layout() {
       return;
     }
 
-     if (isAuthenticated === true && !permissionsLoading) {
-       if (isMaster) return;
- 
-       const path = location.pathname;
+      if (isAuthenticated === true && !permissionsLoading) {
+        const path = location.pathname;
+
+        if (isMaster) {
+          // If Master somehow ends up in unauthorized, send to dashboard
+          if (path === '/unauthorized') {
+            navigate('/dashboard');
+          }
+          return;
+        }
+
       const pageToPermission: Record<string, string> = {
         '/dashboard': 'dashboard',
         '/chamados': 'chamados',
@@ -70,7 +77,7 @@ export default function Layout() {
         }
       }
     }
-  }, [location.pathname, isAuthenticated, permissionsLoading, hasPermission, navigate]);
+  }, [location.pathname, isAuthenticated, permissionsLoading, hasPermission, isMaster, navigate]);
 
   useEffect(() => {
     const trackNavigation = async () => {

@@ -131,13 +131,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                  });
              }
              if (eConfig) setEmailSettings(eConfig.value as any);
-            if (lConfig) {
-              const val = lConfig.value as any;
-              if (!val.menuOrder || val.menuOrder.length === 0) {
-                val.menuOrder = defaultMenuOrder;
-              }
-              setLayoutConfig(val);
-            }
+             if (lConfig) {
+               const val = lConfig.value as any;
+               let currentOrder = val.menuOrder || [];
+               
+               // Ensure all default items are present
+               defaultMenuOrder.forEach(defaultItem => {
+                 if (!currentOrder.some((item: any) => item.id === defaultItem.id)) {
+                   currentOrder.push(defaultItem);
+                 }
+               });
+               
+               val.menuOrder = currentOrder;
+               setLayoutConfig(val);
+             }
             if (sTimeout) setSessionTimeout(sTimeout.value as string);
              if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
              if (eLayout) setEmailLayout(eLayout.value as string);

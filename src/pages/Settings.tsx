@@ -500,8 +500,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                </Card>
              </TabsContent>
 
-              <TabsContent value="kanban" className="space-y-6">
-                <Card>
+               <TabsContent value="kanban" className="space-y-6">
+                 <Card>
                   <CardHeader>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
@@ -575,9 +575,103 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                         </div>
                       </div>
                     ))}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                   </CardContent>
+                 </Card>
+ 
+                 {isAdmin && (
+                   <Card>
+                     <CardHeader>
+                       <div className="flex justify-between items-center">
+                         <div className="flex items-center gap-2">
+                           <LayoutGrid className="h-5 w-5 text-primary" />
+                           <CardTitle>Prioridades de Chamado</CardTitle>
+                         </div>
+                         <Button size="sm" onClick={() => setPriorities([...priorities, { nome: "Nova Prioridade", cor: "#6e59ff", ordem: priorities.length + 1 }])}>
+                           <Plus size={14} className="mr-1" /> Adicionar Prioridade
+                         </Button>
+                       </div>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                       {priorities.map((prio, idx) => (
+                         <div key={prio.id || idx} className="flex items-center gap-4 border p-3 rounded-lg group">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                             <div className="space-y-2">
+                               <Label className="text-[10px] uppercase">Nome da Prioridade</Label>
+                               <Input value={prio.nome} onChange={e => { const np = [...priorities]; np[idx].nome = e.target.value; setPriorities(np); }} />
+                             </div>
+                             <div className="space-y-2">
+                               <Label className="text-[10px] uppercase">Cor</Label>
+                               <div className="flex items-center gap-2">
+                                 <Input 
+                                   type="color" 
+                                   className="w-10 h-10 p-1" 
+                                   value={prio.cor || "#6e59ff"} 
+                                   onChange={e => { 
+                                     const np = [...priorities]; 
+                                     np[idx].cor = e.target.value; 
+                                     setPriorities(np); 
+                                   }} 
+                                 />
+                               </div>
+                             </div>
+                           </div>
+                           <div className="flex flex-col gap-1 pt-4">
+                             <Button 
+                               variant="ghost" 
+                               size="icon" 
+                               className="h-8 w-8" 
+                               disabled={idx === 0} 
+                               onClick={() => { 
+                                 const np = [...priorities]; 
+                                 [np[idx-1], np[idx]] = [np[idx], np[idx-1]];
+                                 // Update ordem
+                                 np[idx-1].ordem = idx;
+                                 np[idx].ordem = idx + 1;
+                                 setPriorities(np); 
+                               }}
+                             >
+                               <ChevronUp size={16} />
+                             </Button>
+                             <Button 
+                               variant="ghost" 
+                               size="icon" 
+                               className="h-8 w-8" 
+                               disabled={idx === priorities.length - 1} 
+                               onClick={() => { 
+                                 const np = [...priorities]; 
+                                 [np[idx], np[idx+1]] = [np[idx+1], np[idx]]; 
+                                 // Update ordem
+                                 np[idx].ordem = idx + 1;
+                                 np[idx+1].ordem = idx + 2;
+                                 setPriorities(np); 
+                               }}
+                             >
+                               <ChevronDown size={16} />
+                             </Button>
+                             <Button 
+                               variant="ghost" 
+                               size="icon" 
+                               className="h-8 w-8 text-destructive" 
+                               onClick={async () => {
+                                 if (prio.id) {
+                                   const { error } = await supabase.from("chamados_prioridades").delete().eq("id", prio.id);
+                                   if (error) {
+                                      toast({ variant: "destructive", title: "Erro ao excluir", description: "Pode haver chamados vinculados a esta prioridade." });
+                                      return;
+                                   }
+                                 }
+                                 setPriorities(priorities.filter((_, i) => i !== idx));
+                               }}
+                             >
+                               <Trash2 size={16} />
+                             </Button>
+                           </div>
+                         </div>
+                       ))}
+                     </CardContent>
+                   </Card>
+                 )}
+               </TabsContent>
 
              <TabsContent value="relatorios" className="space-y-6">
                <Card>

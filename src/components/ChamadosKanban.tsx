@@ -703,23 +703,30 @@ interface ChamadosKanbanProps {
          <DialogHeader>
            <DialogTitle>Transferir Chamado: {selectedTicket?.os}</DialogTitle>
          </DialogHeader>
-         <div className="space-y-4 py-4">
-           <div className="space-y-2">
-             <Label>Selecione o novo responsável</Label>
-             <Select value={transferToId} onValueChange={setTransferToId}>
-               <SelectTrigger>
-                 <SelectValue placeholder="Selecione um atendente" />
-               </SelectTrigger>
-               <SelectContent>
-                 {agents.map(agent => (
-                   <SelectItem key={agent.id} value={agent.id}>
-                     {agent.nome} {agent.sobrenome}
-                   </SelectItem>
-                 ))}
-               </SelectContent>
-             </Select>
-           </div>
-         </div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Selecione o novo responsável</Label>
+              {agents.length > 0 ? (
+                <Select value={transferToId} onValueChange={setTransferToId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um atendente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agents.map(agent => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.nome} {agent.sobrenome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-start gap-2 text-destructive text-xs">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  <p>Não há atendentes ativos disponíveis para transferência. Por favor, contate o administrador.</p>
+                </div>
+              )}
+            </div>
+          </div>
          <DialogFooter>
            <Button variant="outline" onClick={() => setIsTransferDialogOpen(false)}>Cancelar</Button>
            <Button onClick={handleTransfer} disabled={!transferToId}>

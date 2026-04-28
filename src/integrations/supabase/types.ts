@@ -184,6 +184,7 @@ export type Database = {
           atualizado_em: string | null
           chamado_pai_id: string | null
           deletado_em: string | null
+          department_id: string | null
           descricao: string
           descricao_encerramento: string | null
           encerrado_em: string | null
@@ -194,6 +195,7 @@ export type Database = {
           prioridade: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada: string | null
           prioridade_alterada_por: string | null
+          prioridade_new_id: string | null
           reaberto: boolean | null
           sla_deadline: string | null
           sla_violado: boolean | null
@@ -214,6 +216,7 @@ export type Database = {
           atualizado_em?: string | null
           chamado_pai_id?: string | null
           deletado_em?: string | null
+          department_id?: string | null
           descricao: string
           descricao_encerramento?: string | null
           encerrado_em?: string | null
@@ -224,6 +227,7 @@ export type Database = {
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
+          prioridade_new_id?: string | null
           reaberto?: boolean | null
           sla_deadline?: string | null
           sla_violado?: boolean | null
@@ -244,6 +248,7 @@ export type Database = {
           atualizado_em?: string | null
           chamado_pai_id?: string | null
           deletado_em?: string | null
+          department_id?: string | null
           descricao?: string
           descricao_encerramento?: string | null
           encerrado_em?: string | null
@@ -254,6 +259,7 @@ export type Database = {
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
+          prioridade_new_id?: string | null
           reaberto?: boolean | null
           sla_deadline?: string | null
           sla_violado?: boolean | null
@@ -276,10 +282,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "chamados_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "chamados_prioridade_alterada_por_fkey"
             columns: ["prioridade_alterada_por"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamados_prioridade_new_id_fkey"
+            columns: ["prioridade_new_id"]
+            isOneToOne: false
+            referencedRelation: "chamados_prioridades"
             referencedColumns: ["id"]
           },
           {
@@ -301,6 +321,44 @@ export type Database = {
             columns: ["vinculado_por"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chamados_prioridades: {
+        Row: {
+          cor: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chamados_prioridades_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -352,6 +410,41 @@ export type Database = {
             columns: ["chamado_id"]
             isOneToOne: false
             referencedRelation: "chamados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departamentos: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departamentos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -776,6 +869,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_departments: string[] | null
           ativo: boolean | null
           atualizado_em: string | null
           avatar_url: string | null
@@ -803,6 +897,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_departments?: string[] | null
           ativo?: boolean | null
           atualizado_em?: string | null
           avatar_url?: string | null
@@ -830,6 +925,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_departments?: string[] | null
           ativo?: boolean | null
           atualizado_em?: string | null
           avatar_url?: string | null

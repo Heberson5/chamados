@@ -4,7 +4,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { getPriorityLabel } from "@/lib/utils/priority";
-  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History } from "lucide-react";
+ import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History, ArrowRightLeft } from "lucide-react";
+   const [agents, setAgents] = useState<any[]>([]);
+   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+   const [transferToId, setTransferToId] = useState("");
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
   import { useState, useEffect, useCallback } from "react";
@@ -300,8 +303,18 @@ export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProp
      { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
    ]);
 
-     useEffect(() => {
-       const loadData = async () => {
+      const fetchAgents = useCallback(async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, nome, sobrenome")
+          .or("regra.in.(ADMIN,TECNICO,MASTER),is_master.eq.true,pode_receber_chamados.eq.true")
+          .eq("ativo", true);
+        if (data) setAgents(data);
+      }, []);
+
+      useEffect(() => {
+        const loadData = async () => {
+         fetchAgents();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: profile } = await supabase

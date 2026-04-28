@@ -267,7 +267,14 @@ import { usePermissions } from "@/hooks/usePermissions";
                           user.nome?.[0] || <UserIcon size={14} />
                         )}
                       </div>
-                     <span>{user.nome} {user.sobrenome}</span>
+                      <div className="flex flex-col">
+                        <span className="flex items-center gap-2">
+                          {user.nome} {user.sobrenome}
+                          {user.pode_receber_chamados && (
+                            <Headphones className="h-3 w-3 text-primary" title="Pode atender chamados" />
+                          )}
+                        </span>
+                      </div>
                    </div>
                  </TableCell>
                  <TableCell>{user.email}</TableCell>

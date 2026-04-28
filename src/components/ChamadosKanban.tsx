@@ -704,12 +704,24 @@ interface ChamadosKanbanProps {
               <span className="truncate">{selectedTicket?.titulo}</span>
               <Badge variant="outline" className="font-mono text-[10px]">{selectedTicket?.os}</Badge>
             </div>
-            <Badge variant={
-              selectedTicket?.status === 'ABERTO' ? 'default' : 
-              selectedTicket?.status === 'EM_ATENDIMENTO' ? 'secondary' : 'outline'
-            }>
-              {selectedTicket?.status}
-            </Badge>
+               <div className="flex items-center gap-2">
+                 {userRole !== 'USUARIO' && (
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     className="h-7 gap-1 text-[10px]" 
+                     onClick={() => setIsTransferDialogOpen(true)}
+                   >
+                     <ArrowRightLeft size={12} /> Transferir
+                   </Button>
+                 )}
+                 <Badge variant={
+                   selectedTicket?.status === 'ABERTO' ? 'default' : 
+                   selectedTicket?.status === 'EM_ATENDIMENTO' ? 'secondary' : 'outline'
+                 }>
+                   {selectedTicket?.status}
+                 </Badge>
+               </div>
           </DialogTitle>
         </DialogHeader>
 

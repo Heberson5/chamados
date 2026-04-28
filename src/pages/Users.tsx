@@ -209,23 +209,41 @@ import { usePermissions } from "@/hooks/usePermissions";
    };
  
  
-    const fetchUsers = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(`
-          *,
-          department:departamentos(id, nome)
-        `)
-        .order("nome");
-     
-     if (error) {
-       toast({ variant: "destructive", title: "Erro ao buscar usuários", description: error.message });
-     } else {
-       setUsers(data || []);
-     }
-     setLoading(false);
-   };
+     const fetchUsers = async () => {
+       setLoading(true);
+       try {
+         const { data, error } = await supabase
+           .from("profiles")
+           .select(`
+             *,
+             department:department_id(id, nome)
+           `)
+           .order("nome");
+        
+         if (error) {
+           console.error("Error fetching users:", error);
+           // Fallback to fetching without the join if it fails due to schema issues
+           const { data: fallbackData, error: fallbackError } = await supabase
+             .from("profiles")
+             .select("*")
+             .order("nome");
+           
+           if (fallbackError) throw fallbackError;
+           setUsers(fallbackData || []);
+           toast({ 
+             variant: "destructive", 
+             title: "Aviso", 
+             description: "Erro ao carregar departamentos, exibindo apenas dados básicos." 
+           });
+         } else {
+           setUsers(data || []);
+         }
+       } catch (error: any) {
+         toast({ variant: "destructive", title: "Erro ao buscar usuários", description: error.message });
+       } finally {
+         setLoading(false);
+       }
+     };
  
    useEffect(() => {
       fetchUsers();

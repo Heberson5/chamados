@@ -58,9 +58,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       { id: '2', label: "Chamados", path: "/chamados", visible: true },
       { id: '6', label: "Relatórios", path: "/reports", visible: true },
       { id: '3', label: "Usuários", path: "/usuarios", visible: true },
-      { id: '4', label: "Permissões", path: "/permissions", visible: true },
-      { id: '5', label: "Auditoria", path: "/audit", visible: true },
-      { id: '8', label: "Configurações", path: "/settings", visible: true },
+       { id: '4', label: "Permissões", path: "/permissions", visible: true },
+       { id: '9', label: "Departamentos", path: "/departamentos", visible: true },
+       { id: '5', label: "Auditoria", path: "/audit", visible: true },
+       { id: '10', label: "Ajuda", path: "/ajuda", visible: true },
+       { id: '8', label: "Configurações", path: "/settings", visible: true },
     ];
 
      const [layoutConfig, setLayoutConfig] = useState({ 
@@ -129,13 +131,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                  });
              }
              if (eConfig) setEmailSettings(eConfig.value as any);
-            if (lConfig) {
-              const val = lConfig.value as any;
-              if (!val.menuOrder || val.menuOrder.length === 0) {
-                val.menuOrder = defaultMenuOrder;
-              }
-              setLayoutConfig(val);
-            }
+             if (lConfig) {
+               const val = lConfig.value as any;
+               let currentOrder = val.menuOrder || [];
+               
+               // Ensure all default items are present
+               defaultMenuOrder.forEach(defaultItem => {
+                 if (!currentOrder.some((item: any) => item.id === defaultItem.id)) {
+                   currentOrder.push(defaultItem);
+                 }
+               });
+               
+               val.menuOrder = currentOrder;
+               setLayoutConfig(val);
+             }
             if (sTimeout) setSessionTimeout(sTimeout.value as string);
              if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
              if (eLayout) setEmailLayout(eLayout.value as string);

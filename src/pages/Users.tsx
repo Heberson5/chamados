@@ -308,14 +308,18 @@ import { usePermissions } from "@/hooks/usePermissions";
                           user.nome?.[0] || <UserIcon size={14} />
                         )}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="flex items-center gap-2">
-                          {user.nome} {user.sobrenome}
-                          {user.pode_receber_chamados && (
-                            <Headphones className="h-3 w-3 text-primary" />
-                          )}
-                        </span>
-                      </div>
+                       <div className="flex flex-col">
+                         <span className="flex items-center gap-2">
+                           {user.nome} {user.sobrenome}
+                           {user.pode_receber_chamados && (
+                             <Headphones className="h-3 w-3 text-primary" />
+                           )}
+                         </span>
+                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                           <Building2 size={10} />
+                           {user.department?.nome || "Sem departamento"}
+                         </span>
+                       </div>
                    </div>
                  </TableCell>
                  <TableCell>{user.email}</TableCell>
@@ -645,20 +649,60 @@ import { usePermissions } from "@/hooks/usePermissions";
                        onCheckedChange={(checked) => setEditUser({ ...editUser, pode_receber_chamados: checked })}
                      />
                    </div>
+ 
                    <div className="space-y-2">
-                     <Label>Permissão</Label>
-                     <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                     <Label>Departamento</Label>
+                     <Select value={editUser.department_id || ""} onValueChange={v => setEditUser({...editUser, department_id: v})}>
                        <SelectTrigger>
-                         <SelectValue />
+                         <SelectValue placeholder="Selecione um departamento" />
                        </SelectTrigger>
                        <SelectContent>
-                         {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
-                         <SelectItem value="ADMIN">Administrador</SelectItem>
-                         <SelectItem value="TECNICO">Técnico</SelectItem>
-                         <SelectItem value="USUARIO">Usuário</SelectItem>
+                         {departments.map(d => (
+                           <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
+                         ))}
                        </SelectContent>
                      </Select>
                    </div>
+ 
+                    <div className="space-y-2">
+                      <Label>Permissão</Label>
+                      <Select value={editUser.regra} onValueChange={v => setEditUser({...editUser, regra: v as Regra})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isCurrentMaster && <SelectItem value="MASTER">Master</SelectItem>}
+                          <SelectItem value="ADMIN">Administrador</SelectItem>
+                          <SelectItem value="TECNICO">Técnico</SelectItem>
+                          <SelectItem value="USUARIO">Usuário</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+ 
+                    {editUser.regra === 'ADMIN' && (
+                     <div className="space-y-2 p-2 border rounded bg-muted/10">
+                       <Label>Administrar Departamentos</Label>
+                       <p className="text-[10px] text-muted-foreground mb-2">Selecione quais departamentos este admin pode visualizar.</p>
+                       <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-2">
+                         {departments.map(d => (
+                           <div key={d.id} className="flex items-center space-x-2">
+                             <Switch 
+                               id={`edit-dept-${d.id}`}
+                               checked={(editUser.admin_departments || []).includes(d.id)}
+                               onCheckedChange={(checked) => {
+                                 const currentDepts = editUser.admin_departments || [];
+                                 const depts = checked 
+                                   ? [...currentDepts, d.id]
+                                   : currentDepts.filter((id: string) => id !== d.id);
+                                 setEditUser({...editUser, admin_departments: depts});
+                               }}
+                             />
+                             <Label htmlFor={`edit-dept-${d.id}`} className="text-xs truncate">{d.nome}</Label>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
                </div>
              )}
              <DialogFooter>

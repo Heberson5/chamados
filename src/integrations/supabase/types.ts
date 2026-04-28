@@ -195,7 +195,7 @@ export type Database = {
           prioridade: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada: string | null
           prioridade_alterada_por: string | null
-          prioridade_new_id: string | null
+          prioridade_id: string | null
           reaberto: boolean | null
           sla_deadline: string | null
           sla_violado: boolean | null
@@ -227,7 +227,7 @@ export type Database = {
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
-          prioridade_new_id?: string | null
+          prioridade_id?: string | null
           reaberto?: boolean | null
           sla_deadline?: string | null
           sla_violado?: boolean | null
@@ -259,7 +259,7 @@ export type Database = {
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
-          prioridade_new_id?: string | null
+          prioridade_id?: string | null
           reaberto?: boolean | null
           sla_deadline?: string | null
           sla_violado?: boolean | null
@@ -297,7 +297,7 @@ export type Database = {
           },
           {
             foreignKeyName: "chamados_prioridade_new_id_fkey"
-            columns: ["prioridade_new_id"]
+            columns: ["prioridade_id"]
             isOneToOne: false
             referencedRelation: "chamados_prioridades"
             referencedColumns: ["id"]

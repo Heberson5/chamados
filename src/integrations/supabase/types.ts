@@ -18,41 +18,41 @@ export type Database = {
         Row: {
           action: string | null
           created_at: string | null
-          id: string
+          id: number
           new_data: Json | null
           old_data: Json | null
           path: string | null
           record_id: string | null
-          sequencial_id: number
           table_name: string | null
           user_email: string | null
           user_id: string | null
+          uuid: string
         }
         Insert: {
           action?: string | null
           created_at?: string | null
-          id?: string
+          id?: never
           new_data?: Json | null
           old_data?: Json | null
           path?: string | null
           record_id?: string | null
-          sequencial_id?: never
           table_name?: string | null
           user_email?: string | null
           user_id?: string | null
+          uuid?: string
         }
         Update: {
           action?: string | null
           created_at?: string | null
-          id?: string
+          id?: never
           new_data?: Json | null
           old_data?: Json | null
           path?: string | null
           record_id?: string | null
-          sequencial_id?: never
           table_name?: string | null
           user_email?: string | null
           user_id?: string | null
+          uuid?: string
         }
         Relationships: [
           {

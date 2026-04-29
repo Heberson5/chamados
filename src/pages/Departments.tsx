@@ -159,7 +159,8 @@
        <div className="bg-card rounded-md border shadow-sm">
          <Table>
            <TableHeader>
-             <TableRow>
+              <TableRow>
+                <TableHead className="w-16">ID</TableHead>
                <TableHead>Nome</TableHead>
                <TableHead>Descrição</TableHead>
                <TableHead className="text-right">Ações</TableHead>
@@ -175,6 +176,9 @@
               ) : (
                 departments.map((dept) => (
                   <TableRow key={dept.id}>
+                    <TableCell className="text-xs font-mono text-muted-foreground">
+                      {dept.sequencial_id}
+                    </TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <Building2 size={16} className="text-muted-foreground" />

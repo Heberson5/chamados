@@ -14,6 +14,7 @@
  export default function Ajuda() {
    const { isMaster, isAdmin, loading: permsLoading } = usePermissions();
    const [manuals, setManuals] = useState<any[]>([]);
+   const [menuManuals, setMenuManuals] = useState<any[]>([]);
    const [roleDefinitions, setRoleDefinitions] = useState<any[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [isEditing, setIsEditing] = useState(false);
@@ -23,15 +24,18 @@
    const fetchManuals = async () => {
      setIsLoading(true);
      try {
-       const [manualsRes, rolesRes] = await Promise.all([
+       const [manualsRes, menuManualsRes, rolesRes] = await Promise.all([
          supabase.from("system_manuals").select("*").order("role_key"),
+         supabase.from("help_menu_manuals").select("*").order("title"),
          supabase.from("role_definitions").select("*")
        ]);
 
        if (manualsRes.error) throw manualsRes.error;
+       if (menuManualsRes.error) throw menuManualsRes.error;
        if (rolesRes.error) throw rolesRes.error;
 
        setManuals(manualsRes.data || []);
+       setMenuManuals(menuManualsRes.data || []);
        setRoleDefinitions(rolesRes.data || []);
 
        if (manualsRes.data && manualsRes.data.length > 0) {
@@ -92,32 +96,19 @@
       const roleDef = roleDefinitions.find(r => r.name.toUpperCase() === targetName.toUpperCase());
       
       if (!roleDef) {
-        // Special case for Master if no definition found
         if (roleKey.toUpperCase() === 'MASTER') {
-          return Object.keys(MENU_HELP_CONTENT).map(menuId => ({
-            id: menuId,
-            ...MENU_HELP_CONTENT[menuId]
-          }));
+          return menuManuals;
         }
         return [];
       }
       
       const permissions = roleDef.permissions || [];
       
-      // If Master has "Acesso Total", show all
       if (permissions.includes("Acesso Total") || roleKey.toUpperCase() === 'MASTER') {
-        return Object.keys(MENU_HELP_CONTENT).map(menuId => ({
-          id: menuId,
-          ...MENU_HELP_CONTENT[menuId]
-        }));
+        return menuManuals;
       }
 
-      return Object.keys(MENU_HELP_CONTENT)
-        .filter(menuId => permissions.includes(menuId))
-        .map(menuId => ({
-          id: menuId,
-          ...MENU_HELP_CONTENT[menuId]
-        }));
+      return menuManuals.filter(m => permissions.includes(m.menu_id));
     };
 
     const visibleManuals = manuals;

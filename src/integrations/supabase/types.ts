@@ -555,6 +555,33 @@ export type Database = {
         }
         Relationships: []
       }
+      help_menu_manuals: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          menu_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          menu_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          menu_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       itens_baixa: {
         Row: {
           baixa_id: string | null

@@ -128,7 +128,8 @@ import { format, parseISO } from "date-fns";
               <Table>
                 <TableHeader>
                   <TableRow>
-                     <TableHead>Usuário / E-mail</TableHead>
+                  <TableHead className="w-16">#</TableHead>
+                  <TableHead>Usuário / E-mail</TableHead>
                     <TableHead>Ação</TableHead>
                     <TableHead>Local / Tabela</TableHead>
                     <TableHead>ID Registro</TableHead>
@@ -136,9 +137,12 @@ import { format, parseISO } from "date-fns";
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLogs.map((log) => (
-                    <TableRow key={log.id}>
-                        <TableCell className="font-medium text-xs">
+                {filteredLogs.map((log) => (
+                  <TableRow key={log.id}>
+                      <TableCell className="text-xs font-mono text-muted-foreground">
+                        {log.sequencial_id}
+                      </TableCell>
+                      <TableCell className="font-medium text-xs">
                           <div className="flex items-center gap-2">
                             <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden border shrink-0">
                               {log.profiles?.avatar_url ? (

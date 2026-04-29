@@ -18,41 +18,44 @@ export type Database = {
         Row: {
           action: string | null
           created_at: string | null
-          id: string
+          id: number
+          id_numerico: number
           new_data: Json | null
           old_data: Json | null
           path: string | null
           record_id: string | null
-          sequencial_id: number
           table_name: string | null
           user_email: string | null
           user_id: string | null
+          uuid: string
         }
         Insert: {
           action?: string | null
           created_at?: string | null
-          id?: string
+          id?: never
+          id_numerico?: never
           new_data?: Json | null
           old_data?: Json | null
           path?: string | null
           record_id?: string | null
-          sequencial_id?: never
           table_name?: string | null
           user_email?: string | null
           user_id?: string | null
+          uuid?: string
         }
         Update: {
           action?: string | null
           created_at?: string | null
-          id?: string
+          id?: never
+          id_numerico?: never
           new_data?: Json | null
           old_data?: Json | null
           path?: string | null
           record_id?: string | null
-          sequencial_id?: never
           table_name?: string | null
           user_email?: string | null
           user_id?: string | null
+          uuid?: string
         }
         Relationships: [
           {
@@ -75,13 +78,13 @@ export type Database = {
           executado_em: string | null
           executado_por: string | null
           id: string
+          id_numerico: number
           justificativa: string
           motivo_rejeicao: string | null
           observacoes: string | null
           perfil_solicitante: string
           rejeitado_em: string | null
           rejeitado_por: string | null
-          sequencial_id: number
           solicitado_por: string | null
           status: string | null
           updated_at: string | null
@@ -96,13 +99,13 @@ export type Database = {
           executado_em?: string | null
           executado_por?: string | null
           id?: string
+          id_numerico?: never
           justificativa: string
           motivo_rejeicao?: string | null
           observacoes?: string | null
           perfil_solicitante: string
           rejeitado_em?: string | null
           rejeitado_por?: string | null
-          sequencial_id?: never
           solicitado_por?: string | null
           status?: string | null
           updated_at?: string | null
@@ -117,13 +120,13 @@ export type Database = {
           executado_em?: string | null
           executado_por?: string | null
           id?: string
+          id_numerico?: never
           justificativa?: string
           motivo_rejeicao?: string | null
           observacoes?: string | null
           perfil_solicitante?: string
           rejeitado_em?: string | null
           rejeitado_por?: string | null
-          sequencial_id?: never
           solicitado_por?: string | null
           status?: string | null
           updated_at?: string | null
@@ -171,24 +174,24 @@ export type Database = {
           created_at: string | null
           descricao: string | null
           id: string
+          id_numerico: number
           nome: string
-          sequencial_id: number
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           descricao?: string | null
           id?: string
+          id_numerico?: never
           nome: string
-          sequencial_id?: never
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           descricao?: string | null
           id?: string
+          id_numerico?: never
           nome?: string
-          sequencial_id?: never
           updated_at?: string | null
         }
         Relationships: []
@@ -207,6 +210,7 @@ export type Database = {
           encerrado_em: string | null
           gerado_em: string | null
           id: string
+          id_numerico: number
           os: string
           pausado_em: string | null
           prioridade: Database["public"]["Enums"]["prioridade_chamado"] | null
@@ -214,7 +218,6 @@ export type Database = {
           prioridade_alterada_por: string | null
           prioridade_id: string | null
           reaberto: boolean | null
-          sequencial_id: number
           sla_deadline: string | null
           sla_violado: boolean | null
           sla_violado_em: string | null
@@ -240,6 +243,7 @@ export type Database = {
           encerrado_em?: string | null
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           os: string
           pausado_em?: string | null
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
@@ -247,7 +251,6 @@ export type Database = {
           prioridade_alterada_por?: string | null
           prioridade_id?: string | null
           reaberto?: boolean | null
-          sequencial_id?: never
           sla_deadline?: string | null
           sla_violado?: boolean | null
           sla_violado_em?: string | null
@@ -273,6 +276,7 @@ export type Database = {
           encerrado_em?: string | null
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           os?: string
           pausado_em?: string | null
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
@@ -280,7 +284,6 @@ export type Database = {
           prioridade_alterada_por?: string | null
           prioridade_id?: string | null
           reaberto?: boolean | null
-          sequencial_id?: never
           sla_deadline?: string | null
           sla_violado?: boolean | null
           sla_violado_em?: string | null
@@ -350,30 +353,30 @@ export type Database = {
           cor: string
           created_at: string
           id: string
+          id_numerico: number
           nome: string
           ordem: number
           organization_id: string | null
-          sequencial_id: number
           updated_at: string
         }
         Insert: {
           cor?: string
           created_at?: string
           id?: string
+          id_numerico?: never
           nome: string
           ordem?: number
           organization_id?: string | null
-          sequencial_id?: never
           updated_at?: string
         }
         Update: {
           cor?: string
           created_at?: string
           id?: string
+          id_numerico?: never
           nome?: string
           ordem?: number
           organization_id?: string | null
-          sequencial_id?: never
           updated_at?: string
         }
         Relationships: [
@@ -396,7 +399,7 @@ export type Database = {
           criado_em: string | null
           deletado_em: string | null
           id: string
-          sequencial_id: number
+          id_numerico: number
           visibilidade_interna: boolean | null
         }
         Insert: {
@@ -408,7 +411,7 @@ export type Database = {
           criado_em?: string | null
           deletado_em?: string | null
           id?: string
-          sequencial_id?: never
+          id_numerico?: never
           visibilidade_interna?: boolean | null
         }
         Update: {
@@ -420,7 +423,7 @@ export type Database = {
           criado_em?: string | null
           deletado_em?: string | null
           id?: string
-          sequencial_id?: never
+          id_numerico?: never
           visibilidade_interna?: boolean | null
         }
         Relationships: [
@@ -445,27 +448,27 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
+          id_numerico: number
           nome: string
           organization_id: string | null
-          sequencial_id: number
           updated_at: string
         }
         Insert: {
           created_at?: string
           descricao?: string | null
           id?: string
+          id_numerico?: never
           nome: string
           organization_id?: string | null
-          sequencial_id?: never
           updated_at?: string
         }
         Update: {
           created_at?: string
           descricao?: string | null
           id?: string
+          id_numerico?: never
           nome?: string
           organization_id?: string | null
-          sequencial_id?: never
           updated_at?: string
         }
         Relationships: [
@@ -482,27 +485,27 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          id_numerico: number
           item_inventario_id: string | null
           quantidade: number | null
-          sequencial_id: number
           setor: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          id_numerico?: never
           item_inventario_id?: string | null
           quantidade?: number | null
-          sequencial_id?: never
           setor: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          id_numerico?: never
           item_inventario_id?: string | null
           quantidade?: number | null
-          sequencial_id?: never
           setor?: string
           updated_at?: string | null
         }
@@ -524,8 +527,8 @@ export type Database = {
           entrada: string
           gerado_em: string | null
           id: string
+          id_numerico: number
           saida: string
-          sequencial_id: number
           usuario_id: string
         }
         Insert: {
@@ -535,8 +538,8 @@ export type Database = {
           entrada: string
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           saida: string
-          sequencial_id?: never
           usuario_id: string
         }
         Update: {
@@ -546,8 +549,8 @@ export type Database = {
           entrada?: string
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           saida?: string
-          sequencial_id?: never
           usuario_id?: string
         }
         Relationships: [
@@ -566,8 +569,8 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          id_numerico: number
           nome: string
-          sequencial_id: number
           telefone: string | null
           updated_at: string | null
         }
@@ -576,8 +579,8 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          id_numerico?: never
           nome: string
-          sequencial_id?: never
           telefone?: string | null
           updated_at?: string | null
         }
@@ -586,8 +589,8 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          id_numerico?: never
           nome?: string
-          sequencial_id?: never
           telefone?: string | null
           updated_at?: string | null
         }
@@ -598,8 +601,8 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          id_numerico: number
           menu_id: string
-          sequencial_id: number
           title: string
           updated_at: string
         }
@@ -607,8 +610,8 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          id_numerico?: never
           menu_id: string
-          sequencial_id?: never
           title: string
           updated_at?: string
         }
@@ -616,8 +619,8 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          id_numerico?: never
           menu_id?: string
-          sequencial_id?: never
           title?: string
           updated_at?: string
         }
@@ -628,28 +631,28 @@ export type Database = {
           baixa_id: string | null
           created_at: string | null
           id: string
+          id_numerico: number
           item_inventario_id: string | null
           motivo: string | null
           quantidade: number
-          sequencial_id: number
         }
         Insert: {
           baixa_id?: string | null
           created_at?: string | null
           id?: string
+          id_numerico?: never
           item_inventario_id?: string | null
           motivo?: string | null
           quantidade: number
-          sequencial_id?: never
         }
         Update: {
           baixa_id?: string | null
           created_at?: string | null
           id?: string
+          id_numerico?: never
           item_inventario_id?: string | null
           motivo?: string | null
           quantidade?: number
-          sequencial_id?: never
         }
         Relationships: [
           {
@@ -677,10 +680,10 @@ export type Database = {
           estoque_atual: number | null
           estoque_minimo: number | null
           id: string
+          id_numerico: number
           nome: string
           numero: string
           oc_numero: string | null
-          sequencial_id: number
           sku: string
           unidade: string
           updated_at: string | null
@@ -693,10 +696,10 @@ export type Database = {
           estoque_atual?: number | null
           estoque_minimo?: number | null
           id?: string
+          id_numerico?: never
           nome: string
           numero: string
           oc_numero?: string | null
-          sequencial_id?: never
           sku: string
           unidade: string
           updated_at?: string | null
@@ -709,10 +712,10 @@ export type Database = {
           estoque_atual?: number | null
           estoque_minimo?: number | null
           id?: string
+          id_numerico?: never
           nome?: string
           numero?: string
           oc_numero?: string | null
-          sequencial_id?: never
           sku?: string
           unidade?: string
           updated_at?: string | null
@@ -738,34 +741,34 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          id_numerico: number
           item_inventario_id: string | null
           nome_produto: string
           preco_estimado: number | null
           preco_real: number | null
           quantidade: number
-          sequencial_id: number
           solicitacao_compra_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          id_numerico?: never
           item_inventario_id?: string | null
           nome_produto: string
           preco_estimado?: number | null
           preco_real?: number | null
           quantidade: number
-          sequencial_id?: never
           solicitacao_compra_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          id_numerico?: never
           item_inventario_id?: string | null
           nome_produto?: string
           preco_estimado?: number | null
           preco_real?: number | null
           quantidade?: number
-          sequencial_id?: never
           solicitacao_compra_id?: string | null
         }
         Relationships: [
@@ -791,13 +794,13 @@ export type Database = {
           estoque_after: number
           estoque_before: number
           id: string
+          id_numerico: number
           item_id: string | null
           motivo: string
           observacoes: string | null
           quantidade: number
           realizado_por: string | null
           referencia_id: string | null
-          sequencial_id: number
           setor_destino_id: string | null
           setor_destino_nome: string | null
           tipo: string
@@ -807,13 +810,13 @@ export type Database = {
           estoque_after: number
           estoque_before: number
           id?: string
+          id_numerico?: never
           item_id?: string | null
           motivo: string
           observacoes?: string | null
           quantidade: number
           realizado_por?: string | null
           referencia_id?: string | null
-          sequencial_id?: never
           setor_destino_id?: string | null
           setor_destino_nome?: string | null
           tipo: string
@@ -823,13 +826,13 @@ export type Database = {
           estoque_after?: number
           estoque_before?: number
           id?: string
+          id_numerico?: never
           item_id?: string | null
           motivo?: string
           observacoes?: string | null
           quantidade?: number
           realizado_por?: string | null
           referencia_id?: string | null
-          sequencial_id?: never
           setor_destino_id?: string | null
           setor_destino_nome?: string | null
           tipo?: string
@@ -855,30 +858,30 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          id_numerico: number
           lida: boolean | null
           link: string | null
           mensagem: string
-          sequencial_id: number
           titulo: string
           usuario_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          id_numerico?: never
           lida?: boolean | null
           link?: string | null
           mensagem: string
-          sequencial_id?: never
           titulo: string
           usuario_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          id_numerico?: never
           lida?: boolean | null
           link?: string | null
           mensagem?: string
-          sequencial_id?: never
           titulo?: string
           usuario_id?: string | null
         }
@@ -891,7 +894,7 @@ export type Database = {
           deletado_em: string | null
           gerado_em: string | null
           id: string
-          sequencial_id: number
+          id_numerico: number
           servico_id: string
         }
         Insert: {
@@ -900,7 +903,7 @@ export type Database = {
           deletado_em?: string | null
           gerado_em?: string | null
           id?: string
-          sequencial_id?: never
+          id_numerico?: never
           servico_id: string
         }
         Update: {
@@ -909,7 +912,7 @@ export type Database = {
           deletado_em?: string | null
           gerado_em?: string | null
           id?: string
-          sequencial_id?: never
+          id_numerico?: never
           servico_id?: string
         }
         Relationships: [
@@ -934,24 +937,24 @@ export type Database = {
           created_at: string
           email_settings: Json | null
           id: string
+          id_numerico: number
           name: string
-          sequencial_id: number
           slug: string
         }
         Insert: {
           created_at?: string
           email_settings?: Json | null
           id?: string
+          id_numerico?: never
           name: string
-          sequencial_id?: never
           slug: string
         }
         Update: {
           created_at?: string
           email_settings?: Json | null
           id?: string
+          id_numerico?: never
           name?: string
-          sequencial_id?: never
           slug?: string
         }
         Relationships: []
@@ -969,6 +972,7 @@ export type Database = {
           email: string
           gerado_em: string | null
           id: string
+          id_numerico: number
           is_master: boolean | null
           must_change_password: boolean | null
           nivel: Database["public"]["Enums"]["nivel_tecnico"] | null
@@ -979,7 +983,6 @@ export type Database = {
           position_id: string | null
           ramal: string | null
           regra: Database["public"]["Enums"]["regra"]
-          sequencial_id: number
           setor: Database["public"]["Enums"]["setor"] | null
           settings: Json | null
           sobrenome: string | null
@@ -998,6 +1001,7 @@ export type Database = {
           email: string
           gerado_em?: string | null
           id: string
+          id_numerico?: never
           is_master?: boolean | null
           must_change_password?: boolean | null
           nivel?: Database["public"]["Enums"]["nivel_tecnico"] | null
@@ -1008,7 +1012,6 @@ export type Database = {
           position_id?: string | null
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]
-          sequencial_id?: never
           setor?: Database["public"]["Enums"]["setor"] | null
           settings?: Json | null
           sobrenome?: string | null
@@ -1027,6 +1030,7 @@ export type Database = {
           email?: string
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           is_master?: boolean | null
           must_change_password?: boolean | null
           nivel?: Database["public"]["Enums"]["nivel_tecnico"] | null
@@ -1037,7 +1041,6 @@ export type Database = {
           position_id?: string | null
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]
-          sequencial_id?: never
           setor?: Database["public"]["Enums"]["setor"] | null
           settings?: Json | null
           sobrenome?: string | null
@@ -1072,11 +1075,11 @@ export type Database = {
           descricao: string
           gerado_em: string | null
           id: string
+          id_numerico: number
           motivo_rejeicao: string | null
           numero: string
           pagador_id: string | null
           pago_em: string | null
-          sequencial_id: number
           setor: Database["public"]["Enums"]["setor"] | null
           solicitante_id: string
           status: Database["public"]["Enums"]["reembolso_status"] | null
@@ -1092,11 +1095,11 @@ export type Database = {
           descricao: string
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           motivo_rejeicao?: string | null
           numero: string
           pagador_id?: string | null
           pago_em?: string | null
-          sequencial_id?: never
           setor?: Database["public"]["Enums"]["setor"] | null
           solicitante_id: string
           status?: Database["public"]["Enums"]["reembolso_status"] | null
@@ -1112,11 +1115,11 @@ export type Database = {
           descricao?: string
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           motivo_rejeicao?: string | null
           numero?: string
           pagador_id?: string | null
           pago_em?: string | null
-          sequencial_id?: never
           setor?: Database["public"]["Enums"]["setor"] | null
           solicitante_id?: string
           status?: Database["public"]["Enums"]["reembolso_status"] | null
@@ -1158,9 +1161,9 @@ export type Database = {
           description: string | null
           icon: string | null
           id: string
+          id_numerico: number
           name: string
           permissions: Json | null
-          sequencial_id: number
           updated_at: string | null
         }
         Insert: {
@@ -1174,9 +1177,9 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          id_numerico?: never
           name: string
           permissions?: Json | null
-          sequencial_id?: never
           updated_at?: string | null
         }
         Update: {
@@ -1190,9 +1193,9 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          id_numerico?: never
           name?: string
           permissions?: Json | null
-          sequencial_id?: never
           updated_at?: string | null
         }
         Relationships: []
@@ -1205,8 +1208,8 @@ export type Database = {
           descricao: string | null
           gerado_em: string | null
           id: string
+          id_numerico: number
           nome: string
-          sequencial_id: number
         }
         Insert: {
           ativo?: boolean | null
@@ -1215,8 +1218,8 @@ export type Database = {
           descricao?: string | null
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           nome: string
-          sequencial_id?: never
         }
         Update: {
           ativo?: boolean | null
@@ -1225,8 +1228,8 @@ export type Database = {
           descricao?: string | null
           gerado_em?: string | null
           id?: string
+          id_numerico?: never
           nome?: string
-          sequencial_id?: never
         }
         Relationships: []
       }
@@ -1242,6 +1245,7 @@ export type Database = {
           forma_pagamento: string | null
           fornecedor_id: string | null
           id: string
+          id_numerico: number
           justificativa: string | null
           motivo_rejeicao: string | null
           nfe: string | null
@@ -1250,7 +1254,6 @@ export type Database = {
           parcelas: number | null
           rejeitado_em: string | null
           rejeitado_por: string | null
-          sequencial_id: number
           setor_solicitante: string | null
           solicitado_por: string | null
           status: string | null
@@ -1268,6 +1271,7 @@ export type Database = {
           forma_pagamento?: string | null
           fornecedor_id?: string | null
           id?: string
+          id_numerico?: never
           justificativa?: string | null
           motivo_rejeicao?: string | null
           nfe?: string | null
@@ -1276,7 +1280,6 @@ export type Database = {
           parcelas?: number | null
           rejeitado_em?: string | null
           rejeitado_por?: string | null
-          sequencial_id?: never
           setor_solicitante?: string | null
           solicitado_por?: string | null
           status?: string | null
@@ -1294,6 +1297,7 @@ export type Database = {
           forma_pagamento?: string | null
           fornecedor_id?: string | null
           id?: string
+          id_numerico?: never
           justificativa?: string | null
           motivo_rejeicao?: string | null
           nfe?: string | null
@@ -1302,7 +1306,6 @@ export type Database = {
           parcelas?: number | null
           rejeitado_em?: string | null
           rejeitado_por?: string | null
-          sequencial_id?: never
           setor_solicitante?: string | null
           solicitado_por?: string | null
           status?: string | null
@@ -1352,8 +1355,8 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          id_numerico: number
           role_key: string
-          sequencial_id: number
           title: string
           updated_at: string
         }
@@ -1361,8 +1364,8 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          id_numerico?: never
           role_key: string
-          sequencial_id?: never
           title: string
           updated_at?: string
         }
@@ -1370,8 +1373,8 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          id_numerico?: never
           role_key?: string
-          sequencial_id?: never
           title?: string
           updated_at?: string
         }
@@ -1379,20 +1382,20 @@ export type Database = {
       }
       system_settings: {
         Row: {
+          id_numerico: number
           key: string
-          sequencial_id: number
           updated_at: string | null
           value: Json
         }
         Insert: {
+          id_numerico?: never
           key: string
-          sequencial_id?: never
           updated_at?: string | null
           value: Json
         }
         Update: {
+          id_numerico?: never
           key?: string
-          sequencial_id?: never
           updated_at?: string | null
           value?: Json
         }
@@ -1402,8 +1405,8 @@ export type Database = {
         Row: {
           chamado_id: string
           id: string
+          id_numerico: number
           motivo: string
-          sequencial_id: number
           tecnico_anterior_id: string | null
           tecnico_novo_id: string
           transferido_em: string | null
@@ -1412,8 +1415,8 @@ export type Database = {
         Insert: {
           chamado_id: string
           id?: string
+          id_numerico?: never
           motivo: string
-          sequencial_id?: never
           tecnico_anterior_id?: string | null
           tecnico_novo_id: string
           transferido_em?: string | null
@@ -1422,8 +1425,8 @@ export type Database = {
         Update: {
           chamado_id?: string
           id?: string
+          id_numerico?: never
           motivo?: string
-          sequencial_id?: never
           tecnico_anterior_id?: string | null
           tecnico_novo_id?: string
           transferido_em?: string | null
@@ -1468,9 +1471,9 @@ export type Database = {
           can_inactivate: boolean | null
           created_at: string
           id: string
+          id_numerico: number
           organization_id: string
           role: Database["public"]["Enums"]["app_role"]
-          sequencial_id: number
           user_id: string
         }
         Insert: {
@@ -1480,9 +1483,9 @@ export type Database = {
           can_inactivate?: boolean | null
           created_at?: string
           id?: string
+          id_numerico?: never
           organization_id: string
           role: Database["public"]["Enums"]["app_role"]
-          sequencial_id?: never
           user_id: string
         }
         Update: {
@@ -1492,9 +1495,9 @@ export type Database = {
           can_inactivate?: boolean | null
           created_at?: string
           id?: string
+          id_numerico?: never
           organization_id?: string
           role?: Database["public"]["Enums"]["app_role"]
-          sequencial_id?: never
           user_id?: string
         }
         Relationships: [

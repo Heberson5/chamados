@@ -170,7 +170,7 @@
  import { Input } from "@/components/ui/input";
  
  export default function Ajuda() {
-   const { isMaster, isAdmin, role: currentUserRole, loading: permsLoading } = usePermissions();
+   const { isMaster, isAdmin, loading: permsLoading } = usePermissions();
    const [manuals, setManuals] = useState<any[]>([]);
    const [roleDefinitions, setRoleDefinitions] = useState<any[]>([]);
    const [isLoading, setIsLoading] = useState(true);

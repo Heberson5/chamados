@@ -316,7 +316,8 @@ import { usePermissions } from "@/hooks/usePermissions";
        <div className="bg-card rounded-md border shadow-sm">
          <Table>
            <TableHeader>
-             <TableRow>
+              <TableRow>
+                <TableHead className="w-16">ID</TableHead>
                <TableHead>Usuário</TableHead>
                <TableHead>E-mail</TableHead>
                <TableHead>Permissão</TableHead>
@@ -325,9 +326,12 @@ import { usePermissions } from "@/hooks/usePermissions";
              </TableRow>
            </TableHeader>
            <TableBody>
-             {users.filter(u => isCurrentMaster ? true : !(u.is_master || u.regra === "MASTER")).map((user) => (
-               <TableRow key={user.id}>
-                 <TableCell className="font-medium">
+              {users.filter(u => isCurrentMaster ? true : !(u.is_master || u.regra === "MASTER")).map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="text-xs font-mono text-muted-foreground">
+                    {user.sequencial_id}
+                  </TableCell>
+                  <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs overflow-hidden border">
                         {user.avatar_url ? (

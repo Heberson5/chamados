@@ -164,14 +164,15 @@
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight } from "lucide-react";
+ import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight, LayoutDashboard, Ticket, Users, Key, FileText, Building2, Settings, History } from "lucide-react";
  import { useToast } from "@/hooks/use-toast";
  import { Textarea } from "@/components/ui/textarea";
  import { Input } from "@/components/ui/input";
  
  export default function Ajuda() {
-   const { isMaster, isAdmin, loading: permsLoading } = usePermissions();
+   const { isMaster, isAdmin, role: currentUserRole, loading: permsLoading } = usePermissions();
    const [manuals, setManuals] = useState<any[]>([]);
+   const [roleDefinitions, setRoleDefinitions] = useState<any[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [isEditing, setIsEditing] = useState(false);
    const [activeTab, setActiveTab] = useState("");
@@ -180,15 +181,19 @@
    const fetchManuals = async () => {
      setIsLoading(true);
      try {
-       const { data, error } = await supabase
-         .from("system_manuals")
-         .select("*")
-         .order("role_key");
-       
-       if (error) throw error;
-       setManuals(data || []);
-       if (data && data.length > 0) {
-         setActiveTab(data[0].role_key);
+       const [manualsRes, rolesRes] = await Promise.all([
+         supabase.from("system_manuals").select("*").order("role_key"),
+         supabase.from("role_definitions").select("*")
+       ]);
+
+       if (manualsRes.error) throw manualsRes.error;
+       if (rolesRes.error) throw rolesRes.error;
+
+       setManuals(manualsRes.data || []);
+       setRoleDefinitions(rolesRes.data || []);
+
+       if (manualsRes.data && manualsRes.data.length > 0) {
+         setActiveTab(manualsRes.data[0].role_key);
        }
      } catch (error: any) {
        toast({ variant: "destructive", title: "Erro ao carregar manuais", description: error.message });

@@ -6,10 +6,20 @@
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight, LayoutDashboard, Ticket, Users, Key, FileText, Building2, Settings, History } from "lucide-react";
+ import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight, LayoutDashboard, Ticket, Users, Key, FileText, Building2, Settings, History, ArrowLeft, AlertTriangle } from "lucide-react";
  import { useToast } from "@/hooks/use-toast";
  import { Textarea } from "@/components/ui/textarea";
  import { Input } from "@/components/ui/input";
+ import {
+   AlertDialog,
+   AlertDialogAction,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+ } from "@/components/ui/alert-dialog";
  
  export default function Ajuda() {
    const { isMaster, isAdmin, loading: permsLoading } = usePermissions();
@@ -17,7 +27,10 @@
    const [menuManuals, setMenuManuals] = useState<any[]>([]);
    const [roleDefinitions, setRoleDefinitions] = useState<any[]>([]);
    const [isLoading, setIsLoading] = useState(true);
-   const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [showExitDialog, setShowExitDialog] = useState(false);
+    const [pendingExitAction, setPendingExitAction] = useState<"visualize" | "back" | null>(null);
    const [activeTab, setActiveTab] = useState("");
    const { toast } = useToast();
  
@@ -54,7 +67,7 @@
      }
    }, [permsLoading]);
  
-    const handleSave = async (manual: any, isMenuManual = false) => {
+    const handleSave = async (manual: any, isMenuManual = false, silent = false) => {
       try {
         const table = isMenuManual ? "help_menu_manuals" : "system_manuals";
         const { error } = await supabase
@@ -67,12 +80,58 @@
           .eq("id", manual.id);
   
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Manual atualizado com sucesso!" });
-        // We don't necessarily close edit mode if they might want to edit other things
-        fetchManuals();
+        if (!silent) {
+          toast({ title: "Sucesso", description: "Manual atualizado com sucesso!" });
+        }
+        // After saving one, we don't necessarily know if others are clean, 
+        // but the user just clicked "Save" on this specific one.
+        // For simplicity, we'll keep hasChanges as true unless they use saveAll
       } catch (error: any) {
         toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
+        throw error;
       }
+    };
+
+    const handleSaveAll = async () => {
+      try {
+        setIsLoading(true);
+        // Save all manuals
+        for (const manual of manuals) {
+          await handleSave(manual, false, true);
+        }
+        // Save all menu manuals
+        for (const menuManual of menuManuals) {
+          await handleSave(menuManual, true, true);
+        }
+        
+        setHasChanges(false);
+        toast({ title: "Sucesso", description: "Todas as alterações foram salvas!" });
+        setIsEditing(false);
+        fetchManuals();
+      } catch (error) {
+        // Toast already shown in handleSave
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const handleExitEdit = (action: "visualize" | "back") => {
+      if (hasChanges) {
+        setPendingExitAction(action);
+        setShowExitDialog(true);
+      } else {
+        setIsEditing(false);
+        if (action === "back") {
+          // Action is the same for now, but keeping the param for clarity
+        }
+      }
+    };
+
+    const discardChanges = () => {
+      setHasChanges(false);
+      setIsEditing(false);
+      setShowExitDialog(false);
+      fetchManuals(); // Reload original data
     };
  
    if (isLoading || permsLoading) {

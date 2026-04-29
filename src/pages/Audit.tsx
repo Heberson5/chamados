@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
-import { Search, History, MousePointer2, User as UserIcon, RefreshCw } from "lucide-react";
+import { Search, History, MousePointer2, User as UserIcon, RefreshCw, Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
   import { usePermissions } from "@/hooks/usePermissions";
   import { useNavigate } from "react-router-dom";
@@ -20,9 +26,10 @@ import { format, parseISO } from "date-fns";
       }
     }, [permsLoading, hasPermission, navigate]);
 
-   const [logs, setLogs] = useState<any[]>([]);
-   const [searchTerm, setSearchTerm] = useState("");
-   const [isLoading, setIsLoading] = useState(true);
+    const [logs, setLogs] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedLog, setSelectedLog] = useState<any>(null);
  
     const fetchLogs = async () => {
       setIsLoading(true);
@@ -134,6 +141,7 @@ import { format, parseISO } from "date-fns";
                     <TableHead>Local / Tabela</TableHead>
                     <TableHead>ID Registro</TableHead>
                     <TableHead>Data/Hora</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -177,10 +185,20 @@ import { format, parseISO } from "date-fns";
                           <span className="truncate max-w-[150px]">{log.table_name || "-"}</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-[10px] font-mono text-muted-foreground">{log.record_id || "-"}</TableCell>
-                       <TableCell className="text-xs whitespace-nowrap">
-                         {formatCuiabaTime(log.created_at)}
-                       </TableCell>
+                      <TableCell className="text-[10px] font-mono text-muted-foreground">{log.record_id?.slice(0, 8) || "-"}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {formatCuiabaTime(log.created_at)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setSelectedLog(log)}
+                        >
+                          <Eye size={14} />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {filteredLogs.length === 0 && !isLoading && (
@@ -195,7 +213,53 @@ import { format, parseISO } from "date-fns";
             </div>
           </div>
          </CardContent>
-       </Card>
-     </div>
-   );
- }
+        </Card>
+
+        <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detalhes da Atividade #{selectedLog?.id}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-bold text-muted-foreground uppercase text-[10px]">Tabela</p>
+                  <p>{selectedLog?.table_name}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-muted-foreground uppercase text-[10px]">Ação</p>
+                  <p>{selectedLog?.action}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-muted-foreground uppercase text-[10px]">Usuário</p>
+                  <p>{selectedLog?.user_email || "Sistema"}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-muted-foreground uppercase text-[10px]">Data/Hora</p>
+                  <p>{selectedLog && formatCuiabaTime(selectedLog.created_at)}</p>
+                </div>
+              </div>
+              
+              {selectedLog?.old_data && Object.keys(selectedLog.old_data).length > 0 && (
+                <div className="space-y-2">
+                  <p className="font-bold text-muted-foreground uppercase text-[10px]">Dados Anteriores</p>
+                  <pre className="bg-muted p-3 rounded-md text-[10px] overflow-x-auto">
+                    {JSON.stringify(selectedLog.old_data, null, 2)}
+                  </pre>
+                </div>
+              )}
+              
+              {selectedLog?.new_data && Object.keys(selectedLog.new_data).length > 0 && (
+                <div className="space-y-2">
+                  <p className="font-bold text-muted-foreground uppercase text-[10px]">Novos Dados</p>
+                  <pre className="bg-muted p-3 rounded-md text-[10px] overflow-x-auto border-l-4 border-green-500">
+                    {JSON.stringify(selectedLog.new_data, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }

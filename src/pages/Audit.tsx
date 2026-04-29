@@ -140,7 +140,7 @@ import { format, parseISO } from "date-fns";
                 {filteredLogs.map((log) => (
                   <TableRow key={log.id}>
                       <TableCell className="text-xs font-mono text-muted-foreground">
-                        {log.sequencial_id}
+                        {log.id}
                       </TableCell>
                       <TableCell className="font-medium text-xs">
                           <div className="flex items-center gap-2">

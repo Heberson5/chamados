@@ -23,6 +23,7 @@ export type Database = {
           old_data: Json | null
           path: string | null
           record_id: string | null
+          sequencial_id: number
           table_name: string | null
           user_email: string | null
           user_id: string | null
@@ -35,6 +36,7 @@ export type Database = {
           old_data?: Json | null
           path?: string | null
           record_id?: string | null
+          sequencial_id?: never
           table_name?: string | null
           user_email?: string | null
           user_id?: string | null
@@ -47,6 +49,7 @@ export type Database = {
           old_data?: Json | null
           path?: string | null
           record_id?: string | null
+          sequencial_id?: never
           table_name?: string | null
           user_email?: string | null
           user_id?: string | null
@@ -205,6 +208,7 @@ export type Database = {
           prioridade_alterada_por: string | null
           prioridade_id: string | null
           reaberto: boolean | null
+          sequencial_id: number
           sla_deadline: string | null
           sla_violado: boolean | null
           sla_violado_em: string | null
@@ -237,6 +241,7 @@ export type Database = {
           prioridade_alterada_por?: string | null
           prioridade_id?: string | null
           reaberto?: boolean | null
+          sequencial_id?: never
           sla_deadline?: string | null
           sla_violado?: boolean | null
           sla_violado_em?: string | null
@@ -269,6 +274,7 @@ export type Database = {
           prioridade_alterada_por?: string | null
           prioridade_id?: string | null
           reaberto?: boolean | null
+          sequencial_id?: never
           sla_deadline?: string | null
           sla_violado?: boolean | null
           sla_violado_em?: string | null
@@ -429,6 +435,7 @@ export type Database = {
           id: string
           nome: string
           organization_id: string | null
+          sequencial_id: number
           updated_at: string
         }
         Insert: {
@@ -437,6 +444,7 @@ export type Database = {
           id?: string
           nome: string
           organization_id?: string | null
+          sequencial_id?: never
           updated_at?: string
         }
         Update: {
@@ -445,6 +453,7 @@ export type Database = {
           id?: string
           nome?: string
           organization_id?: string | null
+          sequencial_id?: never
           updated_at?: string
         }
         Relationships: [
@@ -925,6 +934,7 @@ export type Database = {
           position_id: string | null
           ramal: string | null
           regra: Database["public"]["Enums"]["regra"]
+          sequencial_id: number
           setor: Database["public"]["Enums"]["setor"] | null
           settings: Json | null
           sobrenome: string | null
@@ -953,6 +963,7 @@ export type Database = {
           position_id?: string | null
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]
+          sequencial_id?: never
           setor?: Database["public"]["Enums"]["setor"] | null
           settings?: Json | null
           sobrenome?: string | null
@@ -981,6 +992,7 @@ export type Database = {
           position_id?: string | null
           ramal?: string | null
           regra?: Database["public"]["Enums"]["regra"]
+          sequencial_id?: never
           setor?: Database["public"]["Enums"]["setor"] | null
           settings?: Json | null
           sobrenome?: string | null

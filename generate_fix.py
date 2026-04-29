@@ -5,17 +5,23 @@ def run_query(query):
     return result.stdout.strip()
 
 # 1. Get all policy definitions
-policies_query = "SELECT schemaname, tablename, policyname, pg_get_policydef(oid) as def FROM pg_policies WHERE schemaname = 'public';"
-policies = run_query(policies_query).split('\n')
+policies_query = """
+SELECT c.relname, p.polname, pg_get_policydef(p.oid)
+FROM pg_policy p
+JOIN pg_class c ON c.oid = p.polrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public';
+"""
+policies_raw = run_query(policies_query).split('\n')
 
 sql = ["BEGIN;"]
 
 # Drop all policies first
-for line in policies:
+for line in policies_raw:
     if not line: continue
     parts = line.split('|')
     if len(parts) < 3: continue
-    sql.append(f"DROP POLICY IF EXISTS \"{parts[2]}\" ON public.\"{parts[1]}\";")
+    sql.append(f"DROP POLICY IF EXISTS \"{parts[1]}\" ON public.\"{parts[0]}\";")
 
 # Drop all FKs
 fks_detailed_query = """
@@ -54,10 +60,10 @@ for line in fks_detailed:
         sql.append(f"ALTER TABLE public.\"{table}\" ADD CONSTRAINT \"{conname}\" FOREIGN KEY (\"{col}\") REFERENCES public.\"{ftable}\"(id);")
 
 # Re-create policies
-for line in policies:
+for line in policies_raw:
     if not line: continue
     parts = line.split('|')
-    definition = parts[3]
+    definition = parts[2]
     # Transform definition
     new_def = definition.replace('id = auth.uid()', 'user_id = auth.uid()')
     new_def = new_def.replace('auth.uid() = id', 'auth.uid() = user_id')

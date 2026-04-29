@@ -6,7 +6,7 @@
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight, LayoutDashboard, Ticket, Users, Key, FileText, Building2, Settings, History, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight, LayoutDashboard, Ticket, Users, Key, FileText, Building2, Settings, History, ArrowLeft, AlertTriangle, ScrollText } from "lucide-react";
  import { useToast } from "@/hooks/use-toast";
  import { Textarea } from "@/components/ui/textarea";
  import { Input } from "@/components/ui/input";
@@ -221,13 +221,13 @@
          </Card>
        ) : (
          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-           <TabsList className="flex w-full overflow-x-auto justify-start md:grid md:grid-cols-4">
+            <TabsList className="flex w-full overflow-x-auto justify-start md:grid md:grid-cols-4 h-auto p-1 bg-muted/50">
              {visibleManuals.map((m) => {
                const label = m.role_key === "TECNICO" ? "Técnico" : 
                             m.role_key === "USUARIO" ? "Usuário" : 
                             m.role_key.charAt(0) + m.role_key.slice(1).toLowerCase();
                return (
-                 <TabsTrigger key={m.role_key} value={m.role_key} className="gap-2">
+                  <TabsTrigger key={m.role_key} value={m.role_key} className="gap-2 py-2 md:py-1 px-4 md:px-2 min-w-max md:min-w-0">
                    {getRoleIcon(m.role_key)}
                    {label}
                  </TabsTrigger>
@@ -273,9 +273,9 @@
                      
                     {isEditing ? (
                       <Tabs defaultValue="intro" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-4">
-                          <TabsTrigger value="intro">Introdução do Perfil</TabsTrigger>
-                          <TabsTrigger value="menus">Manuais por Menu</TabsTrigger>
+                         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-4 h-auto gap-2 sm:gap-0">
+                           <TabsTrigger value="intro" className="py-2">Introdução do Perfil</TabsTrigger>
+                           <TabsTrigger value="menus" className="py-2">Manuais por Menu</TabsTrigger>
                         </TabsList>
                         
                         <TabsContent value="intro" className="space-y-4">
@@ -303,35 +303,40 @@
                           <div className="space-y-8">
                             {getMenuSections(manual.role_key).map((section) => (
                               <div key={section.id} className="p-4 border rounded-lg space-y-4 bg-background">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
+                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                   <div className="flex items-center gap-2 flex-1">
                                     <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                                      {section.menu_id === 'dashboard' && <LayoutDashboard className="h-4 w-4" />}
-                                      {section.menu_id === 'chamados' && <Ticket className="h-4 w-4" />}
-                                      {section.menu_id === 'usuarios' && <Users className="h-4 w-4" />}
-                                      {section.menu_id === 'permissoes' && <Key className="h-4 w-4" />}
-                                      {section.menu_id === 'relatorios' && <FileText className="h-4 w-4" />}
-                                      {section.menu_id === 'departamentos' && <Building2 className="h-4 w-4" />}
-                                      {section.menu_id === 'configuracoes' && <Settings className="h-4 w-4" />}
-                                      {section.menu_id === 'audit' && <History className="h-4 w-4" />}
-                                      {section.menu_id === 'ajuda' && <HelpCircle className="h-4 w-4" />}
+                                       {section.menu_id === 'dashboard' ? <LayoutDashboard className="h-4 w-4" /> :
+                                        section.menu_id === 'chamados' ? <Ticket className="h-4 w-4" /> :
+                                        section.menu_id === 'usuarios' ? <Users className="h-4 w-4" /> :
+                                        section.menu_id === 'permissoes' ? <Key className="h-4 w-4" /> :
+                                        section.menu_id === 'relatorios' ? <FileText className="h-4 w-4" /> :
+                                        section.menu_id === 'departamentos' ? <Building2 className="h-4 w-4" /> :
+                                        section.menu_id === 'configuracoes' ? <Settings className="h-4 w-4" /> :
+                                        section.menu_id === 'audit' ? <History className="h-4 w-4" /> :
+                                        section.menu_id === 'ajuda' ? <HelpCircle className="h-4 w-4" /> :
+                                        <ScrollText className="h-4 w-4" />}
                                     </div>
-                                    <Input 
-                                      value={section.title} 
-                                      onChange={(e) => {
-                                        const next = [...menuManuals];
-                                        const idx = next.findIndex(m => m.id === section.id);
-                                        next[idx].title = e.target.value;
-                                        setMenuManuals(next);
-                                        setHasChanges(true);
-                                      }}
-                                      className="font-bold border-none h-auto p-0 focus-visible:ring-0 text-lg"
-                                    />
+                                     <div className="flex-1 min-w-0">
+                                       <Input 
+                                         value={section.title} 
+                                         onChange={(e) => {
+                                           const next = [...menuManuals];
+                                           const idx = next.findIndex(m => m.id === section.id);
+                                           next[idx].title = e.target.value;
+                                           setMenuManuals(next);
+                                           setHasChanges(true);
+                                         }}
+                                         className="font-bold text-lg w-full bg-transparent border-primary/20 focus:border-primary transition-all"
+                                         placeholder="Título do menu"
+                                       />
+                                     </div>
                                   </div>
                                   <Button 
-                                    size="sm" 
+                                     size="sm"
+                                     variant="outline"
                                     onClick={() => handleSave(section, true)}
-                                    className="gap-1 h-8 px-2"
+                                     className="gap-1 h-9 px-4 sm:w-auto w-full border-primary/30 text-primary hover:bg-primary/10"
                                   >
                                     <Save size={14} /> Salvar Menu
                                   </Button>

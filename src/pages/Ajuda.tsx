@@ -6,10 +6,20 @@
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight, LayoutDashboard, Ticket, Users, Key, FileText, Building2, Settings, History } from "lucide-react";
+ import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, BookOpen, ChevronRight, LayoutDashboard, Ticket, Users, Key, FileText, Building2, Settings, History, ArrowLeft, AlertTriangle } from "lucide-react";
  import { useToast } from "@/hooks/use-toast";
  import { Textarea } from "@/components/ui/textarea";
  import { Input } from "@/components/ui/input";
+ import {
+   AlertDialog,
+   AlertDialogAction,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+ } from "@/components/ui/alert-dialog";
  
  export default function Ajuda() {
    const { isMaster, isAdmin, loading: permsLoading } = usePermissions();
@@ -17,7 +27,10 @@
    const [menuManuals, setMenuManuals] = useState<any[]>([]);
    const [roleDefinitions, setRoleDefinitions] = useState<any[]>([]);
    const [isLoading, setIsLoading] = useState(true);
-   const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [showExitDialog, setShowExitDialog] = useState(false);
+    const [pendingExitAction, setPendingExitAction] = useState<"visualize" | "back" | null>(null);
    const [activeTab, setActiveTab] = useState("");
    const { toast } = useToast();
  
@@ -54,7 +67,7 @@
      }
    }, [permsLoading]);
  
-    const handleSave = async (manual: any, isMenuManual = false) => {
+    const handleSave = async (manual: any, isMenuManual = false, silent = false) => {
       try {
         const table = isMenuManual ? "help_menu_manuals" : "system_manuals";
         const { error } = await supabase
@@ -67,12 +80,58 @@
           .eq("id", manual.id);
   
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Manual atualizado com sucesso!" });
-        // We don't necessarily close edit mode if they might want to edit other things
-        fetchManuals();
+        if (!silent) {
+          toast({ title: "Sucesso", description: "Manual atualizado com sucesso!" });
+        }
+        // After saving one, we don't necessarily know if others are clean, 
+        // but the user just clicked "Save" on this specific one.
+        // For simplicity, we'll keep hasChanges as true unless they use saveAll
       } catch (error: any) {
         toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
+        throw error;
       }
+    };
+
+    const handleSaveAll = async () => {
+      try {
+        setIsLoading(true);
+        // Save all manuals
+        for (const manual of manuals) {
+          await handleSave(manual, false, true);
+        }
+        // Save all menu manuals
+        for (const menuManual of menuManuals) {
+          await handleSave(menuManual, true, true);
+        }
+        
+        setHasChanges(false);
+        toast({ title: "Sucesso", description: "Todas as alterações foram salvas!" });
+        setIsEditing(false);
+        fetchManuals();
+      } catch (error) {
+        // Toast already shown in handleSave
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const handleExitEdit = (action: "visualize" | "back") => {
+      if (hasChanges) {
+        setPendingExitAction(action);
+        setShowExitDialog(true);
+      } else {
+        setIsEditing(false);
+        if (action === "back") {
+          // Action is the same for now, but keeping the param for clarity
+        }
+      }
+    };
+
+    const discardChanges = () => {
+      setHasChanges(false);
+      setIsEditing(false);
+      setShowExitDialog(false);
+      fetchManuals(); // Reload original data
     };
  
    if (isLoading || permsLoading) {
@@ -130,16 +189,28 @@
            <h1 className="text-3xl font-bold tracking-tight">Centro de Ajuda</h1>
            <p className="text-muted-foreground">Consulte os manuais de utilização do sistema.</p>
          </div>
-         {canEdit && (
-           <Button 
-             variant={isEditing ? "outline" : "default"} 
-             onClick={() => setIsEditing(!isEditing)}
-             className="gap-2"
-           >
-             {isEditing ? <Eye size={18} /> : <Edit3 size={18} />}
-             {isEditing ? "Visualizar" : "Editar Manuais"}
-           </Button>
-         )}
+          <div className="flex gap-2">
+            {isEditing && (
+              <Button 
+                variant="outline" 
+                onClick={() => handleExitEdit("back")}
+                className="gap-2"
+              >
+                <ArrowLeft size={18} />
+                Voltar
+              </Button>
+            )}
+            {canEdit && (
+              <Button 
+                variant={isEditing ? "secondary" : "default"} 
+                onClick={() => isEditing ? handleExitEdit("visualize") : setIsEditing(true)}
+                className="gap-2"
+              >
+                {isEditing ? <Eye size={18} /> : <Edit3 size={18} />}
+                {isEditing ? "Visualizar" : "Editar Manuais"}
+              </Button>
+            )}
+          </div>
        </div>
  
        {visibleManuals.length === 0 ? (
@@ -171,12 +242,13 @@
                    {isEditing ? (
                      <Input 
                        value={manual.title} 
-                       onChange={(e) => {
-                         const next = [...manuals];
-                         const idx = next.findIndex(m => m.id === manual.id);
-                         next[idx].title = e.target.value;
-                         setManuals(next);
-                       }}
+                        onChange={(e) => {
+                          const next = [...manuals];
+                          const idx = next.findIndex(m => m.id === manual.id);
+                          next[idx].title = e.target.value;
+                          setManuals(next);
+                          setHasChanges(true);
+                        }}
                        className="text-2xl font-bold"
                      />
                    ) : (
@@ -209,15 +281,16 @@
                         <TabsContent value="intro" className="space-y-4">
                           <div className="p-4 border rounded-lg bg-muted/30">
                             <h4 className="font-bold mb-2">Introdução Geral - {manual.role_key}</h4>
-                            <RichTextEditor 
-                              content={manual.content} 
-                              onChange={(content) => {
-                                const next = [...manuals];
-                                const idx = next.findIndex(m => m.id === manual.id);
-                                next[idx].content = content;
-                                setManuals(next);
-                              }} 
-                            />
+                             <RichTextEditor 
+                               content={manual.content} 
+                               onChange={(content) => {
+                                 const next = [...manuals];
+                                 const idx = next.findIndex(m => m.id === manual.id);
+                                 next[idx].content = content;
+                                 setManuals(next);
+                                 setHasChanges(true);
+                               }} 
+                             />
                           </div>
                           <div className="flex justify-end">
                             <Button onClick={() => handleSave(manual)} className="gap-2">
@@ -250,6 +323,7 @@
                                         const idx = next.findIndex(m => m.id === section.id);
                                         next[idx].title = e.target.value;
                                         setMenuManuals(next);
+                                        setHasChanges(true);
                                       }}
                                       className="font-bold border-none h-auto p-0 focus-visible:ring-0 text-lg"
                                     />
@@ -262,15 +336,16 @@
                                     <Save size={14} /> Salvar Menu
                                   </Button>
                                 </div>
-                                <RichTextEditor 
-                                  content={section.content} 
-                                  onChange={(content) => {
-                                    const next = [...menuManuals];
-                                    const idx = next.findIndex(m => m.id === section.id);
-                                    next[idx].content = content;
-                                    setMenuManuals(next);
-                                  }} 
-                                />
+                                 <RichTextEditor 
+                                   content={section.content} 
+                                   onChange={(content) => {
+                                     const next = [...menuManuals];
+                                     const idx = next.findIndex(m => m.id === section.id);
+                                     next[idx].content = content;
+                                     setMenuManuals(next);
+                                     setHasChanges(true);
+                                   }} 
+                                 />
                               </div>
                             ))}
                           </div>
@@ -329,7 +404,30 @@
              </TabsContent>
            ))}
          </Tabs>
-       )}
-     </div>
-   );
- }
+        )}
+
+        <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <div className="flex items-center gap-2 text-warning mb-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+              </div>
+              <AlertDialogDescription>
+                Você possui alterações que ainda não foram salvas. Deseja salvar antes de sair da edição ou descartar as mudanças?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel onClick={() => setShowExitDialog(false)}>Cancelar</AlertDialogCancel>
+              <Button variant="outline" onClick={discardChanges} className="sm:mr-auto">
+                Descartar
+              </Button>
+              <AlertDialogAction onClick={handleSaveAll}>
+                Salvar e Sair
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }

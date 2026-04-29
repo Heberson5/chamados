@@ -242,12 +242,13 @@
                    {isEditing ? (
                      <Input 
                        value={manual.title} 
-                       onChange={(e) => {
-                         const next = [...manuals];
-                         const idx = next.findIndex(m => m.id === manual.id);
-                         next[idx].title = e.target.value;
-                         setManuals(next);
-                       }}
+                        onChange={(e) => {
+                          const next = [...manuals];
+                          const idx = next.findIndex(m => m.id === manual.id);
+                          next[idx].title = e.target.value;
+                          setManuals(next);
+                          setHasChanges(true);
+                        }}
                        className="text-2xl font-bold"
                      />
                    ) : (
@@ -280,15 +281,16 @@
                         <TabsContent value="intro" className="space-y-4">
                           <div className="p-4 border rounded-lg bg-muted/30">
                             <h4 className="font-bold mb-2">Introdução Geral - {manual.role_key}</h4>
-                            <RichTextEditor 
-                              content={manual.content} 
-                              onChange={(content) => {
-                                const next = [...manuals];
-                                const idx = next.findIndex(m => m.id === manual.id);
-                                next[idx].content = content;
-                                setManuals(next);
-                              }} 
-                            />
+                             <RichTextEditor 
+                               content={manual.content} 
+                               onChange={(content) => {
+                                 const next = [...manuals];
+                                 const idx = next.findIndex(m => m.id === manual.id);
+                                 next[idx].content = content;
+                                 setManuals(next);
+                                 setHasChanges(true);
+                               }} 
+                             />
                           </div>
                           <div className="flex justify-end">
                             <Button onClick={() => handleSave(manual)} className="gap-2">
@@ -321,6 +323,7 @@
                                         const idx = next.findIndex(m => m.id === section.id);
                                         next[idx].title = e.target.value;
                                         setMenuManuals(next);
+                                        setHasChanges(true);
                                       }}
                                       className="font-bold border-none h-auto p-0 focus-visible:ring-0 text-lg"
                                     />
@@ -333,15 +336,16 @@
                                     <Save size={14} /> Salvar Menu
                                   </Button>
                                 </div>
-                                <RichTextEditor 
-                                  content={section.content} 
-                                  onChange={(content) => {
-                                    const next = [...menuManuals];
-                                    const idx = next.findIndex(m => m.id === section.id);
-                                    next[idx].content = content;
-                                    setMenuManuals(next);
-                                  }} 
-                                />
+                                 <RichTextEditor 
+                                   content={section.content} 
+                                   onChange={(content) => {
+                                     const next = [...menuManuals];
+                                     const idx = next.findIndex(m => m.id === section.id);
+                                     next[idx].content = content;
+                                     setMenuManuals(next);
+                                     setHasChanges(true);
+                                   }} 
+                                 />
                               </div>
                             ))}
                           </div>

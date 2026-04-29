@@ -238,9 +238,47 @@
  
    const canEdit = isMaster || isAdmin;
    
-   // Note: RLS already handles filtering by role.
-   const visibleManuals = manuals;
- 
+    const getMenuSections = (roleKey: string) => {
+      const roleNameMap: Record<string, string> = {
+        'MASTER': 'Master',
+        'ADMIN': 'Administrador',
+        'TECNICO': 'Técnico',
+        'USUARIO': 'Usuário'
+      };
+      
+      const targetName = roleNameMap[roleKey.toUpperCase()] || roleKey;
+      const roleDef = roleDefinitions.find(r => r.name.toUpperCase() === targetName.toUpperCase());
+      
+      if (!roleDef) {
+        // Special case for Master if no definition found
+        if (roleKey.toUpperCase() === 'MASTER') {
+          return Object.keys(MENU_HELP_CONTENT).map(menuId => ({
+            id: menuId,
+            ...MENU_HELP_CONTENT[menuId]
+          }));
+        }
+        return [];
+      }
+      
+      const permissions = roleDef.permissions || [];
+      
+      // If Master has "Acesso Total", show all
+      if (permissions.includes("Acesso Total") || roleKey.toUpperCase() === 'MASTER') {
+        return Object.keys(MENU_HELP_CONTENT).map(menuId => ({
+          id: menuId,
+          ...MENU_HELP_CONTENT[menuId]
+        }));
+      }
+
+      return Object.keys(MENU_HELP_CONTENT)
+        .filter(menuId => permissions.includes(menuId))
+        .map(menuId => ({
+          id: menuId,
+          ...MENU_HELP_CONTENT[menuId]
+        }));
+    };
+
+    const visibleManuals = manuals;
    const getRoleIcon = (role: string) => {
      switch (role.toUpperCase()) {
        case "MASTER": return <Crown className="h-4 w-4" />;
@@ -327,39 +365,73 @@
                        </div>
                      )}
                      
-                   {isEditing ? (
-                     <div className="space-y-4">
-                       <Textarea 
-                         value={manual.content} 
-                         onChange={(e) => {
-                           const next = [...manuals];
-                           const idx = next.findIndex(m => m.id === manual.id);
-                           next[idx].content = e.target.value;
-                           setManuals(next);
-                         }}
-                         className="min-h-[400px] font-mono text-sm"
-                         placeholder="Escreva o conteúdo em HTML..."
-                       />
-                       <div className="flex justify-end">
-                         <Button onClick={() => handleSave(manual)} className="gap-2">
-                           <Save size={18} /> Salvar Alterações
-                         </Button>
-                       </div>
-                     </div>
-                   ) : (
-                       <div className="relative">
-                         <div 
-                           className="prose prose-slate dark:prose-invert max-w-none 
-                                     prose-headings:font-bold prose-headings:tracking-tight
-                                     prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:text-primary
-                                     prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3
-                                     prose-p:text-muted-foreground prose-p:leading-relaxed
-                                     prose-li:text-muted-foreground prose-strong:text-foreground
-                                     prose-hr:my-8"
-                           dangerouslySetInnerHTML={{ __html: manual.content }}
-                         />
-                       </div>
-                   )}
+                    {isEditing ? (
+                      <div className="space-y-4">
+                        <Textarea 
+                          value={manual.content} 
+                          onChange={(e) => {
+                            const next = [...manuals];
+                            const idx = next.findIndex(m => m.id === manual.id);
+                            next[idx].content = e.target.value;
+                            setManuals(next);
+                          }}
+                          className="min-h-[400px] font-mono text-sm"
+                          placeholder="Escreva o conteúdo em HTML..."
+                        />
+                        <div className="flex justify-end">
+                          <Button onClick={() => handleSave(manual)} className="gap-2">
+                            <Save size={18} /> Salvar Alterações
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="space-y-12">
+                          {/* General Intro Section */}
+                          <section className="prose prose-slate dark:prose-invert max-w-none">
+                            <div dangerouslySetInnerHTML={{ __html: manual.content }} />
+                          </section>
+
+                          {/* Dynamic Menu Sections */}
+                          <div className="space-y-8 border-t pt-12">
+                            <h3 className="text-xl font-bold flex items-center gap-2 text-primary">
+                              <BookOpen className="h-5 w-5" />
+                              Guia Detalhado por Menu
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 gap-6">
+                              {getMenuSections(manual.role_key).map((section) => (
+                                <div key={section.id} className="group p-6 rounded-xl border bg-card hover:border-primary/50 transition-all shadow-sm">
+                                  <div className="flex items-start gap-4 mb-4">
+                                    <div className="mt-1 p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                      {section.id === 'dashboard' && <LayoutDashboard className="h-5 w-5" />}
+                                      {section.id === 'chamados' && <Ticket className="h-5 w-5" />}
+                                      {section.id === 'usuarios' && <Users className="h-5 w-5" />}
+                                      {section.id === 'permissoes' && <Key className="h-5 w-5" />}
+                                      {section.id === 'relatorios' && <FileText className="h-5 w-5" />}
+                                      {section.id === 'departamentos' && <Building2 className="h-5 w-5" />}
+                                      {section.id === 'configuracoes' && <Settings className="h-5 w-5" />}
+                                      {section.id === 'audit' && <History className="h-5 w-5" />}
+                                      {section.id === 'ajuda' && <HelpCircle className="h-5 w-5" />}
+                                    </div>
+                                    <div>
+                                      <h4 className="text-lg font-bold">{section.title}</h4>
+                                      <p className="text-xs text-muted-foreground">Funcionalidades e instruções do menu {section.title}</p>
+                                    </div>
+                                  </div>
+                                  <div 
+                                    className="prose prose-slate dark:prose-invert max-w-none text-sm 
+                                               prose-p:text-muted-foreground prose-p:leading-relaxed
+                                               prose-li:text-muted-foreground prose-strong:text-foreground"
+                                    dangerouslySetInnerHTML={{ __html: section.content }} 
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                  </CardContent>
                </Card>
              </TabsContent>

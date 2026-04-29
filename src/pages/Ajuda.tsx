@@ -404,7 +404,30 @@
              </TabsContent>
            ))}
          </Tabs>
-       )}
-     </div>
-   );
- }
+        )}
+
+        <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <div className="flex items-center gap-2 text-warning mb-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+              </div>
+              <AlertDialogDescription>
+                Você possui alterações que ainda não foram salvas. Deseja salvar antes de sair da edição ou descartar as mudanças?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel onClick={() => setShowExitDialog(false)}>Cancelar</AlertDialogCancel>
+              <Button variant="outline" onClick={discardChanges} className="sm:mr-auto">
+                Descartar
+              </Button>
+              <AlertDialogAction onClick={handleSaveAll}>
+                Salvar e Sair
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }

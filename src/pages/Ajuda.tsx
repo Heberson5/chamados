@@ -376,15 +376,15 @@ import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, Boo
                                 <div key={section.id} className="group p-6 rounded-xl border bg-card hover:border-primary/50 transition-all shadow-sm">
                                   <div className="flex items-start gap-4 mb-4">
                                     <div className="mt-1 p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                      {section.id === 'dashboard' && <LayoutDashboard className="h-5 w-5" />}
-                                      {section.id === 'chamados' && <Ticket className="h-5 w-5" />}
-                                      {section.id === 'usuarios' && <Users className="h-5 w-5" />}
-                                      {section.id === 'permissoes' && <Key className="h-5 w-5" />}
-                                      {section.id === 'relatorios' && <FileText className="h-5 w-5" />}
-                                      {section.id === 'departamentos' && <Building2 className="h-5 w-5" />}
-                                      {section.id === 'configuracoes' && <Settings className="h-5 w-5" />}
-                                      {section.id === 'audit' && <History className="h-5 w-5" />}
-                                      {section.id === 'ajuda' && <HelpCircle className="h-5 w-5" />}
+                                      {section.menu_id === 'dashboard' && <LayoutDashboard className="h-5 w-5" />}
+                                      {section.menu_id === 'chamados' && <Ticket className="h-5 w-5" />}
+                                      {section.menu_id === 'usuarios' && <Users className="h-5 w-5" />}
+                                      {section.menu_id === 'permissoes' && <Key className="h-5 w-5" />}
+                                      {section.menu_id === 'relatorios' && <FileText className="h-5 w-5" />}
+                                      {section.menu_id === 'departamentos' && <Building2 className="h-5 w-5" />}
+                                      {section.menu_id === 'configuracoes' && <Settings className="h-5 w-5" />}
+                                      {section.menu_id === 'audit' && <History className="h-5 w-5" />}
+                                      {section.menu_id === 'ajuda' && <HelpCircle className="h-5 w-5" />}
                                     </div>
                                     <div>
                                       <h4 className="text-lg font-bold">{section.title}</h4>

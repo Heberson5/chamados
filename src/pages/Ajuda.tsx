@@ -189,16 +189,28 @@
            <h1 className="text-3xl font-bold tracking-tight">Centro de Ajuda</h1>
            <p className="text-muted-foreground">Consulte os manuais de utilização do sistema.</p>
          </div>
-         {canEdit && (
-           <Button 
-             variant={isEditing ? "outline" : "default"} 
-             onClick={() => setIsEditing(!isEditing)}
-             className="gap-2"
-           >
-             {isEditing ? <Eye size={18} /> : <Edit3 size={18} />}
-             {isEditing ? "Visualizar" : "Editar Manuais"}
-           </Button>
-         )}
+          <div className="flex gap-2">
+            {isEditing && (
+              <Button 
+                variant="outline" 
+                onClick={() => handleExitEdit("back")}
+                className="gap-2"
+              >
+                <ArrowLeft size={18} />
+                Voltar
+              </Button>
+            )}
+            {canEdit && (
+              <Button 
+                variant={isEditing ? "secondary" : "default"} 
+                onClick={() => isEditing ? handleExitEdit("visualize") : setIsEditing(true)}
+                className="gap-2"
+              >
+                {isEditing ? <Eye size={18} /> : <Edit3 size={18} />}
+                {isEditing ? "Visualizar" : "Editar Manuais"}
+              </Button>
+            )}
+          </div>
        </div>
  
        {visibleManuals.length === 0 ? (

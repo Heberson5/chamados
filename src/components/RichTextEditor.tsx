@@ -1,19 +1,19 @@
  import { useEditor, EditorContent } from '@tiptap/react';
- import StarterKit from '@tiptap/starter-kit';
- import Underline from '@tiptap/extension-underline';
- import Link from '@tiptap/extension-link';
- import TextAlign from '@tiptap/extension-text-align';
- import Color from '@tiptap/extension-color';
- import TextStyle from '@tiptap/extension-text-style';
- import Highlight from '@tiptap/extension-highlight';
+ import { StarterKit } from '@tiptap/starter-kit';
+ import { Underline } from '@tiptap/extension-underline';
+ import { Link } from '@tiptap/extension-link';
+ import { TextAlign } from '@tiptap/extension-text-align';
+ import { Color } from '@tiptap/extension-color';
+ import { TextStyle } from '@tiptap/extension-text-style';
+ import { Highlight } from '@tiptap/extension-highlight';
  import { 
    Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, 
    AlignLeft, AlignCenter, AlignRight, Link as LinkIcon, 
    Heading1, Heading2, Heading3, Highlighter, Quote, Undo, Redo, Eraser
  } from 'lucide-react';
  import { Button } from '@/components/ui/button';
- import { Toggle } from '@/components/ui/toggle';
- import { Separator } from '@/components/ui/separator';
+ 
+ const Separator = () => <div className="w-[1px] h-6 bg-border mx-1" />;
  
  interface RichTextEditorProps {
    content: string;

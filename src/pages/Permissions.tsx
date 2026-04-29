@@ -169,7 +169,7 @@ export default function Permissions() {
             </div>
             <CardHeader className="text-center pb-2 relative">
               <div className="absolute top-2 left-2 text-[10px] font-mono text-muted-foreground">
-                #{role.sequencial_id}
+                #{role.id_numerico}
               </div>
               <div className={`mx-auto w-12 h-12 rounded-full ${role.bg_color} flex items-center justify-center mb-2 ${role.color}`}>
                 {getIcon(role.icon)}

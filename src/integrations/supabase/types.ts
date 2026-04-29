@@ -988,6 +988,7 @@ export type Database = {
           sobrenome: string | null
           telefone: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           admin_departments?: string[] | null
@@ -1017,6 +1018,7 @@ export type Database = {
           sobrenome?: string | null
           telefone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           admin_departments?: string[] | null
@@ -1046,6 +1048,7 @@ export type Database = {
           sobrenome?: string | null
           telefone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {

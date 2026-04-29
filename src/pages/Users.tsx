@@ -329,7 +329,7 @@ import { usePermissions } from "@/hooks/usePermissions";
               {users.filter(u => isCurrentMaster ? true : !(u.is_master || u.regra === "MASTER")).map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="text-xs font-mono text-muted-foreground">
-                    {user.sequencial_id}
+                    {user.id_numerico}
                   </TableCell>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">

@@ -1,0 +1,18 @@
+DROP POLICY IF EXISTS insert role self bootstrap ON public.user_roles;
+CREATE POLICY insert role self bootstrap ON public.user_roles FOR INSERT  WITH CHECK ((user_user_id = auth.uid()));
+DROP POLICY IF EXISTS profiles_self_all ON public.profiles;
+CREATE POLICY profiles_self_all ON public.profiles  USING ((auth.uid() = user_id)) WITH CHECK ((auth.uid() = user_id));
+DROP POLICY IF EXISTS profiles_signup_insert ON public.profiles;
+CREATE POLICY profiles_signup_insert ON public.profiles FOR INSERT  WITH CHECK ((auth.uid() = user_id));
+DROP POLICY IF EXISTS User view own chamados ON public.chamados;
+CREATE POLICY User view own chamados ON public.chamados FOR SELECT USING ((usuario_user_id = auth.uid())) ;
+DROP POLICY IF EXISTS User create own chamados ON public.chamados;
+CREATE POLICY User create own chamados ON public.chamados FOR INSERT  WITH CHECK ((usuario_user_id = auth.uid()));
+DROP POLICY IF EXISTS User update own chamados ON public.chamados;
+CREATE POLICY User update own chamados ON public.chamados FOR UPDATE USING (((usuario_user_id = auth.uid()) AND (NOT is_tecnico()))) ;
+DROP POLICY IF EXISTS Technicians view own schedules ON public.expedientes;
+CREATE POLICY Technicians view own schedules ON public.expedientes FOR SELECT USING ((usuario_user_id = auth.uid())) ;
+DROP POLICY IF EXISTS Users view own reimbursements ON public.reembolsos;
+CREATE POLICY Users view own reimbursements ON public.reembolsos FOR SELECT USING ((solicitante_user_id = auth.uid())) ;
+DROP POLICY IF EXISTS Users create reimbursements ON public.reembolsos;
+CREATE POLICY Users create reimbursements ON public.reembolsos FOR INSERT  WITH CHECK ((solicitante_user_id = auth.uid()));

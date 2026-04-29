@@ -17,6 +17,7 @@ export type Database = {
       audit_logs: {
         Row: {
           action: string | null
+          auth_user_id: string | null
           created_at: string | null
           id: number
           id_numerico: number
@@ -26,11 +27,12 @@ export type Database = {
           record_id: string | null
           table_name: string | null
           user_email: string | null
-          user_id: string | null
+          user_id: number | null
           uuid: string
         }
         Insert: {
           action?: string | null
+          auth_user_id?: string | null
           created_at?: string | null
           id?: never
           id_numerico?: never
@@ -40,11 +42,12 @@ export type Database = {
           record_id?: string | null
           table_name?: string | null
           user_email?: string | null
-          user_id?: string | null
+          user_id?: number | null
           uuid?: string
         }
         Update: {
           action?: string | null
+          auth_user_id?: string | null
           created_at?: string | null
           id?: never
           id_numerico?: never
@@ -54,18 +57,10 @@ export type Database = {
           record_id?: string | null
           table_name?: string | null
           user_email?: string | null
-          user_id?: string | null
+          user_id?: number | null
           uuid?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "audit_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       baixas: {
         Row: {
@@ -988,6 +983,7 @@ export type Database = {
           sobrenome: string | null
           telefone: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           admin_departments?: string[] | null
@@ -1017,6 +1013,7 @@ export type Database = {
           sobrenome?: string | null
           telefone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           admin_departments?: string[] | null
@@ -1046,6 +1043,7 @@ export type Database = {
           sobrenome?: string | null
           telefone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {

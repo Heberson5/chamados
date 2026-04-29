@@ -54,25 +54,26 @@
      }
    }, [permsLoading]);
  
-   const handleSave = async (manual: any) => {
-     try {
-       const { error } = await supabase
-         .from("system_manuals")
-         .update({ 
-           content: manual.content,
-           title: manual.title,
-           updated_at: new Date().toISOString()
-         })
-         .eq("id", manual.id);
- 
-       if (error) throw error;
-       toast({ title: "Sucesso", description: "Manual atualizado com sucesso!" });
-       setIsEditing(false);
-       fetchManuals();
-     } catch (error: any) {
-       toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
-     }
-   };
+    const handleSave = async (manual: any, isMenuManual = false) => {
+      try {
+        const table = isMenuManual ? "help_menu_manuals" : "system_manuals";
+        const { error } = await supabase
+          .from(table)
+          .update({ 
+            content: manual.content,
+            title: manual.title,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", manual.id);
+  
+        if (error) throw error;
+        toast({ title: "Sucesso", description: "Manual atualizado com sucesso!" });
+        // We don't necessarily close edit mode if they might want to edit other things
+        fetchManuals();
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
+      }
+    };
  
    if (isLoading || permsLoading) {
      return (
@@ -199,24 +200,82 @@
                      )}
                      
                     {isEditing ? (
-                      <div className="space-y-4">
-                        <Textarea 
-                          value={manual.content} 
-                          onChange={(e) => {
-                            const next = [...manuals];
-                            const idx = next.findIndex(m => m.id === manual.id);
-                            next[idx].content = e.target.value;
-                            setManuals(next);
-                          }}
-                          className="min-h-[400px] font-mono text-sm"
-                          placeholder="Escreva o conteúdo em HTML..."
-                        />
-                        <div className="flex justify-end">
-                          <Button onClick={() => handleSave(manual)} className="gap-2">
-                            <Save size={18} /> Salvar Alterações
-                          </Button>
-                        </div>
-                      </div>
+                      <Tabs defaultValue="intro" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                          <TabsTrigger value="intro">Introdução do Perfil</TabsTrigger>
+                          <TabsTrigger value="menus">Manuais por Menu</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="intro" className="space-y-4">
+                          <div className="p-4 border rounded-lg bg-muted/30">
+                            <h4 className="font-bold mb-2">Introdução Geral - {manual.role_key}</h4>
+                            <RichTextEditor 
+                              content={manual.content} 
+                              onChange={(content) => {
+                                const next = [...manuals];
+                                const idx = next.findIndex(m => m.id === manual.id);
+                                next[idx].content = content;
+                                setManuals(next);
+                              }} 
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <Button onClick={() => handleSave(manual)} className="gap-2">
+                              <Save size={18} /> Salvar Introdução
+                            </Button>
+                          </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="menus" className="space-y-6">
+                          <div className="space-y-8">
+                            {getMenuSections(manual.role_key).map((section) => (
+                              <div key={section.id} className="p-4 border rounded-lg space-y-4 bg-background">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                                      {section.menu_id === 'dashboard' && <LayoutDashboard className="h-4 w-4" />}
+                                      {section.menu_id === 'chamados' && <Ticket className="h-4 w-4" />}
+                                      {section.menu_id === 'usuarios' && <Users className="h-4 w-4" />}
+                                      {section.menu_id === 'permissoes' && <Key className="h-4 w-4" />}
+                                      {section.menu_id === 'relatorios' && <FileText className="h-4 w-4" />}
+                                      {section.menu_id === 'departamentos' && <Building2 className="h-4 w-4" />}
+                                      {section.menu_id === 'configuracoes' && <Settings className="h-4 w-4" />}
+                                      {section.menu_id === 'audit' && <History className="h-4 w-4" />}
+                                      {section.menu_id === 'ajuda' && <HelpCircle className="h-4 w-4" />}
+                                    </div>
+                                    <Input 
+                                      value={section.title} 
+                                      onChange={(e) => {
+                                        const next = [...menuManuals];
+                                        const idx = next.findIndex(m => m.id === section.id);
+                                        next[idx].title = e.target.value;
+                                        setMenuManuals(next);
+                                      }}
+                                      className="font-bold border-none h-auto p-0 focus-visible:ring-0 text-lg"
+                                    />
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => handleSave(section, true)}
+                                    className="gap-1 h-8 px-2"
+                                  >
+                                    <Save size={14} /> Salvar Menu
+                                  </Button>
+                                </div>
+                                <RichTextEditor 
+                                  content={section.content} 
+                                  onChange={(content) => {
+                                    const next = [...menuManuals];
+                                    const idx = next.findIndex(m => m.id === section.id);
+                                    next[idx].content = content;
+                                    setMenuManuals(next);
+                                  }} 
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
                     ) : (
                       <div className="relative">
                         <div className="space-y-12">

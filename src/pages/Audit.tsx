@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
 import { Search, History, MousePointer2, User as UserIcon, RefreshCw } from "lucide-react";
-  import { format, addHours } from "date-fns";
+import { format, parseISO } from "date-fns";
   import { usePermissions } from "@/hooks/usePermissions";
   import { useNavigate } from "react-router-dom";
  import { ptBR } from "date-fns/locale";
@@ -72,12 +72,18 @@ import { Search, History, MousePointer2, User as UserIcon, RefreshCw } from "luc
       return translations[action] || action;
     };
 
-    // Cuiabá is UTC-4. Since JS dates are usually UTC, we adjust.
-    // Note: Better to use a timezone library like date-fns-tz, but for simplicity:
     const formatCuiabaTime = (date: string) => {
-      const d = new Date(date);
-      // Cuiabá is -4
-      return format(addHours(d, 0), "dd/MM/yy HH:mm:ss", { locale: ptBR });
+      if (!date) return "-";
+      try {
+        const d = parseISO(date);
+        // The date is already in UTC from Supabase, parseISO handles the offset if present
+        // but since it's displayed in the browser, it will use the browser's timezone.
+        // If the user specifically wants Cuiabá time, they might need an explicit offset, 
+        // but standard practice is to show browser local time or UTC.
+        return format(d, "dd/MM/yy HH:mm:ss", { locale: ptBR });
+      } catch (e) {
+        return date;
+      }
     };
  
    return (
@@ -117,69 +123,73 @@ import { Search, History, MousePointer2, User as UserIcon, RefreshCw } from "luc
            </CardTitle>
          </CardHeader>
          <CardContent>
-           <Table>
-             <TableHeader>
-               <TableRow>
-                  <TableHead>Usuário / E-mail</TableHead>
-                 <TableHead>Ação</TableHead>
-                 <TableHead>Local / Tabela</TableHead>
-                 <TableHead>ID Registro</TableHead>
-                 <TableHead>Data/Hora</TableHead>
-               </TableRow>
-             </TableHeader>
-             <TableBody>
-               {filteredLogs.map((log) => (
-                 <TableRow key={log.id}>
-                     <TableCell className="font-medium text-xs">
-                       <div className="flex items-center gap-2">
-                         <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden border shrink-0">
-                           {log.profiles?.avatar_url ? (
-                             <img src={log.profiles.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
-                           ) : (
-                             <UserIcon size={12} />
-                           )}
-                         </div>
-                         <div className="flex flex-col">
-                         <span>{log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : (log.user_email || 'Sistema')}</span>
-                           <span className="text-[10px] text-muted-foreground">{log.user_email}</span>
-                         </div>
-                       </div>
-                     </TableCell>
-                   <TableCell>
-                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                       log.action === 'INSERT' ? 'bg-green-100 text-green-700' :
-                       log.action === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
-                       log.action === 'DELETE' ? 'bg-red-100 text-red-700' :
-                       'bg-slate-100 text-slate-700'
-                     }`}>
-                        {translateAction(log.action)}
-                     </span>
-                   </TableCell>
-                   <TableCell className="text-xs">
-                     {log.path ? (
-                       <div className="flex items-center gap-1">
-                         <MousePointer2 size={10} />
-                         {log.path}
-                       </div>
-                     ) : (
-                       log.table_name || "-"
-                     )}
-                   </TableCell>
-                   <TableCell className="text-[10px] font-mono text-muted-foreground">{log.record_id || "-"}</TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">
-                      {formatCuiabaTime(log.created_at)}
-                    </TableCell>
-                 </TableRow>
-               ))}
-               {filteredLogs.length === 0 && !isLoading && (
-                 <TableRow>
-                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                     Nenhum log encontrado.
-                   </TableCell>
-                 </TableRow>
-               )}
-             </TableBody>
-           </Table>
+          <div className="overflow-x-auto -mx-6">
+            <div className="min-w-[800px] px-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                     <TableHead>Usuário / E-mail</TableHead>
+                    <TableHead>Ação</TableHead>
+                    <TableHead>Local / Tabela</TableHead>
+                    <TableHead>ID Registro</TableHead>
+                    <TableHead>Data/Hora</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.map((log) => (
+                    <TableRow key={log.id}>
+                        <TableCell className="font-medium text-xs">
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden border shrink-0">
+                              {log.profiles?.avatar_url ? (
+                                <img src={log.profiles.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                              ) : (
+                                <UserIcon size={12} />
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                            <span className="truncate max-w-[150px]">{log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : (log.user_email || 'Sistema')}</span>
+                              <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{log.user_email}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          log.action === 'INSERT' ? 'bg-green-100 text-green-700' :
+                          log.action === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
+                          log.action === 'DELETE' ? 'bg-red-100 text-red-700' :
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                           {translateAction(log.action)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {log.path ? (
+                          <div className="flex items-center gap-1">
+                            <MousePointer2 size={10} />
+                            <span className="truncate max-w-[200px]">{log.path}</span>
+                          </div>
+                        ) : (
+                          <span className="truncate max-w-[150px]">{log.table_name || "-"}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-[10px] font-mono text-muted-foreground">{log.record_id || "-"}</TableCell>
+                       <TableCell className="text-xs whitespace-nowrap">
+                         {formatCuiabaTime(log.created_at)}
+                       </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredLogs.length === 0 && !isLoading && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        Nenhum log encontrado.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
          </CardContent>
        </Card>
      </div>

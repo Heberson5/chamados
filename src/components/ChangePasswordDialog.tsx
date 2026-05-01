@@ -56,25 +56,30 @@ export default function ChangePasswordDialog({ open, onOpenChange, forced, onSuc
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: pwd });
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("change-password-secure", {
+        body: { newPassword: pwd }
+      });
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from("profiles")
-          .update({
-            must_change_password: false,
-            password_changed_at: new Date().toISOString(),
-          })
-          .eq("id", user.id);
+      if (error) {
+        // Handle cases where error is wrapped or is an object
+        const msg = error.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+        throw new Error(msg);
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
       toast({ title: "Senha atualizada", description: "Sua senha foi alterada com sucesso." });
       onOpenChange(false);
       onSuccess?.();
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Erro", description: e.message });
+      // If the edge function returns a specific error about history/current password
+      const errorMsg = e.message?.includes("nova senha não pode ser igual") 
+        ? e.message 
+        : "Erro ao atualizar senha. Verifique se ela atende aos requisitos.";
+        
+      toast({ variant: "destructive", title: "Erro na alteração", description: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -111,7 +116,11 @@ export default function ChangePasswordDialog({ open, onOpenChange, forced, onSuc
           </div>
 
           <div className="rounded-md border p-3 text-sm space-y-1 bg-muted/30">
-            <p className="font-medium mb-1">A senha deve conter:</p>
+            <p className="font-medium mb-1">Requisitos da senha:</p>
+            <div className="flex items-center gap-2">
+              <Check size={14} className="text-primary" />
+              <span className="text-foreground">Diferente da atual e anteriores</span>
+            </div>
             {rules.map((r, i) => {
               const ok = pwd.length > 0 && !validation.errors.some((e) => e.toLowerCase().includes(r.toLowerCase().split(" ")[0]) || (r.startsWith("Mínimo") && e.startsWith("Mínimo")));
               return (

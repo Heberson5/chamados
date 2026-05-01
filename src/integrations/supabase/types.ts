@@ -954,6 +954,27 @@ export type Database = {
         }
         Relationships: []
       }
+      password_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          password_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          password_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          password_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           admin_departments: string[] | null
@@ -1514,6 +1535,10 @@ export type Database = {
     }
     Functions: {
       check_is_master: { Args: never; Returns: boolean }
+      check_password_history: {
+        Args: { p_password: string; p_user_id: string }
+        Returns: boolean
+      }
       get_my_organization_id: { Args: never; Returns: string }
       get_user_org: { Args: { _user_id: string }; Returns: string }
       has_role: {
@@ -1537,6 +1562,10 @@ export type Database = {
       is_tecnico: { Args: never; Returns: boolean }
       log_user_action: { Args: { p_action: string }; Returns: undefined }
       set_session_user_id: { Args: { user_id: string }; Returns: undefined }
+      store_password_history: {
+        Args: { p_password: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "agent" | "customer"

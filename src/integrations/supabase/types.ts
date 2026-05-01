@@ -954,6 +954,27 @@ export type Database = {
         }
         Relationships: []
       }
+      password_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          password_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          password_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          password_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           admin_departments: string[] | null

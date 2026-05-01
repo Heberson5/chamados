@@ -116,7 +116,11 @@ export default function ChangePasswordDialog({ open, onOpenChange, forced, onSuc
           </div>
 
           <div className="rounded-md border p-3 text-sm space-y-1 bg-muted/30">
-            <p className="font-medium mb-1">A senha deve conter:</p>
+            <p className="font-medium mb-1">Requisitos da senha:</p>
+            <div className="flex items-center gap-2">
+              <Check size={14} className="text-primary" />
+              <span className="text-foreground">Diferente da atual e anteriores</span>
+            </div>
             {rules.map((r, i) => {
               const ok = pwd.length > 0 && !validation.errors.some((e) => e.toLowerCase().includes(r.toLowerCase().split(" ")[0]) || (r.startsWith("Mínimo") && e.startsWith("Mínimo")));
               return (

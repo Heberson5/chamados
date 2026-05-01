@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Layout from "./components/Layout";
-import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Chamados from "./pages/Chamados";
@@ -37,7 +36,7 @@ const App = () => {
           <BrandingProvider>
             <BrowserRouter>
             <Routes>
-            <Route path="/" element={<Index />} />
+             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             
             <Route element={<Layout />}>

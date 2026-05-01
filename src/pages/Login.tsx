@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/ThemeProvider";
-import { Sun, Moon, Monitor, Ticket, CheckCircle2, Mail, Lock, KeyRound, ArrowRight } from "lucide-react";
+import { Sun, Moon, Monitor, Ticket, CheckCircle2, Mail, Lock, KeyRound, ArrowRight, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,

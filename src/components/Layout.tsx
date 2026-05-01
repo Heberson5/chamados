@@ -83,8 +83,15 @@ export default function Layout() {
     const trackNavigation = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id_numerico")
+          .eq("id", user.id)
+          .single();
+
         await supabase.from("audit_logs").insert({
-          user_id: user.id,
+          auth_user_id: user.id,
+          user_id: profile?.id_numerico,
           user_email: user.email,
           action: "NAVIGATION",
           path: location.pathname,

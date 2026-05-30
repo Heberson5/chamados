@@ -10,9 +10,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { User as UserIcon, KeyRound, LogOut } from "lucide-react";
+import { User as UserIcon, KeyRound, LogOut, Moon, Sun, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ChangePasswordDialog from "./ChangePasswordDialog";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface Props {
   collapsed?: boolean;
@@ -22,6 +23,15 @@ export default function UserMenu({ collapsed }: Props) {
   const [profile, setProfile] = useState<any>(null);
   const [pwdOpen, setPwdOpen] = useState(false);
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+
+  const cycleTheme = () => {
+    if (theme === "system") setTheme("light");
+    else if (theme === "light") setTheme("dark");
+    else setTheme("system");
+  };
+  const ThemeIcon = theme === "system" ? Monitor : theme === "dark" ? Sun : Moon;
+  const themeLabel = theme === "system" ? "Automático" : theme === "dark" ? "Claro" : "Escuro";
 
   const loadProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -86,6 +96,14 @@ export default function UserMenu({ collapsed }: Props) {
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setPwdOpen(true)} className="gap-2">
             <KeyRound size={14} /> Trocar Senha
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(e) => { e.preventDefault(); cycleTheme(); }}
+            className="gap-2"
+            title={`Tema atual: ${themeLabel}`}
+          >
+            <ThemeIcon size={14} />
+            <span className="sr-only">Alternar tema ({themeLabel})</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} className="gap-2 text-destructive focus:text-destructive">

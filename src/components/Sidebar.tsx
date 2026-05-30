@@ -6,9 +6,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Moon,
-  Sun,
-  Monitor,
   BarChart3,
   Package,
    History,
@@ -19,7 +16,6 @@ import {
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
- import { useTheme } from "@/components/ThemeProvider";
   import { usePermissions } from "@/hooks/usePermissions";
  import UserMenu from "./UserMenu";
  import { useBranding } from "@/hooks/useBranding";
@@ -32,7 +28,6 @@ interface SidebarProps {
    const [collapsed, setCollapsed] = useState(false);
     const { hasPermission } = usePermissions();
     const { branding: layout } = useBranding();
-   const { theme, setTheme } = useTheme();
    const navigate = useNavigate();
    const location = useLocation();
  
@@ -134,35 +129,6 @@ interface SidebarProps {
        <div className="p-2 border-t space-y-2">
           {/* Atalho do perfil */}
           <UserMenu collapsed={collapsed} />
-
-          <div className="px-2">
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start h-10 transition-all",
-                collapsed ? "px-0 justify-center" : "px-4"
-              )}
-              onClick={() => {
-                if (theme === "system") setTheme("light");
-                else if (theme === "light") setTheme("dark");
-                else setTheme("system");
-              }}
-              title={`Tema: ${theme === "system" ? "Automático" : theme === "dark" ? "Escuro" : "Claro"}`}
-            >
-              {theme === "system" ? (
-                <Monitor size={20} className={cn(!collapsed && "mr-2")} />
-              ) : theme === "dark" ? (
-                <Sun size={20} className={cn(!collapsed && "mr-2")} />
-              ) : (
-                <Moon size={20} className={cn(!collapsed && "mr-2")} />
-              )}
-              {!collapsed && (
-                <span>
-                  Tema: {theme === "system" ? "Automático" : theme === "dark" ? "Claro" : "Escuro"}
-                </span>
-              )}
-            </Button>
-          </div>
        </div>
     </aside>
   );

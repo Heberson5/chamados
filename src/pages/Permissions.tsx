@@ -39,31 +39,46 @@ export default function Permissions() {
   }, []);
 
   const handleSaveRole = async () => {
-    if (!selectedRole.name) return;
+    if (!selectedRole?.name) {
+      toast({ variant: "destructive", title: "Erro", description: "Informe o nome da permissão." });
+      return;
+    }
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from("role_definitions")
-        .upsert({
-          id: selectedRole.id || undefined,
-          name: selectedRole.name,
-          description: selectedRole.description,
-          icon: selectedRole.icon,
-          color: selectedRole.color,
-          bg_color: selectedRole.bg_color,
-          can_create: selectedRole.can_create,
-          can_edit: selectedRole.can_edit,
-          can_delete: selectedRole.can_delete,
-          can_inactivate: selectedRole.can_inactivate,
-          permissions: selectedRole.permissions
-        });
+      const payload: any = {
+        name: selectedRole.name,
+        description: selectedRole.description ?? null,
+        icon: selectedRole.icon ?? "User",
+        color: selectedRole.color ?? "text-slate-500",
+        bg_color: selectedRole.bg_color ?? "bg-slate-500/10",
+        can_create: !!selectedRole.can_create,
+        can_edit: !!selectedRole.can_edit,
+        can_delete: !!selectedRole.can_delete,
+        can_inactivate: !!selectedRole.can_inactivate,
+        permissions: selectedRole.permissions ?? [],
+      };
+
+      let error: any = null;
+      if (selectedRole.id) {
+        const res = await supabase
+          .from("role_definitions")
+          .update(payload)
+          .eq("id", selectedRole.id);
+        error = res.error;
+      } else {
+        const res = await supabase
+          .from("role_definitions")
+          .insert(payload);
+        error = res.error;
+      }
 
       if (error) throw error;
       toast({ title: "Sucesso", description: "Permissão salva com sucesso!" });
       setIsDialogOpen(false);
+      setSelectedRole(null);
       fetchRoles();
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Erro", description: error.message });
+      toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
     } finally {
       setIsLoading(false);
     }

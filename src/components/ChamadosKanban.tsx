@@ -6,6 +6,17 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
  import { getPriorityLabel } from "@/lib/utils/priority";
  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History, ArrowRightLeft } from "lucide-react";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
   import { useState, useEffect, useCallback } from "react";
@@ -44,6 +55,7 @@ import { Label } from "@/components/ui/label";
   };
 
   function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
+   const isReadOnly = !!ticket.__transferredAway;
    const {
      attributes,
      listeners,
@@ -54,7 +66,7 @@ import { Label } from "@/components/ui/label";
    } = useSortable({
      id: ticket.id,
      data: { ticket, columnId },
-      disabled: ticket.status === "ENCERRADO" || userRole === "USUARIO"
+      disabled: ticket.status === "ENCERRADO" || userRole === "USUARIO" || isReadOnly
    });
  
    const style = {
@@ -89,7 +101,7 @@ import { Label } from "@/components/ui/label";
  
      return (
        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-4">
-         <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" ? "cursor-default grayscale-[0.3]" : ""}`}>
+          <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
            <CardHeader className="p-4 pb-2">
            <div className="flex justify-between items-start mb-2">
             <Badge 
@@ -99,6 +111,11 @@ import { Label } from "@/components/ui/label";
                 {ticket.prioridade?.nome || getPriorityLabel(ticket.prioridade)}
               </Badge>
                <div className="flex items-center gap-1">
+                  {isReadOnly && (
+                    <Badge variant="outline" className="text-[9px] bg-purple-100 text-purple-700 border-purple-200 px-1 py-0">
+                      Transferido
+                    </Badge>
+                  )}
                  {ticket.reaberto && (
                    <Badge variant="outline" className="text-[9px] bg-yellow-100 text-yellow-700 border-yellow-200 px-1 py-0">
                      Reaberto
@@ -141,7 +158,7 @@ import { Label } from "@/components/ui/label";
            >
              <Eye size={12} /> Detalhes
            </Button>
-           {columnId === "ABERTO" && userRole !== "USUARIO" && (
+            {!isReadOnly && columnId === "ABERTO" && userRole !== "USUARIO" && (
              <Button 
                size="sm" 
                className="flex-1 gap-2 text-[10px] h-8"
@@ -150,7 +167,7 @@ import { Label } from "@/components/ui/label";
                <Play size={12} /> Atender
              </Button>
            )}
-            {["EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO"].includes(columnId) && userRole !== "USUARIO" && (
+             {!isReadOnly && ["EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO"].includes(columnId) && userRole !== "USUARIO" && (
               <>
                 <Button 
                   size="sm" 
@@ -194,7 +211,7 @@ import { Label } from "@/components/ui/label";
                 )}
               </>
             )}
-           {ticket.status === "ENCERRADO" && (
+           {!isReadOnly && ticket.status === "ENCERRADO" && (
              <Button 
                size="sm" 
                variant="secondary"
@@ -224,16 +241,36 @@ interface ChamadosKanbanProps {
     const [agents, setAgents] = useState<any[]>([]);
     const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
     const [transferToId, setTransferToId] = useState("");
+     const [transferMotivo, setTransferMotivo] = useState("");
+     const [isTransferConfirmOpen, setIsTransferConfirmOpen] = useState(false);
+     const [transferredAwayIds, setTransferredAwayIds] = useState<Set<string>>(new Set());
+     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     const handleTransfer = async () => {
       if (!transferToId || !selectedTicket) return;
+       if (!transferMotivo.trim()) {
+         toast({ variant: "destructive", title: "Motivo obrigatório", description: "Informe o motivo da transferência." });
+         return;
+       }
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+         const tecnicoAnteriorId = selectedTicket.tecnico_id || user.id;
+
+         // Record transfer history
+         const { error: trErr } = await supabase.from("transferencias_chamado").insert({
+           chamado_id: selectedTicket.id,
+           tecnico_anterior_id: tecnicoAnteriorId,
+           tecnico_novo_id: transferToId,
+           motivo: transferMotivo.trim(),
+           transferido_por: user.id,
+         });
+         if (trErr) throw trErr;
   
         const { error } = await supabase
           .from("chamados")
-          .update({ tecnico_id: transferToId, status: 'EM_ATENDIMENTO' })
+           .update({ tecnico_id: transferToId, status: 'EM_ATENDIMENTO', atualizado_em: new Date().toISOString() })
           .eq("id", selectedTicket.id);
   
         if (error) throw error;
@@ -242,11 +279,48 @@ interface ChamadosKanbanProps {
         await supabase.from("comentarios_chamado").insert({
           chamado_id: selectedTicket.id,
           autor_id: user.id,
-          comentario: `[TRANSFERÊNCIA] Chamado transferido para o técnico.`
+           comentario: `[TRANSFERÊNCIA] Chamado transferido. Motivo: ${transferMotivo.trim()}`,
         });
+
+         // Mark locally as transferred away for the current user
+         setTransferredAwayIds(prev => {
+           const next = new Set(prev);
+           next.add(selectedTicket.id);
+           return next;
+         });
+
+         // Notify the receiving technician
+         try {
+           const { data: newTec } = await supabase
+             .from("profiles")
+             .select("email, nome, sobrenome")
+             .eq("id", transferToId)
+             .single();
+           await supabase.from("notificacoes").insert({
+             usuario_id: transferToId,
+             titulo: `Chamado ${selectedTicket.os} foi transferido para você`,
+             mensagem: `Motivo: ${transferMotivo.trim()}`,
+             link: `/chamados?id=${selectedTicket.id}`,
+           });
+           if (newTec?.email) {
+             import("@/utils/email").then(({ sendTemplatedEmail }) => {
+               sendTemplatedEmail(newTec.email, "ticket_transferred", {
+                 user: `${newTec.nome ?? ""} ${newTec.sobrenome ?? ""}`.trim() || newTec.email,
+                 os: selectedTicket.os || "",
+                 titulo: selectedTicket.titulo || "",
+                 motivo: transferMotivo.trim(),
+               });
+             });
+           }
+         } catch (e) {
+           console.warn("Falha ao notificar técnico destino", e);
+         }
   
-        toast({ title: "Chamado transferido", description: "O responsável pelo chamado foi atualizado." });
+         toast({ title: "Chamado transferido", description: "O chamado agora aparece como ENCERRADO (somente visualização) para você." });
         onUpdate();
+         setTransferMotivo("");
+         setTransferToId("");
+         setIsTransferConfirmOpen(false);
         setIsTransferDialogOpen(false);
         setIsDetailsOpen(false);
       } catch (error: any) {
@@ -358,6 +432,15 @@ interface ChamadosKanbanProps {
          fetchAgents();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          setCurrentUserId(user.id);
+          // Load tickets I transferred away — they should appear as read-only/encerrado for me
+          const { data: myTransfers } = await supabase
+            .from("transferencias_chamado")
+            .select("chamado_id")
+            .eq("tecnico_anterior_id", user.id);
+          if (myTransfers) {
+            setTransferredAwayIds(new Set(myTransfers.map((t: any) => t.chamado_id)));
+          }
           const { data: profile } = await supabase
             .from("profiles")
             .select("*")
@@ -645,28 +728,42 @@ interface ChamadosKanbanProps {
                  </h3>
                </div>
  
-               <SortableContext 
-                 id={column.id} 
-                 items={tickets.filter(t => t.status === column.id).map(t => t.id)} 
-                 strategy={verticalListSortingStrategy}
-               >
-                 <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
-                   {tickets
-                     .filter((t) => t.status === column.id)
-                     .map((ticket) => (
-                       <SortableCard 
-                         key={ticket.id} 
-                         ticket={ticket} 
-                         columnId={column.id} 
-                         userRole={userRole} 
-                         onUpdate={onUpdate}
-                         onDetails={openDetails}
-                         onAction={handleAction}
-                         onOpenClosure={openClosureDialog}
-                       />
-                     ))}
-                   
-                   {tickets.filter(t => t.status === column.id).length === 0 && (
+                <SortableContext 
+                  id={column.id} 
+                  items={tickets
+                    .filter(t => {
+                      const transferred = transferredAwayIds.has(t.id);
+                      if (transferred) return column.id === "ENCERRADO";
+                      return t.status === column.id;
+                    })
+                    .map(t => t.id)} 
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
+                    {tickets
+                      .filter((t) => {
+                        const transferred = transferredAwayIds.has(t.id);
+                        if (transferred) return column.id === "ENCERRADO";
+                        return t.status === column.id;
+                      })
+                      .map((ticket) => (
+                        <SortableCard 
+                          key={ticket.id} 
+                          ticket={{ ...ticket, __transferredAway: transferredAwayIds.has(ticket.id) }} 
+                          columnId={column.id} 
+                          userRole={userRole} 
+                          onUpdate={onUpdate}
+                          onDetails={openDetails}
+                          onAction={handleAction}
+                          onOpenClosure={openClosureDialog}
+                        />
+                      ))}
+                    
+                    {tickets.filter(t => {
+                      const transferred = transferredAwayIds.has(t.id);
+                      if (transferred) return column.id === "ENCERRADO";
+                      return t.status === column.id;
+                    }).length === 0 && (
                      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50 border-2 border-dashed rounded-lg">
                        <AlertTriangle size={24} className="mb-2 opacity-20" />
                        <p className="text-xs">Nenhum chamado</p>
@@ -722,7 +819,7 @@ interface ChamadosKanbanProps {
                     <SelectValue placeholder="Selecione um atendente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {agents.map(agent => (
+                    {agents.filter(a => a.id !== currentUserId).map(agent => (
                       <SelectItem key={agent.id} value={agent.id}>
                         {agent.nome} {agent.sobrenome}
                       </SelectItem>
@@ -736,15 +833,53 @@ interface ChamadosKanbanProps {
                 </div>
               )}
             </div>
+             <div className="space-y-2">
+               <Label>Motivo da transferência</Label>
+               <Textarea
+                 value={transferMotivo}
+                 onChange={(e) => setTransferMotivo(e.target.value)}
+                 placeholder="Explique por que está transferindo este chamado..."
+                 className="min-h-[90px]"
+               />
+             </div>
           </div>
          <DialogFooter>
            <Button variant="outline" onClick={() => setIsTransferDialogOpen(false)}>Cancelar</Button>
-           <Button onClick={handleTransfer} disabled={!transferToId}>
+            <Button
+              onClick={() => {
+                if (!transferToId) return;
+                if (!transferMotivo.trim()) {
+                  toast({ variant: "destructive", title: "Motivo obrigatório", description: "Informe o motivo da transferência." });
+                  return;
+                }
+                setIsTransferConfirmOpen(true);
+              }}
+              disabled={!transferToId || !transferMotivo.trim()}
+            >
              Transferir Responsabilidade
            </Button>
          </DialogFooter>
        </DialogContent>
      </Dialog>
+
+      <AlertDialog open={isTransferConfirmOpen} onOpenChange={setIsTransferConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar transferência</AlertDialogTitle>
+            <AlertDialogDescription>
+              O chamado <strong>{selectedTicket?.os}</strong> será transferido para o novo responsável.
+              <br /><br />
+              Para você, ele passará a ser exibido como <strong>ENCERRADO</strong> no gerenciamento de chamados,
+              <strong> somente para visualização</strong>. Você não poderá reabri-lo nem realizar novas ações;
+              apenas acompanhar o andamento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleTransfer}>Confirmar transferência</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
  
      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
@@ -755,7 +890,7 @@ interface ChamadosKanbanProps {
               <Badge variant="outline" className="font-mono text-[10px]">{selectedTicket?.os}</Badge>
             </div>
                <div className="flex items-center gap-2">
-                  {userRole !== 'USUARIO' && selectedTicket?.status !== 'ENCERRADO' && (
+                   {userRole !== 'USUARIO' && selectedTicket?.status !== 'ENCERRADO' && !transferredAwayIds.has(selectedTicket?.id) && (
                    <Button 
                      variant="outline" 
                      size="sm" 

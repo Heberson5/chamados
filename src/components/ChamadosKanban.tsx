@@ -432,6 +432,15 @@ interface ChamadosKanbanProps {
          fetchAgents();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          setCurrentUserId(user.id);
+          // Load tickets I transferred away — they should appear as read-only/encerrado for me
+          const { data: myTransfers } = await supabase
+            .from("transferencias_chamado")
+            .select("chamado_id")
+            .eq("tecnico_anterior_id", user.id);
+          if (myTransfers) {
+            setTransferredAwayIds(new Set(myTransfers.map((t: any) => t.chamado_id)));
+          }
           const { data: profile } = await supabase
             .from("profiles")
             .select("*")

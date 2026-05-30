@@ -241,16 +241,36 @@ interface ChamadosKanbanProps {
     const [agents, setAgents] = useState<any[]>([]);
     const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
     const [transferToId, setTransferToId] = useState("");
+     const [transferMotivo, setTransferMotivo] = useState("");
+     const [isTransferConfirmOpen, setIsTransferConfirmOpen] = useState(false);
+     const [transferredAwayIds, setTransferredAwayIds] = useState<Set<string>>(new Set());
+     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     const handleTransfer = async () => {
       if (!transferToId || !selectedTicket) return;
+       if (!transferMotivo.trim()) {
+         toast({ variant: "destructive", title: "Motivo obrigatório", description: "Informe o motivo da transferência." });
+         return;
+       }
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+         const tecnicoAnteriorId = selectedTicket.tecnico_id || user.id;
+
+         // Record transfer history
+         const { error: trErr } = await supabase.from("transferencias_chamado").insert({
+           chamado_id: selectedTicket.id,
+           tecnico_anterior_id: tecnicoAnteriorId,
+           tecnico_novo_id: transferToId,
+           motivo: transferMotivo.trim(),
+           transferido_por: user.id,
+         });
+         if (trErr) throw trErr;
   
         const { error } = await supabase
           .from("chamados")
-          .update({ tecnico_id: transferToId, status: 'EM_ATENDIMENTO' })
+           .update({ tecnico_id: transferToId, status: 'EM_ATENDIMENTO', atualizado_em: new Date().toISOString() })
           .eq("id", selectedTicket.id);
   
         if (error) throw error;
@@ -259,11 +279,48 @@ interface ChamadosKanbanProps {
         await supabase.from("comentarios_chamado").insert({
           chamado_id: selectedTicket.id,
           autor_id: user.id,
-          comentario: `[TRANSFERÊNCIA] Chamado transferido para o técnico.`
+           comentario: `[TRANSFERÊNCIA] Chamado transferido. Motivo: ${transferMotivo.trim()}`,
         });
+
+         // Mark locally as transferred away for the current user
+         setTransferredAwayIds(prev => {
+           const next = new Set(prev);
+           next.add(selectedTicket.id);
+           return next;
+         });
+
+         // Notify the receiving technician
+         try {
+           const { data: newTec } = await supabase
+             .from("profiles")
+             .select("email, nome, sobrenome")
+             .eq("id", transferToId)
+             .single();
+           await supabase.from("notificacoes").insert({
+             usuario_id: transferToId,
+             titulo: `Chamado ${selectedTicket.os} foi transferido para você`,
+             mensagem: `Motivo: ${transferMotivo.trim()}`,
+             link: `/chamados?id=${selectedTicket.id}`,
+           });
+           if (newTec?.email) {
+             import("@/utils/email").then(({ sendTemplatedEmail }) => {
+               sendTemplatedEmail(newTec.email, "ticket_transferred", {
+                 user: `${newTec.nome ?? ""} ${newTec.sobrenome ?? ""}`.trim() || newTec.email,
+                 os: selectedTicket.os || "",
+                 titulo: selectedTicket.titulo || "",
+                 motivo: transferMotivo.trim(),
+               });
+             });
+           }
+         } catch (e) {
+           console.warn("Falha ao notificar técnico destino", e);
+         }
   
-        toast({ title: "Chamado transferido", description: "O responsável pelo chamado foi atualizado." });
+         toast({ title: "Chamado transferido", description: "O chamado agora aparece como ENCERRADO (somente visualização) para você." });
         onUpdate();
+         setTransferMotivo("");
+         setTransferToId("");
+         setIsTransferConfirmOpen(false);
         setIsTransferDialogOpen(false);
         setIsDetailsOpen(false);
       } catch (error: any) {

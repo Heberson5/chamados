@@ -1,9 +1,9 @@
-  import { useEffect, useState, useMemo } from "react";
+   import { useEffect, useState, useMemo } from "react";
  import { useNavigate } from "react-router-dom";
  import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
- import { FileSpreadsheet, FileText } from "lucide-react";
+  import { FileSpreadsheet, FileText, ArrowRightLeft, Clock, Users as UsersIcon, Ticket as TicketIcon, AlertOctagon } from "lucide-react";
  import * as XLSX from 'xlsx';
  import jsPDF from 'jspdf';
  import autoTable from 'jspdf-autotable';
@@ -19,6 +19,7 @@
      const { toast } = useToast();
      const [tickets, setTickets] = useState<any[]>([]);
      const [loading, setLoading] = useState(true);
+      const [transfers, setTransfers] = useState<any[]>([]);
  
      const fetchData = async () => {
       const { data, error } = await supabase
@@ -30,6 +31,16 @@
         `);
        
        if (data) setTickets(data);
+        const { data: trData } = await supabase
+          .from("transferencias_chamado")
+          .select(`
+            id, chamado_id, motivo, transferido_em,
+            tecnico_anterior:profiles!transferencias_chamado_tecnico_anterior_id_fkey(id, nome, sobrenome, department_id),
+            tecnico_novo:profiles!transferencias_chamado_tecnico_novo_id_fkey(id, nome, sobrenome, department_id),
+            chamado:chamados!transferencias_chamado_chamado_id_fkey(os, titulo, gerado_em, atendido_em, department_id, departamento:departamentos(nome))
+          `)
+          .order("transferido_em", { ascending: false });
+        if (trData) setTransfers(trData);
        setLoading(false);
      };
  
@@ -39,6 +50,7 @@
        const channel = supabase
          .channel('reports-realtime')
          .on('postgres_changes', { event: '*', schema: 'public', table: 'chamados' }, () => fetchData())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'transferencias_chamado' }, () => fetchData())
          .subscribe();
  
        return () => { supabase.removeChannel(channel); };
@@ -69,6 +81,81 @@
  
        return { byStatus, byTechnician, byPriority };
      }, [tickets]);
+
+    // Transfer stats
+    const transferStats = useMemo(() => {
+      const total = transfers.length;
+      const byTec: Record<string, { nome: string; saidas: number; entradas: number }> = {};
+      const byDept: Record<string, { dept: string; total: number }> = {};
+      let totalHoldMinutes = 0;
+      let countHold = 0;
+
+      // Group transfers per chamado to compute "hold time" between transfers
+      const byChamado: Record<string, any[]> = {};
+      transfers.forEach(t => {
+        (byChamado[t.chamado_id] ||= []).push(t);
+      });
+      Object.values(byChamado).forEach(list => {
+        const sorted = [...list].sort((a, b) => new Date(a.transferido_em).getTime() - new Date(b.transferido_em).getTime());
+        sorted.forEach((tr, idx) => {
+          const prevTime = idx === 0
+            ? (tr.chamado?.atendido_em || tr.chamado?.gerado_em)
+            : sorted[idx - 1].transferido_em;
+          if (prevTime) {
+            const diff = (new Date(tr.transferido_em).getTime() - new Date(prevTime).getTime()) / 60000;
+            if (diff > 0) {
+              totalHoldMinutes += diff;
+              countHold += 1;
+            }
+          }
+        });
+      });
+
+      transfers.forEach(t => {
+        if (t.tecnico_anterior) {
+          const key = t.tecnico_anterior.id;
+          const nome = `${t.tecnico_anterior.nome ?? ""} ${t.tecnico_anterior.sobrenome ?? ""}`.trim();
+          byTec[key] = byTec[key] || { nome, saidas: 0, entradas: 0 };
+          byTec[key].saidas += 1;
+        }
+        if (t.tecnico_novo) {
+          const key = t.tecnico_novo.id;
+          const nome = `${t.tecnico_novo.nome ?? ""} ${t.tecnico_novo.sobrenome ?? ""}`.trim();
+          byTec[key] = byTec[key] || { nome, saidas: 0, entradas: 0 };
+          byTec[key].entradas += 1;
+        }
+        const deptName = t.chamado?.departamento?.nome || "Sem departamento";
+        byDept[deptName] = byDept[deptName] || { dept: deptName, total: 0 };
+        byDept[deptName].total += 1;
+      });
+
+      const avgHold = countHold > 0 ? Math.round(totalHoldMinutes / countHold) : 0;
+      const formatMinutes = (m: number) => {
+        if (m < 60) return `${m} min`;
+        const h = Math.floor(m / 60);
+        const r = m % 60;
+        if (h < 24) return `${h}h ${r}m`;
+        const d = Math.floor(h / 24);
+        return `${d}d ${h % 24}h`;
+      };
+
+      return {
+        total,
+        avgHoldMinutes: avgHold,
+        avgHoldLabel: formatMinutes(avgHold),
+        byTec: Object.values(byTec).sort((a, b) => (b.saidas + b.entradas) - (a.saidas + a.entradas)),
+        byDept: Object.values(byDept).sort((a, b) => b.total - a.total),
+      };
+    }, [transfers]);
+
+    const kpis = useMemo(() => {
+      const total = tickets.length;
+      const abertos = tickets.filter(t => ["ABERTO", "EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO", "REABERTO"].includes(t.status)).length;
+      const encerrados = tickets.filter(t => t.status === "ENCERRADO").length;
+      const slaViolados = tickets.filter(t => t.sla_violado).length;
+      const reabertos = tickets.filter(t => t.reaberto).length;
+      return { total, abertos, encerrados, slaViolados, reabertos };
+    }, [tickets]);
  
     const getReportSettings = async () => {
       const { data: settings } = await supabase
@@ -256,6 +343,31 @@
            </Button>
          </div>
        </div>
+
+         {/* KPIs */}
+         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+           <Card><CardContent className="p-4">
+             <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Total</span><TicketIcon size={14}/></div>
+             <div className="text-2xl font-bold mt-1">{kpis.total}</div>
+           </CardContent></Card>
+           <Card><CardContent className="p-4">
+             <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Em andamento</span><Clock size={14}/></div>
+             <div className="text-2xl font-bold mt-1 text-amber-600">{kpis.abertos}</div>
+           </CardContent></Card>
+           <Card><CardContent className="p-4">
+             <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Encerrados</span><TicketIcon size={14}/></div>
+             <div className="text-2xl font-bold mt-1 text-emerald-600">{kpis.encerrados}</div>
+           </CardContent></Card>
+           <Card><CardContent className="p-4">
+             <div className="flex items-center justify-between text-xs text-muted-foreground"><span>SLA violado</span><AlertOctagon size={14}/></div>
+             <div className="text-2xl font-bold mt-1 text-destructive">{kpis.slaViolados}</div>
+           </CardContent></Card>
+           <Card><CardContent className="p-4">
+             <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Transferências</span><ArrowRightLeft size={14}/></div>
+             <div className="text-2xl font-bold mt-1 text-purple-600">{transferStats.total}</div>
+             <div className="text-[10px] text-muted-foreground mt-1">Tempo médio antes da transferência: <strong>{transferStats.avgHoldLabel}</strong></div>
+           </CardContent></Card>
+         </div>
  
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            <Card>
@@ -319,6 +431,90 @@
              </CardContent>
            </Card>
          </div>
+
+         {/* Transferências */}
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+           <Card>
+             <CardHeader>
+               <CardTitle className="flex items-center gap-2"><UsersIcon size={18}/> Transferências por Técnico</CardTitle>
+             </CardHeader>
+             <CardContent className="h-[320px]">
+               {transferStats.byTec.length === 0 ? (
+                 <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Nenhuma transferência registrada.</div>
+               ) : (
+                 <ResponsiveContainer width="100%" height="100%">
+                   <BarChart data={transferStats.byTec}>
+                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                     <XAxis dataKey="nome" stroke="currentColor" tick={{ fontSize: 11 }} />
+                     <YAxis stroke="currentColor" />
+                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
+                     <Legend />
+                     <Bar dataKey="saidas" name="Transferiu" fill="hsl(var(--destructive))" radius={[4,4,0,0]} />
+                     <Bar dataKey="entradas" name="Recebeu" fill="hsl(var(--primary))" radius={[4,4,0,0]} />
+                   </BarChart>
+                 </ResponsiveContainer>
+               )}
+             </CardContent>
+           </Card>
+
+           <Card>
+             <CardHeader>
+               <CardTitle className="flex items-center gap-2"><ArrowRightLeft size={18}/> Transferências por Departamento</CardTitle>
+             </CardHeader>
+             <CardContent className="h-[320px]">
+               {transferStats.byDept.length === 0 ? (
+                 <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Nenhuma transferência registrada.</div>
+               ) : (
+                 <ResponsiveContainer width="100%" height="100%">
+                   <BarChart data={transferStats.byDept}>
+                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                     <XAxis dataKey="dept" stroke="currentColor" tick={{ fontSize: 11 }} />
+                     <YAxis stroke="currentColor" />
+                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
+                     <Bar dataKey="total" name="Transferências" fill="hsl(var(--accent))" radius={[4,4,0,0]} />
+                   </BarChart>
+                 </ResponsiveContainer>
+               )}
+             </CardContent>
+           </Card>
+         </div>
+
+         <Card>
+           <CardHeader>
+             <CardTitle className="flex items-center gap-2"><ArrowRightLeft size={18}/> Últimas Transferências</CardTitle>
+           </CardHeader>
+           <CardContent>
+             <div className="overflow-x-auto">
+               <table className="w-full text-sm">
+                 <thead>
+                   <tr className="text-left text-xs uppercase text-muted-foreground border-b">
+                     <th className="py-2 pr-2">OS</th>
+                     <th className="py-2 pr-2">De</th>
+                     <th className="py-2 pr-2">Para</th>
+                     <th className="py-2 pr-2">Departamento</th>
+                     <th className="py-2 pr-2">Motivo</th>
+                     <th className="py-2 pr-2">Data</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {transfers.slice(0, 20).map((t) => (
+                     <tr key={t.id} className="border-b hover:bg-muted/40">
+                       <td className="py-2 pr-2 font-mono text-xs">{t.chamado?.os || "-"}</td>
+                       <td className="py-2 pr-2 text-xs">{t.tecnico_anterior ? `${t.tecnico_anterior.nome} ${t.tecnico_anterior.sobrenome ?? ""}` : "-"}</td>
+                       <td className="py-2 pr-2 text-xs">{t.tecnico_novo ? `${t.tecnico_novo.nome} ${t.tecnico_novo.sobrenome ?? ""}` : "-"}</td>
+                       <td className="py-2 pr-2 text-xs">{t.chamado?.departamento?.nome || "-"}</td>
+                       <td className="py-2 pr-2 text-xs max-w-[260px] truncate" title={t.motivo}>{t.motivo}</td>
+                       <td className="py-2 pr-2 text-xs whitespace-nowrap">{new Date(t.transferido_em).toLocaleString('pt-BR')}</td>
+                     </tr>
+                   ))}
+                   {transfers.length === 0 && (
+                     <tr><td colSpan={6} className="text-center py-6 text-muted-foreground text-sm">Nenhuma transferência registrada.</td></tr>
+                   )}
+                 </tbody>
+               </table>
+             </div>
+           </CardContent>
+         </Card>
      </div>
    );
  }

@@ -6,6 +6,17 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
  import { getPriorityLabel } from "@/lib/utils/priority";
  import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, FileText, MessageSquare, Send, Paperclip, Image as ImageIcon, X, Loader2, Plus, Pause, History, ArrowRightLeft } from "lucide-react";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
   import { useState, useEffect, useCallback } from "react";
@@ -44,6 +55,7 @@ import { Label } from "@/components/ui/label";
   };
 
   function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
+   const isReadOnly = !!ticket.__transferredAway;
    const {
      attributes,
      listeners,
@@ -54,7 +66,7 @@ import { Label } from "@/components/ui/label";
    } = useSortable({
      id: ticket.id,
      data: { ticket, columnId },
-      disabled: ticket.status === "ENCERRADO" || userRole === "USUARIO"
+      disabled: ticket.status === "ENCERRADO" || userRole === "USUARIO" || isReadOnly
    });
  
    const style = {
@@ -89,7 +101,7 @@ import { Label } from "@/components/ui/label";
  
      return (
        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-4">
-         <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" ? "cursor-default grayscale-[0.3]" : ""}`}>
+          <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
            <CardHeader className="p-4 pb-2">
            <div className="flex justify-between items-start mb-2">
             <Badge 
@@ -99,6 +111,11 @@ import { Label } from "@/components/ui/label";
                 {ticket.prioridade?.nome || getPriorityLabel(ticket.prioridade)}
               </Badge>
                <div className="flex items-center gap-1">
+                  {isReadOnly && (
+                    <Badge variant="outline" className="text-[9px] bg-purple-100 text-purple-700 border-purple-200 px-1 py-0">
+                      Transferido
+                    </Badge>
+                  )}
                  {ticket.reaberto && (
                    <Badge variant="outline" className="text-[9px] bg-yellow-100 text-yellow-700 border-yellow-200 px-1 py-0">
                      Reaberto
@@ -141,7 +158,7 @@ import { Label } from "@/components/ui/label";
            >
              <Eye size={12} /> Detalhes
            </Button>
-           {columnId === "ABERTO" && userRole !== "USUARIO" && (
+            {!isReadOnly && columnId === "ABERTO" && userRole !== "USUARIO" && (
              <Button 
                size="sm" 
                className="flex-1 gap-2 text-[10px] h-8"
@@ -150,7 +167,7 @@ import { Label } from "@/components/ui/label";
                <Play size={12} /> Atender
              </Button>
            )}
-            {["EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO"].includes(columnId) && userRole !== "USUARIO" && (
+             {!isReadOnly && ["EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO"].includes(columnId) && userRole !== "USUARIO" && (
               <>
                 <Button 
                   size="sm" 
@@ -194,7 +211,7 @@ import { Label } from "@/components/ui/label";
                 )}
               </>
             )}
-           {ticket.status === "ENCERRADO" && (
+           {!isReadOnly && ticket.status === "ENCERRADO" && (
              <Button 
                size="sm" 
                variant="secondary"

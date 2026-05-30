@@ -1,9 +1,10 @@
- import { useState, useEffect } from "react";
+ import { useState, useEffect, useMemo } from "react";
  import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
+ import { Label } from "@/components/ui/label";
 import { Search, History, MousePointer2, User as UserIcon, RefreshCw, Eye } from "lucide-react";
 import {
   Dialog,
@@ -30,9 +31,23 @@ import { format, parseISO } from "date-fns";
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [selectedLog, setSelectedLog] = useState<any>(null);
+
+    const todayStr = useMemo(() => {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }, []);
+    const [dateFrom, setDateFrom] = useState<string>(todayStr);
+    const [dateTo, setDateTo] = useState<string>(todayStr);
  
     const fetchLogs = async () => {
       setIsLoading(true);
+      const from = dateFrom || todayStr;
+      const to = dateTo || todayStr;
+      const startISO = new Date(`${from}T00:00:00`).toISOString();
+      const endISO = new Date(`${to}T23:59:59.999`).toISOString();
       const { data, error } = await supabase
         .from("audit_logs")
         .select(`
@@ -43,6 +58,8 @@ import { format, parseISO } from "date-fns";
             avatar_url
           )
         `)
+        .gte("created_at", startISO)
+        .lte("created_at", endISO)
         .order("created_at", { ascending: false });
       
       if (error) {
@@ -54,7 +71,18 @@ import { format, parseISO } from "date-fns";
 
     useEffect(() => {
       fetchLogs();
-    }, []);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dateFrom, dateTo]);
+
+    const applyPreset = (days: number) => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - (days - 1));
+      const fmt = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      setDateFrom(fmt(start));
+      setDateTo(fmt(end));
+    };
  
     const filteredLogs = logs.filter(log => {
       const userName = log.profiles 
@@ -100,27 +128,54 @@ import { format, parseISO } from "date-fns";
          <p className="text-muted-foreground">Monitore as ações e a navegação de todos os usuários cadastrados.</p>
        </div>
  
-        <div className="flex items-center justify-between gap-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={fetchLogs} 
-            disabled={isLoading}
-            className="gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-         <div className="relative flex-1 max-w-md">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-           <Input 
-             placeholder="Buscar por e-mail, ação ou tabela..." 
-             className="pl-10"
-             value={searchTerm}
-             onChange={(e) => setSearchTerm(e.target.value)}
-           />
-         </div>
-       </div>
+        <Card>
+          <CardContent className="p-4 flex flex-col lg:flex-row lg:items-end gap-3 flex-wrap">
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">De</Label>
+              <Input
+                type="date"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(e) => setDateFrom(e.target.value || todayStr)}
+                className="w-[160px]"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Até</Label>
+              <Input
+                type="date"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(e) => setDateTo(e.target.value || todayStr)}
+                className="w-[160px]"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => { setDateFrom(todayStr); setDateTo(todayStr); }}>Hoje</Button>
+              <Button variant="outline" size="sm" onClick={() => applyPreset(7)}>7 dias</Button>
+              <Button variant="outline" size="sm" onClick={() => applyPreset(30)}>30 dias</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchLogs}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+            </div>
+            <div className="relative flex-1 min-w-[220px] lg:ml-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+              <Input
+                placeholder="Buscar por e-mail, ação ou tabela..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
  
        <Card>
          <CardHeader>

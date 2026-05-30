@@ -33,14 +33,35 @@
        if (data) setTickets(data);
         const { data: trData } = await supabase
           .from("transferencias_chamado")
-          .select(`
-            id, chamado_id, motivo, transferido_em,
-            tecnico_anterior:profiles!transferencias_chamado_tecnico_anterior_id_fkey(id, nome, sobrenome, department_id),
-            tecnico_novo:profiles!transferencias_chamado_tecnico_novo_id_fkey(id, nome, sobrenome, department_id),
-            chamado:chamados!transferencias_chamado_chamado_id_fkey(os, titulo, gerado_em, atendido_em, department_id, departamento:departamentos(nome))
-          `)
+          .select("id, chamado_id, motivo, transferido_em, tecnico_anterior_id, tecnico_novo_id")
           .order("transferido_em", { ascending: false });
-        if (trData) setTransfers(trData);
+
+        if (trData && trData.length > 0) {
+          const userIds = Array.from(new Set(trData.flatMap((t: any) => [t.tecnico_anterior_id, t.tecnico_novo_id].filter(Boolean))));
+          const chamadoIds = Array.from(new Set(trData.map((t: any) => t.chamado_id).filter(Boolean)));
+
+          const [{ data: profs }, { data: chams }, { data: depts }] = await Promise.all([
+            supabase.from("profiles").select("id, nome, sobrenome, department_id").in("id", userIds),
+            supabase.from("chamados").select("id, os, titulo, gerado_em, atendido_em, department_id").in("id", chamadoIds),
+            supabase.from("departamentos").select("id, nome"),
+          ]);
+          const profMap = new Map((profs || []).map((p: any) => [p.id, p]));
+          const chamMap = new Map((chams || []).map((c: any) => [c.id, c]));
+          const deptMap = new Map((depts || []).map((d: any) => [d.id, d]));
+
+          const enriched = trData.map((t: any) => {
+            const cham = chamMap.get(t.chamado_id);
+            return {
+              ...t,
+              tecnico_anterior: profMap.get(t.tecnico_anterior_id) || null,
+              tecnico_novo: profMap.get(t.tecnico_novo_id) || null,
+              chamado: cham ? { ...cham, departamento: deptMap.get(cham.department_id) || null } : null,
+            };
+          });
+          setTransfers(enriched);
+        } else {
+          setTransfers([]);
+        }
        setLoading(false);
      };
  

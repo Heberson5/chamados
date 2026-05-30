@@ -728,28 +728,42 @@ interface ChamadosKanbanProps {
                  </h3>
                </div>
  
-               <SortableContext 
-                 id={column.id} 
-                 items={tickets.filter(t => t.status === column.id).map(t => t.id)} 
-                 strategy={verticalListSortingStrategy}
-               >
-                 <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
-                   {tickets
-                     .filter((t) => t.status === column.id)
-                     .map((ticket) => (
-                       <SortableCard 
-                         key={ticket.id} 
-                         ticket={ticket} 
-                         columnId={column.id} 
-                         userRole={userRole} 
-                         onUpdate={onUpdate}
-                         onDetails={openDetails}
-                         onAction={handleAction}
-                         onOpenClosure={openClosureDialog}
-                       />
-                     ))}
-                   
-                   {tickets.filter(t => t.status === column.id).length === 0 && (
+                <SortableContext 
+                  id={column.id} 
+                  items={tickets
+                    .filter(t => {
+                      const transferred = transferredAwayIds.has(t.id);
+                      if (transferred) return column.id === "ENCERRADO";
+                      return t.status === column.id;
+                    })
+                    .map(t => t.id)} 
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
+                    {tickets
+                      .filter((t) => {
+                        const transferred = transferredAwayIds.has(t.id);
+                        if (transferred) return column.id === "ENCERRADO";
+                        return t.status === column.id;
+                      })
+                      .map((ticket) => (
+                        <SortableCard 
+                          key={ticket.id} 
+                          ticket={{ ...ticket, __transferredAway: transferredAwayIds.has(ticket.id) }} 
+                          columnId={column.id} 
+                          userRole={userRole} 
+                          onUpdate={onUpdate}
+                          onDetails={openDetails}
+                          onAction={handleAction}
+                          onOpenClosure={openClosureDialog}
+                        />
+                      ))}
+                    
+                    {tickets.filter(t => {
+                      const transferred = transferredAwayIds.has(t.id);
+                      if (transferred) return column.id === "ENCERRADO";
+                      return t.status === column.id;
+                    }).length === 0 && (
                      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50 border-2 border-dashed rounded-lg">
                        <AlertTriangle size={24} className="mb-2 opacity-20" />
                        <p className="text-xs">Nenhum chamado</p>
@@ -805,7 +819,7 @@ interface ChamadosKanbanProps {
                     <SelectValue placeholder="Selecione um atendente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {agents.map(agent => (
+                    {agents.filter(a => a.id !== currentUserId).map(agent => (
                       <SelectItem key={agent.id} value={agent.id}>
                         {agent.nome} {agent.sobrenome}
                       </SelectItem>
@@ -819,15 +833,53 @@ interface ChamadosKanbanProps {
                 </div>
               )}
             </div>
+             <div className="space-y-2">
+               <Label>Motivo da transferência</Label>
+               <Textarea
+                 value={transferMotivo}
+                 onChange={(e) => setTransferMotivo(e.target.value)}
+                 placeholder="Explique por que está transferindo este chamado..."
+                 className="min-h-[90px]"
+               />
+             </div>
           </div>
          <DialogFooter>
            <Button variant="outline" onClick={() => setIsTransferDialogOpen(false)}>Cancelar</Button>
-           <Button onClick={handleTransfer} disabled={!transferToId}>
+            <Button
+              onClick={() => {
+                if (!transferToId) return;
+                if (!transferMotivo.trim()) {
+                  toast({ variant: "destructive", title: "Motivo obrigatório", description: "Informe o motivo da transferência." });
+                  return;
+                }
+                setIsTransferConfirmOpen(true);
+              }}
+              disabled={!transferToId || !transferMotivo.trim()}
+            >
              Transferir Responsabilidade
            </Button>
          </DialogFooter>
        </DialogContent>
      </Dialog>
+
+      <AlertDialog open={isTransferConfirmOpen} onOpenChange={setIsTransferConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar transferência</AlertDialogTitle>
+            <AlertDialogDescription>
+              O chamado <strong>{selectedTicket?.os}</strong> será transferido para o novo responsável.
+              <br /><br />
+              Para você, ele passará a ser exibido como <strong>ENCERRADO</strong> no gerenciamento de chamados,
+              <strong> somente para visualização</strong>. Você não poderá reabri-lo nem realizar novas ações;
+              apenas acompanhar o andamento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleTransfer}>Confirmar transferência</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
  
      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">

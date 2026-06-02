@@ -476,6 +476,42 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          attempts: number
+          context: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          recipient: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          context?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          context?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       estoque_setor: {
         Row: {
           created_at: string | null

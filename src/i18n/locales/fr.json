@@ -1,0 +1,37 @@
+{
+  "common": {
+    "save": "Enregistrer", "cancel": "Annuler", "delete": "Supprimer", "edit": "Modifier", "create": "Créer",
+    "search": "Rechercher", "loading": "Chargement...", "yes": "Oui", "no": "Non", "close": "Fermer",
+    "back": "Retour", "next": "Suivant", "confirm": "Confirmer", "actions": "Actions", "status": "Statut",
+    "name": "Nom", "email": "E-mail", "password": "Mot de passe", "filter": "Filtrer", "all": "Tous",
+    "today": "Aujourd'hui", "from": "De", "to": "À", "noData": "Aucune donnée", "error": "Erreur", "success": "Succès"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord", "chamados": "Tickets", "reports": "Rapports", "users": "Utilisateurs",
+    "departments": "Départements", "permissions": "Autorisations", "audit": "Audit", "help": "Aide", "settings": "Paramètres"
+  },
+  "userMenu": {
+    "myProfile": "Mon Profil", "changePassword": "Changer le mot de passe", "theme": "Thème",
+    "themeLight": "Clair", "themeDark": "Sombre", "themeSystem": "Automatique",
+    "language": "Langue", "logout": "Déconnexion", "user": "Utilisateur"
+  },
+  "login": {
+    "title": "Connexion", "subtitle": "Bienvenue. Veuillez vous identifier.",
+    "emailLabel": "E-mail professionnel", "emailPlaceholder": "exemple@entreprise.com",
+    "passwordLabel": "Mot de passe d'accès", "forgot": "Oublié ?", "submit": "Se connecter",
+    "validating": "Validation...", "errorTitle": "Erreur de connexion",
+    "invalidCredentials": "E-mail ou mot de passe incorrect.",
+    "heroTitle1": "UNE GESTION QUI", "heroTitle2": "TRANSFORME.",
+    "heroText": "La plateforme définitive pour le contrôle du service, l'inventaire et la productivité de votre opération.",
+    "feature1": "SLA Intelligent & Automatique", "feature2": "Inventaire en Temps Réel",
+    "feature3": "Workflows Personnalisables", "feature4": "Analytique Avancée",
+    "systemOnline": "Système en Ligne", "support": "Support Technique",
+    "supportText": "Contactez l'informatique en cas de difficultés.",
+    "recoverTitle": "Récupérer l'accès",
+    "recoverDesc": "Nous enverrons un mot de passe temporaire à votre e-mail enregistré.",
+    "registeredEmail": "E-mail enregistré", "requestPassword": "Demander un mot de passe",
+    "emailSent": "E-mail envoyé",
+    "emailSentDesc": "Si l'e-mail est enregistré, un mot de passe temporaire a été envoyé.",
+    "genericError": "Une erreur s'est produite lors du traitement de votre demande."
+  }
+}

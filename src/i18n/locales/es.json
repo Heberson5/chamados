@@ -1,0 +1,37 @@
+{
+  "common": {
+    "save": "Guardar", "cancel": "Cancelar", "delete": "Eliminar", "edit": "Editar", "create": "Crear",
+    "search": "Buscar", "loading": "Cargando...", "yes": "Sí", "no": "No", "close": "Cerrar",
+    "back": "Volver", "next": "Siguiente", "confirm": "Confirmar", "actions": "Acciones", "status": "Estado",
+    "name": "Nombre", "email": "Correo", "password": "Contraseña", "filter": "Filtrar", "all": "Todos",
+    "today": "Hoy", "from": "Desde", "to": "Hasta", "noData": "Sin datos", "error": "Error", "success": "Éxito"
+  },
+  "nav": {
+    "dashboard": "Panel", "chamados": "Tickets", "reports": "Informes", "users": "Usuarios",
+    "departments": "Departamentos", "permissions": "Permisos", "audit": "Auditoría", "help": "Ayuda", "settings": "Configuración"
+  },
+  "userMenu": {
+    "myProfile": "Mi Perfil", "changePassword": "Cambiar Contraseña", "theme": "Tema",
+    "themeLight": "Claro", "themeDark": "Oscuro", "themeSystem": "Automático",
+    "language": "Idioma", "logout": "Salir", "user": "Usuario"
+  },
+  "login": {
+    "title": "Acceso", "subtitle": "Bienvenido. Por favor, identifíquese.",
+    "emailLabel": "Correo corporativo", "emailPlaceholder": "ejemplo@empresa.com",
+    "passwordLabel": "Contraseña de acceso", "forgot": "¿Olvidó?", "submit": "Entrar",
+    "validating": "Validando...", "errorTitle": "Error de inicio de sesión",
+    "invalidCredentials": "Correo o contraseña incorrectos.",
+    "heroTitle1": "GESTIÓN QUE", "heroTitle2": "TRANSFORMA.",
+    "heroText": "La plataforma definitiva para el control de atención, inventario y productividad de su operación.",
+    "feature1": "SLA Inteligente y Automático", "feature2": "Inventario en Tiempo Real",
+    "feature3": "Flujos Personalizables", "feature4": "Analítica Avanzada",
+    "systemOnline": "Sistema en Línea", "support": "Soporte Técnico",
+    "supportText": "Contacte a TI si tiene dificultades.",
+    "recoverTitle": "Recuperar Acceso",
+    "recoverDesc": "Enviaremos una contraseña provisional a su correo registrado.",
+    "registeredEmail": "Correo registrado", "requestPassword": "Solicitar Contraseña",
+    "emailSent": "Correo enviado",
+    "emailSentDesc": "Si el correo está registrado, se ha enviado una contraseña provisional.",
+    "genericError": "Ocurrió un error al procesar su solicitud."
+  }
+}

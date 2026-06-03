@@ -1,6 +1,5 @@
  import { useState, useEffect } from "react";
  import { useNavigate, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { 
   LayoutDashboard,
   Ticket,
@@ -31,19 +30,18 @@ interface SidebarProps {
     const { branding: layout } = useBranding();
    const navigate = useNavigate();
    const location = useLocation();
-  const { t } = useTranslation();
  
 
     const defaultMenuItems = [
-      { id: '1', icon: LayoutDashboard, label: t("nav.dashboard"), path: "/dashboard", permission: "dashboard" },
-      { id: '2', icon: Ticket, label: t("nav.chamados"), path: "/chamados", permission: "chamados" },
-      { id: '6', icon: BarChart3, label: t("nav.reports"), path: "/reports", permission: "relatorios" },
-        { id: '3', icon: Users, label: t("nav.users"), path: "/usuarios", permission: "usuarios" },
-        { id: '9', icon: Building2, label: t("nav.departments"), path: "/departamentos", permission: "departamentos" },
-         { id: '4', icon: Lock, label: t("nav.permissions"), path: "/permissions", permission: "permissoes" },
-        { id: '5', icon: History, label: t("nav.audit"), path: "/audit", permission: "audit" },
-        { id: '10', icon: HelpCircle, label: t("nav.help"), path: "/ajuda", permission: "ajuda" },
-        { id: '8', icon: Settings, label: t("nav.settings"), path: "/settings", permission: "configuracoes" },
+      { id: '1', icon: LayoutDashboard, label: "Painel", path: "/dashboard", permission: "dashboard" },
+      { id: '2', icon: Ticket, label: "Chamados", path: "/chamados", permission: "chamados" },
+      { id: '6', icon: BarChart3, label: "Relatórios", path: "/reports", permission: "relatorios" },
+        { id: '3', icon: Users, label: "Usuários", path: "/usuarios", permission: "usuarios" },
+        { id: '9', icon: Building2, label: "Departamentos", path: "/departamentos", permission: "departamentos" },
+         { id: '4', icon: Lock, label: "Permissões", path: "/permissions", permission: "permissoes" },
+        { id: '5', icon: History, label: "Auditoria", path: "/audit", permission: "audit" },
+        { id: '10', icon: HelpCircle, label: "Ajuda", path: "/ajuda", permission: "ajuda" },
+        { id: '8', icon: Settings, label: "Configurações", path: "/settings", permission: "configuracoes" },
      ];
  
     const getMenuItems = () => {

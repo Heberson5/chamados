@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,14 +17,12 @@ import {
 } from "@/components/ui/dialog";
 import { useBranding } from "@/hooks/useBranding";
 import { useToast } from "@/hooks/use-toast";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Login() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { branding } = useBranding();
-  const { t } = useTranslation();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,15 +40,15 @@ export default function Login() {
       });
       if (error) throw error;
       toast({
-        title: t("login.emailSent"),
-        description: data.message || t("login.emailSentDesc"),
+        title: "E-mail enviado",
+        description: data.message || "Se o e-mail estiver cadastrado, uma senha provisória foi enviada.",
       });
       setForgotOpen(false);
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: t("common.error"),
-        description: error.message || t("login.genericError"),
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao processar sua solicitação.",
       });
     } finally {
       setForgotLoading(false);
@@ -76,9 +73,9 @@ export default function Login() {
     if (error) {
       toast({
         variant: "destructive",
-        title: t("login.errorTitle"),
+        title: "Erro no login",
         description: error.message === "Invalid login credentials" 
-          ? t("login.invalidCredentials")
+          ? "E-mail ou senha incorretos." 
           : error.message,
       });
     } else {
@@ -120,20 +117,20 @@ export default function Login() {
           </div>
           
           <h2 className="text-6xl font-black leading-[0.9] mb-8 animate-in fade-in slide-in-from-left duration-1000 delay-150">
-            {t("login.heroTitle1")} <br />
-            <span className="text-primary italic">{t("login.heroTitle2")}</span>
+            GESTÃO QUE <br />
+            <span className="text-primary italic">TRANSFORMA.</span>
           </h2>
           
           <p className="text-xl text-slate-400 mb-12 leading-relaxed max-w-md animate-in fade-in slide-in-from-left duration-1000 delay-300">
-            {t("login.heroText")}
+            A plataforma definitiva para controle de atendimento, inventário e produtividade da sua operação.
           </p>
 
           <div className="space-y-5 animate-in fade-in slide-in-from-left duration-1000 delay-500">
             {[
-              t("login.feature1"),
-              t("login.feature2"),
-              t("login.feature3"),
-              t("login.feature4"),
+              "SLA Inteligente & Automático",
+              "Inventário em Tempo Real",
+              "Workflows Customizáveis",
+              "Analytics Avançado"
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-4 group cursor-default">
                 <div className="h-6 w-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
@@ -147,7 +144,7 @@ export default function Login() {
         
         <div className="absolute bottom-12 left-12 text-sm text-slate-500 font-medium flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span>{t("login.systemOnline")}</span>
+          <span>Sistema Online</span>
           <span className="mx-2 opacity-20">|</span>
           <span>&copy; {new Date().getFullYear()} {branding.companyName || "Chamados"}</span>
         </div>
@@ -155,8 +152,7 @@ export default function Login() {
 
       {/* Right Side: Modern Login Form */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative bg-background/50 backdrop-blur-sm">
-        <div className="absolute top-8 right-8 animate-in fade-in duration-1000 flex items-center gap-2">
-          <LanguageSwitcher />
+        <div className="absolute top-8 right-8 animate-in fade-in duration-1000">
           <Button
             variant="outline"
             size="icon"
@@ -186,19 +182,19 @@ export default function Login() {
           </div>
 
           <div className="space-y-3 text-center md:text-left">
-            <h3 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{t("login.title")}</h3>
-            <p className="text-slate-500 font-medium">{t("login.subtitle")}</p>
+            <h3 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Acesso</h3>
+            <p className="text-slate-500 font-medium">Bem-vindo. Por favor, identifique-se.</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">{t("login.emailLabel")}</Label>
+              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">E-mail corporativo</Label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder={t("login.emailPlaceholder")}
+                  placeholder="exemplo@empresa.com"
                   className="h-14 pl-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary rounded-2xl transition-all font-medium"
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
@@ -209,24 +205,24 @@ export default function Login() {
             
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
-                <Label htmlFor="password" title={t("common.password")} className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("login.passwordLabel")}</Label>
+                <Label htmlFor="password" title="Senha" className="text-xs font-bold uppercase tracking-widest text-slate-500">Senha de acesso</Label>
                 
                 <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
                   <DialogTrigger asChild>
                     <button type="button" className="text-xs font-bold text-primary hover:underline hover:text-primary/80 transition-all uppercase tracking-tighter">
-                      {t("login.forgot")}
+                      Esqueceu?
                     </button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px] rounded-3xl">
                     <DialogHeader>
-                      <DialogTitle className="text-2xl font-black">{t("login.recoverTitle")}</DialogTitle>
+                      <DialogTitle className="text-2xl font-black">Recuperar Acesso</DialogTitle>
                       <DialogDescription className="font-medium text-slate-500">
-                        {t("login.recoverDesc")}
+                        Enviaremos uma senha provisória para o seu e-mail cadastrado.
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleForgotPassword} className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label htmlFor="forgot-email" className="text-xs font-bold uppercase text-slate-500">{t("login.registeredEmail")}</Label>
+                        <Label htmlFor="forgot-email" className="text-xs font-bold uppercase text-slate-500">E-mail cadastrado</Label>
                         <div className="relative">
                           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                           <Input
@@ -249,7 +245,7 @@ export default function Login() {
                           {forgotLoading ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
                           ) : (
-                            <>{t("login.requestPassword")} <ArrowRight className="ml-2 w-5 h-5" /></>
+                            <>Solicitar Senha <ArrowRight className="ml-2 w-5 h-5" /></>
                           )}
                         </Button>
                       </DialogFooter>
@@ -279,11 +275,11 @@ export default function Login() {
               {loading ? (
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>{t("login.validating")}</span>
+                  <span>Validando...</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2">
-                  <span>{t("login.submit")}</span>
+                  <span>Entrar</span>
                   <KeyRound className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                 </div>
               )}
@@ -296,8 +292,8 @@ export default function Login() {
                 <Monitor size={16} className="text-primary" />
               </div>
               <div className="text-sm">
-                <p className="font-bold text-slate-900 dark:text-white">{t("login.support")}</p>
-                <p className="text-slate-500 font-medium">{t("login.supportText")}</p>
+                <p className="font-bold text-slate-900 dark:text-white">Suporte Técnico</p>
+                <p className="text-slate-500 font-medium">Contate a TI caso tenha dificuldades.</p>
               </div>
             </div>
           </div>

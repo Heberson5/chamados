@@ -1,0 +1,37 @@
+{
+  "common": {
+    "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit", "create": "Create",
+    "search": "Search", "loading": "Loading...", "yes": "Yes", "no": "No", "close": "Close",
+    "back": "Back", "next": "Next", "confirm": "Confirm", "actions": "Actions", "status": "Status",
+    "name": "Name", "email": "Email", "password": "Password", "filter": "Filter", "all": "All",
+    "today": "Today", "from": "From", "to": "To", "noData": "No data found", "error": "Error", "success": "Success"
+  },
+  "nav": {
+    "dashboard": "Dashboard", "chamados": "Tickets", "reports": "Reports", "users": "Users",
+    "departments": "Departments", "permissions": "Permissions", "audit": "Audit", "help": "Help", "settings": "Settings"
+  },
+  "userMenu": {
+    "myProfile": "My Profile", "changePassword": "Change Password", "theme": "Theme",
+    "themeLight": "Light", "themeDark": "Dark", "themeSystem": "Automatic",
+    "language": "Language", "logout": "Sign Out", "user": "User"
+  },
+  "login": {
+    "title": "Sign In", "subtitle": "Welcome. Please identify yourself.",
+    "emailLabel": "Corporate email", "emailPlaceholder": "example@company.com",
+    "passwordLabel": "Access password", "forgot": "Forgot?", "submit": "Sign In",
+    "validating": "Validating...", "errorTitle": "Login error",
+    "invalidCredentials": "Incorrect email or password.",
+    "heroTitle1": "MANAGEMENT THAT", "heroTitle2": "TRANSFORMS.",
+    "heroText": "The definitive platform for service control, inventory and productivity of your operation.",
+    "feature1": "Smart & Automatic SLA", "feature2": "Real-Time Inventory",
+    "feature3": "Customizable Workflows", "feature4": "Advanced Analytics",
+    "systemOnline": "System Online", "support": "Technical Support",
+    "supportText": "Contact IT if you have difficulties.",
+    "recoverTitle": "Recover Access",
+    "recoverDesc": "We will send a temporary password to your registered email.",
+    "registeredEmail": "Registered email", "requestPassword": "Request Password",
+    "emailSent": "Email sent",
+    "emailSentDesc": "If the email is registered, a temporary password has been sent.",
+    "genericError": "An error occurred while processing your request."
+  }
+}

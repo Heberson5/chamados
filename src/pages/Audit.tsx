@@ -50,22 +50,38 @@ import { format, parseISO } from "date-fns";
       const endISO = new Date(`${to}T23:59:59.999`).toISOString();
       const { data, error } = await supabase
         .from("audit_logs")
-        .select(`
-          *,
-          profiles!audit_logs_user_id_fkey (
-            nome,
-            sobrenome,
-            avatar_url
-          )
-        `)
+        .select("*")
         .gte("created_at", startISO)
         .lte("created_at", endISO)
         .order("created_at", { ascending: false });
-      
+
       if (error) {
         console.error("Error fetching logs:", error);
+        setLogs([]);
+        setIsLoading(false);
+        return;
       }
-      if (data) setLogs(data);
+
+      let enriched = data || [];
+      const authIds = Array.from(
+        new Set(
+          enriched
+            .map((l: any) => l.auth_user_id)
+            .filter((v: any) => !!v)
+        )
+      );
+      if (authIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("user_id, nome, sobrenome, avatar_url")
+          .in("user_id", authIds as string[]);
+        const map = new Map((profs || []).map((p: any) => [p.user_id, p]));
+        enriched = enriched.map((l: any) => ({
+          ...l,
+          profiles: l.auth_user_id ? map.get(l.auth_user_id) || null : null,
+        }));
+      }
+      setLogs(enriched);
       setIsLoading(false);
     };
 

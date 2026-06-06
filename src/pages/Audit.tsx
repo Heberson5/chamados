@@ -166,6 +166,63 @@ import { format, parseISO } from "date-fns";
       return translations[action] || action;
     };
 
+    const TABLE_LABELS: Record<string, string> = {
+      chamados: "Chamados",
+      comentarios_chamado: "Interações do Chamado",
+      transferencias_chamado: "Transferências de Chamado",
+      chamados_prioridades: "Prioridades de Chamado",
+      profiles: "Usuários",
+      user_roles: "Funções de Usuário",
+      role_definitions: "Permissões",
+      departamentos: "Departamentos",
+      categorias: "Categorias",
+      organizations: "Organizações",
+      notificacoes: "Notificações",
+      email_logs: "Registros de E-mail",
+      audit_logs: "Logs de Auditoria",
+      help_menu_manuals: "Manuais de Ajuda",
+      system_manuals: "Manuais do Sistema",
+      system_settings: "Configurações do Sistema",
+      password_history: "Histórico de Senhas",
+      expedientes: "Expedientes",
+      fornecedores: "Fornecedores",
+      itens_inventario: "Itens de Inventário",
+      movimentacoes_estoque: "Movimentações de Estoque",
+      estoque_setor: "Estoque por Setor",
+      baixas: "Baixas",
+      itens_baixa: "Itens de Baixa",
+      solicitacoes_compra: "Solicitações de Compra",
+      itens_solicitacao_compra: "Itens de Solicitação de Compra",
+      reembolsos: "Reembolsos",
+      servicos: "Serviços",
+      ordens_de_servico: "Ordens de Serviço",
+    };
+
+    const PATH_LABELS: Record<string, string> = {
+      "/dashboard": "Painel",
+      "/chamados": "Chamados",
+      "/acompanhamento": "Acompanhamento",
+      "/reports": "Relatórios",
+      "/usuarios": "Usuários",
+      "/departamentos": "Departamentos",
+      "/permissions": "Permissões",
+      "/audit": "Auditoria",
+      "/ajuda": "Ajuda",
+      "/settings": "Configurações",
+      "/configuracoes/senhas": "Política de Senhas",
+      "/perfil": "Perfil",
+      "/login": "Login",
+    };
+
+    const translateTable = (name?: string | null) => {
+      if (!name) return "-";
+      return TABLE_LABELS[name] || name;
+    };
+    const translatePath = (path?: string | null) => {
+      if (!path) return "-";
+      return PATH_LABELS[path] || path;
+    };
+
     const formatCuiabaTime = (date: string) => {
       if (!date) return "-";
       try {
@@ -293,10 +350,10 @@ import { format, parseISO } from "date-fns";
                         {log.path ? (
                           <div className="flex items-center gap-1">
                             <MousePointer2 size={10} />
-                            <span className="truncate max-w-[200px]">{log.path}</span>
+                            <span className="truncate max-w-[200px]">{translatePath(log.path)}</span>
                           </div>
                         ) : (
-                          <span className="truncate max-w-[150px]">{log.table_name || "-"}</span>
+                          <span className="truncate max-w-[150px]">{translateTable(log.table_name)}</span>
                         )}
                       </TableCell>
                       <TableCell className="text-[10px] font-mono text-muted-foreground">

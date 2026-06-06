@@ -81,6 +81,49 @@ import { format, parseISO } from "date-fns";
           profiles: l.auth_user_id ? map.get(l.auth_user_id) || null : null,
         }));
       }
+
+      // Enrich each mutation log (INSERT/UPDATE/DELETE) with the id_numerico of the affected record
+      const mutationActions = new Set(["INSERT", "UPDATE", "DELETE"]);
+      const byTable = new Map<string, Set<string>>();
+      for (const l of enriched) {
+        if (mutationActions.has(l.action) && l.table_name && l.record_id) {
+          if (!byTable.has(l.table_name)) byTable.set(l.table_name, new Set());
+          byTable.get(l.table_name)!.add(String(l.record_id));
+        }
+      }
+
+      const recordIdMap = new Map<string, any>(); // key: `${table}:${record_id}` -> id_numerico
+      await Promise.all(
+        Array.from(byTable.entries()).map(async ([table, idsSet]) => {
+          const ids = Array.from(idsSet);
+          try {
+            const { data: rows, error: tErr } = await (supabase as any)
+              .from(table)
+              .select("id, id_numerico")
+              .in("id", ids);
+            if (tErr || !rows) return;
+            for (const r of rows) {
+              recordIdMap.set(`${table}:${r.id}`, r.id_numerico);
+            }
+          } catch (e) {
+            // table without id column or inaccessible — try fallback from old/new data later
+          }
+        })
+      );
+
+      enriched = enriched.map((l: any) => {
+        let recordIdNumerico: any = null;
+        if (mutationActions.has(l.action) && l.table_name && l.record_id) {
+          recordIdNumerico = recordIdMap.get(`${l.table_name}:${l.record_id}`) ?? null;
+          // Fallback: try to read id_numerico from new_data/old_data snapshot
+          if (recordIdNumerico == null) {
+            recordIdNumerico =
+              l.new_data?.id_numerico ?? l.old_data?.id_numerico ?? null;
+          }
+        }
+        return { ...l, record_id_numerico: recordIdNumerico };
+      });
+
       setLogs(enriched);
       setIsLoading(false);
     };
@@ -256,7 +299,11 @@ import { format, parseISO } from "date-fns";
                           <span className="truncate max-w-[150px]">{log.table_name || "-"}</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-[10px] font-mono text-muted-foreground">{log.id_numerico ?? "-"}</TableCell>
+                      <TableCell className="text-[10px] font-mono text-muted-foreground">
+                        {["INSERT","UPDATE","DELETE"].includes(log.action)
+                          ? (log.record_id_numerico ?? "-")
+                          : "-"}
+                      </TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
                         {formatCuiabaTime(log.created_at)}
                       </TableCell>

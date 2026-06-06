@@ -256,7 +256,7 @@ import { format, parseISO } from "date-fns";
                           <span className="truncate max-w-[150px]">{log.table_name || "-"}</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-[10px] font-mono text-muted-foreground">{log.record_id?.slice(0, 8) || "-"}</TableCell>
+                      <TableCell className="text-[10px] font-mono text-muted-foreground">{log.id_numerico ?? "-"}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
                         {formatCuiabaTime(log.created_at)}
                       </TableCell>

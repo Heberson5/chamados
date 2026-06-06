@@ -414,7 +414,7 @@ export default function Chamados() {
           <div className="relative w-full md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <Input 
-              placeholder="Buscar por OS ou descrição..." 
+              placeholder="Buscar por OS, título, descrição ou interação..." 
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

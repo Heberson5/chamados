@@ -49,7 +49,8 @@ export default function Chamados() {
           tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome, avatar_url), 
           usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome, avatar_url), 
           chamado_pai:chamado_pai_id(os),
-          comentarios_chamado(count)
+          comentarios_chamado(count),
+          interacoes:comentarios_chamado(comentario)
         `)
         .order("gerado_em", { ascending: false });
      
@@ -234,10 +235,15 @@ export default function Chamados() {
   };
 
     const filteredTickets = tickets.filter(t => {
+      const term = searchTerm.toLowerCase();
+      const interacoes = Array.isArray(t.interacoes)
+        ? t.interacoes.map((c: any) => (c?.comentario || "").toLowerCase()).join(" ")
+        : "";
       const matchesSearch = 
-        (t.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        t.os.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+        (t.titulo?.toLowerCase().includes(term) || false) ||
+        t.os.toLowerCase().includes(term) || 
+        t.descricao.toLowerCase().includes(term) ||
+        interacoes.includes(term);
       
       const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
       

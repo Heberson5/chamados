@@ -18,6 +18,7 @@ import Settings from "./pages/Settings";
   import PasswordPolicyPage from "./pages/PasswordPolicy";
   import NotAuthorized from "./pages/NotAuthorized";
   import Departments from "./pages/Departments";
+  import Acompanhamento from "./pages/Acompanhamento";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,7 @@ const App = () => {
             <Route element={<Layout />}>
                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/chamados" element={<Chamados />} />
+                <Route path="/acompanhamento" element={<Acompanhamento />} />
                  <Route path="/reports" element={<Reports />} />
                 <Route path="/usuarios" element={<Users />} />
                  <Route path="/permissions" element={<Permissions />} />

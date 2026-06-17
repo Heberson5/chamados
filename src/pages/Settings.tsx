@@ -1185,6 +1185,165 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                </TabsContent>
            </>
          )}
+
+         {isMaster && (
+           <TabsContent value="landing" className="space-y-6">
+             <Card>
+               <CardHeader>
+                 <div className="flex items-center gap-2">
+                   <Sparkles className="h-5 w-5 text-primary" />
+                   <CardTitle>Página de Login (Landing)</CardTitle>
+                 </div>
+                 <CardDescription>Edite textos, cores e itens da tela de login. Apenas Master.</CardDescription>
+               </CardHeader>
+               <CardContent className="space-y-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                     <Label>Título principal</Label>
+                     <Input
+                       value={landingConfig.brandTitle}
+                       onChange={e => setLandingConfig({ ...landingConfig, brandTitle: e.target.value })}
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label>Destaque (segunda linha)</Label>
+                     <Input
+                       value={landingConfig.brandHighlight}
+                       onChange={e => setLandingConfig({ ...landingConfig, brandHighlight: e.target.value })}
+                     />
+                   </div>
+                 </div>
+                 <div className="space-y-2">
+                   <Label>Subtítulo</Label>
+                   <Input
+                     value={landingConfig.subtitle}
+                     onChange={e => setLandingConfig({ ...landingConfig, subtitle: e.target.value })}
+                   />
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                     <Label>Título do formulário</Label>
+                     <Input
+                       value={landingConfig.formTitle}
+                       onChange={e => setLandingConfig({ ...landingConfig, formTitle: e.target.value })}
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label>Subtítulo do formulário</Label>
+                     <Input
+                       value={landingConfig.formSubtitle}
+                       onChange={e => setLandingConfig({ ...landingConfig, formSubtitle: e.target.value })}
+                     />
+                   </div>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                     <Label>Texto de status (rodapé)</Label>
+                     <Input
+                       value={landingConfig.statusText}
+                       onChange={e => setLandingConfig({ ...landingConfig, statusText: e.target.value })}
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label>Cor de fundo (painel esquerdo)</Label>
+                     <div className="flex items-center gap-2">
+                       <Input
+                         type="color"
+                         className="w-12 h-10 p-1"
+                         value={landingConfig.bgColor || "#020617"}
+                         onChange={e => setLandingConfig({ ...landingConfig, bgColor: e.target.value })}
+                       />
+                       <span className="text-xs font-mono">{landingConfig.bgColor || "#020617"}</span>
+                     </div>
+                   </div>
+                 </div>
+
+                 <div className="space-y-3 border-t pt-6">
+                   <div className="flex items-center justify-between">
+                     <div>
+                       <h3 className="text-sm font-bold">Itens em destaque</h3>
+                       <p className="text-xs text-muted-foreground italic">Reordene, edite ou remova os itens listados na tela de login.</p>
+                     </div>
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       className="gap-1"
+                       onClick={() => {
+                         const newFeatures = [...(landingConfig.features || []), { id: Date.now().toString(), text: "Novo item" }];
+                         setLandingConfig({ ...landingConfig, features: newFeatures });
+                       }}
+                     >
+                       <Plus size={14} /> Adicionar
+                     </Button>
+                   </div>
+                   <div className="space-y-2 max-w-xl">
+                     {(landingConfig.features || []).map((feat: any, i: number) => (
+                       <div key={feat.id || i} className="flex items-center gap-2 border p-2 rounded bg-muted/10 group">
+                         <div className="flex flex-col gap-1">
+                           <Button
+                             variant="ghost" size="icon" className="h-4 w-4"
+                             disabled={i === 0}
+                             onClick={() => {
+                               const f = [...landingConfig.features];
+                               [f[i-1], f[i]] = [f[i], f[i-1]];
+                               setLandingConfig({ ...landingConfig, features: f });
+                             }}
+                           ><ChevronUp size={10} /></Button>
+                           <Button
+                             variant="ghost" size="icon" className="h-4 w-4"
+                             disabled={i === (landingConfig.features?.length || 0) - 1}
+                             onClick={() => {
+                               const f = [...landingConfig.features];
+                               [f[i], f[i+1]] = [f[i+1], f[i]];
+                               setLandingConfig({ ...landingConfig, features: f });
+                             }}
+                           ><ChevronDown size={10} /></Button>
+                         </div>
+                         <Input
+                           className="h-8 text-sm"
+                           value={feat.text}
+                           onChange={e => {
+                             const f = [...landingConfig.features];
+                             f[i] = { ...f[i], text: e.target.value };
+                             setLandingConfig({ ...landingConfig, features: f });
+                           }}
+                         />
+                         <Button
+                           variant="ghost" size="icon"
+                           className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                           onClick={() => {
+                             const f = landingConfig.features.filter((_: any, idx: number) => idx !== i);
+                             setLandingConfig({ ...landingConfig, features: f });
+                           }}
+                         ><Trash2 size={14} /></Button>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+
+                 <div className="space-y-2 border-t pt-6">
+                   <h3 className="text-sm font-bold">Pré-visualização</h3>
+                   <div className="rounded-lg overflow-hidden border" style={{ backgroundColor: landingConfig.bgColor || "#020617" }}>
+                     <div className="p-6 text-white space-y-3">
+                       <h2 className="text-3xl font-black leading-tight">
+                         {landingConfig.brandTitle}{" "}
+                         <span className="text-primary italic">{landingConfig.brandHighlight}</span>
+                       </h2>
+                       <p className="text-sm text-slate-300">{landingConfig.subtitle}</p>
+                       <ul className="space-y-1 text-sm">
+                         {(landingConfig.features || []).map((f: any) => (
+                           <li key={f.id} className="flex items-center gap-2">
+                             <span className="w-1.5 h-1.5 rounded-full bg-primary" /> {f.text}
+                           </li>
+                         ))}
+                       </ul>
+                     </div>
+                   </div>
+                 </div>
+               </CardContent>
+             </Card>
+           </TabsContent>
+         )}
        </Tabs>
      </div>
    );

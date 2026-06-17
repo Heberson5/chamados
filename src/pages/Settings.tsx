@@ -271,6 +271,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                   <TabsTrigger value="layout">Layout</TabsTrigger>
               </>
             )}
+            {isMaster && (
+              <TabsTrigger value="landing">Landing Page</TabsTrigger>
+            )}
          </TabsList>
 
          <TabsContent value="geral" className="space-y-6">

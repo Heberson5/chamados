@@ -200,6 +200,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
                 { key: 'layout_settings', value: layoutConfig },
                 { key: 'session_timeout', value: sessionTimeout }
             ];
+
+            if (isMaster) {
+              settings.push({ key: 'landing_page_settings', value: landingConfig });
+            }
   
             for (const setting of settings) {
               const { error } = await supabase.from("system_settings").upsert({

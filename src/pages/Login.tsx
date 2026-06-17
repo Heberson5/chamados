@@ -30,6 +30,35 @@ export default function Login() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const defaultLanding = {
+    bgColor: "#020617",
+    brandTitle: "GESTÃO QUE",
+    brandHighlight: "TRANSFORMA.",
+    subtitle: "A plataforma definitiva para controle de atendimento, inventário e produtividade da sua operação.",
+    features: [
+      { id: "1", text: "SLA Inteligente & Automático" },
+      { id: "2", text: "Inventário em Tempo Real" },
+      { id: "3", text: "Workflows Customizáveis" },
+      { id: "4", text: "Analytics Avançado" },
+    ],
+    formTitle: "Acesso",
+    formSubtitle: "Bem-vindo. Por favor, identifique-se.",
+    statusText: "Sistema Online",
+  };
+  const [landing, setLanding] = useState<any>(defaultLanding);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "landing_page_settings")
+        .maybeSingle();
+      if (data?.value) {
+        setLanding({ ...defaultLanding, ...(data.value as any) });
+      }
+    })();
+  }, []);
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) return;
@@ -87,7 +116,10 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20">
       {/* Left Side: Modern Illustration & Branding */}
-      <div className="hidden md:flex flex-1 bg-slate-950 items-center justify-center p-12 text-white relative overflow-hidden">
+      <div
+        className="hidden md:flex flex-1 items-center justify-center p-12 text-white relative overflow-hidden"
+        style={{ backgroundColor: landing.bgColor || "#020617" }}
+      >
         {/* Modern animated background elements */}
         <div className="absolute top-0 left-0 w-full h-full">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] animate-pulse" />
@@ -117,26 +149,21 @@ export default function Login() {
           </div>
           
           <h2 className="text-6xl font-black leading-[0.9] mb-8 animate-in fade-in slide-in-from-left duration-1000 delay-150">
-            GESTÃO QUE <br />
-            <span className="text-primary italic">TRANSFORMA.</span>
+            {landing.brandTitle} <br />
+            <span className="text-primary italic">{landing.brandHighlight}</span>
           </h2>
-          
+
           <p className="text-xl text-slate-400 mb-12 leading-relaxed max-w-md animate-in fade-in slide-in-from-left duration-1000 delay-300">
-            A plataforma definitiva para controle de atendimento, inventário e produtividade da sua operação.
+            {landing.subtitle}
           </p>
 
           <div className="space-y-5 animate-in fade-in slide-in-from-left duration-1000 delay-500">
-            {[
-              "SLA Inteligente & Automático",
-              "Inventário em Tempo Real",
-              "Workflows Customizáveis",
-              "Analytics Avançado"
-            ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-4 group cursor-default">
+            {(landing.features || []).map((feature: any, i: number) => (
+              <div key={feature.id || i} className="flex items-center gap-4 group cursor-default">
                 <div className="h-6 w-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
                   <CheckCircle2 size={14} className="text-primary group-hover:text-white transition-colors" />
                 </div>
-                <span className="text-slate-300 font-medium group-hover:text-white transition-colors">{feature}</span>
+                <span className="text-slate-300 font-medium group-hover:text-white transition-colors">{feature.text || feature}</span>
               </div>
             ))}
           </div>
@@ -144,7 +171,7 @@ export default function Login() {
         
         <div className="absolute bottom-12 left-12 text-sm text-slate-500 font-medium flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span>Sistema Online</span>
+          <span>{landing.statusText}</span>
           <span className="mx-2 opacity-20">|</span>
           <span>&copy; {new Date().getFullYear()} {branding.companyName || "Chamados"}</span>
         </div>
@@ -182,8 +209,8 @@ export default function Login() {
           </div>
 
           <div className="space-y-3 text-center md:text-left">
-            <h3 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Acesso</h3>
-            <p className="text-slate-500 font-medium">Bem-vindo. Por favor, identifique-se.</p>
+            <h3 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{landing.formTitle}</h3>
+            <p className="text-slate-500 font-medium">{landing.formSubtitle}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">

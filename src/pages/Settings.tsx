@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
- import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown } from "lucide-react";
+ import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { useState, useEffect } from "react";
@@ -56,6 +56,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
     const defaultMenuOrder = [
       { id: '1', label: "Painel", path: "/dashboard", visible: true },
       { id: '2', label: "Chamados", path: "/chamados", visible: true },
+      { id: '11', label: "Acompanhamento", path: "/acompanhamento", visible: true },
       { id: '6', label: "Relatórios", path: "/reports", visible: true },
       { id: '3', label: "Usuários", path: "/usuarios", visible: true },
        { id: '4', label: "Permissões", path: "/permissions", visible: true },
@@ -77,6 +78,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
       const [emailLayout, setEmailLayout] = useState("");
       const [priorities, setPriorities] = useState<any[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isMaster, setIsMaster] = useState(false);
+    const defaultLandingConfig = {
+      bgColor: "#020617",
+      accentColor: "",
+      brandTitle: "GESTÃO QUE",
+      brandHighlight: "TRANSFORMA.",
+      subtitle: "A plataforma definitiva para controle de atendimento, inventário e produtividade da sua operação.",
+      features: [
+        { id: "1", text: "SLA Inteligente & Automático" },
+        { id: "2", text: "Inventário em Tempo Real" },
+        { id: "3", text: "Workflows Customizáveis" },
+        { id: "4", text: "Analytics Avançado" },
+      ],
+      formTitle: "Acesso",
+      formSubtitle: "Bem-vindo. Por favor, identifique-se.",
+      statusText: "Sistema Online",
+    };
+    const [landingConfig, setLandingConfig] = useState<any>(defaultLandingConfig);
  
      useEffect(() => {
        const loadSettings = async () => {
@@ -88,6 +107,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
            if (profile.regra === 'ADMIN' || profile.regra === 'MASTER' || profile.is_master) {
              setIsAdmin(true);
            }
+            if (profile.regra === 'MASTER' || profile.is_master) {
+              setIsMaster(true);
+            }
            if (profile.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config) {
              setKanbanConfig((profile.settings as any).kanban_config);
            }
@@ -102,6 +124,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
               const sTimeout = data.find(s => s.key === 'session_timeout');
                const eTemplates = data.find(s => s.key === 'email_templates');
                const eLayout = data.find(s => s.key === 'email_layout');
+               const landing = data.find(s => s.key === 'landing_page_settings');
+               if (landing) {
+                 setLandingConfig({ ...defaultLandingConfig, ...(landing.value as any) });
+               }
              
              // Fetch priorities
              const { data: prioData } = await supabase.from("chamados_prioridades").select("*").order("ordem");

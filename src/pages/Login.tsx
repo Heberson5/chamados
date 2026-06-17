@@ -30,6 +30,35 @@ export default function Login() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const defaultLanding = {
+    bgColor: "#020617",
+    brandTitle: "GESTÃO QUE",
+    brandHighlight: "TRANSFORMA.",
+    subtitle: "A plataforma definitiva para controle de atendimento, inventário e produtividade da sua operação.",
+    features: [
+      { id: "1", text: "SLA Inteligente & Automático" },
+      { id: "2", text: "Inventário em Tempo Real" },
+      { id: "3", text: "Workflows Customizáveis" },
+      { id: "4", text: "Analytics Avançado" },
+    ],
+    formTitle: "Acesso",
+    formSubtitle: "Bem-vindo. Por favor, identifique-se.",
+    statusText: "Sistema Online",
+  };
+  const [landing, setLanding] = useState<any>(defaultLanding);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "landing_page_settings")
+        .maybeSingle();
+      if (data?.value) {
+        setLanding({ ...defaultLanding, ...(data.value as any) });
+      }
+    })();
+  }, []);
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) return;

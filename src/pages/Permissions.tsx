@@ -128,6 +128,7 @@ export default function Permissions() {
         { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Layout", "E-mail", "Segurança", "Kanban"] },
         { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar", "Limpar Logs"] },
         { id: "ajuda", label: "Ajuda", icon: HelpCircle, actions: ["Visualizar", "Editar Manuais"] },
+        { id: "landing_page", label: "Landing Page (Login)", icon: LayoutDashboard, actions: ["Visualizar", "Editar"] },
      ];
  
    const getIcon = (iconName: string) => {

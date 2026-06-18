@@ -259,22 +259,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
           </Button>
         </div>
  
-       <Tabs defaultValue="geral" className="w-full">
-           <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 mb-8">
-           <TabsTrigger value="geral">Geral</TabsTrigger>
-            <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
-            <TabsTrigger value="kanban">Kanban</TabsTrigger>
+        <Tabs defaultValue="geral" className="w-full">
+          <TabsList className="flex flex-wrap h-auto w-full justify-start gap-1 mb-8 p-1">
+            <TabsTrigger value="geral" className="flex-1 min-w-[110px]">Geral</TabsTrigger>
+            <TabsTrigger value="notificacoes" className="flex-1 min-w-[110px]">Notificações</TabsTrigger>
+            <TabsTrigger value="kanban" className="flex-1 min-w-[110px]">Kanban</TabsTrigger>
             {isAdmin && (
               <>
-                <TabsTrigger value="email">E-mail & Alertas</TabsTrigger>
-                  <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
-                  <TabsTrigger value="layout">Layout</TabsTrigger>
+                <TabsTrigger value="email" className="flex-1 min-w-[140px]">E-mail & Alertas</TabsTrigger>
+                <TabsTrigger value="relatorios" className="flex-1 min-w-[110px]">Relatórios</TabsTrigger>
+                <TabsTrigger value="layout" className="flex-1 min-w-[110px]">Layout</TabsTrigger>
               </>
             )}
             {isMaster && (
-              <TabsTrigger value="landing">Landing Page</TabsTrigger>
+              <TabsTrigger value="landing" className="flex-1 min-w-[120px]">Landing Page</TabsTrigger>
             )}
-         </TabsList>
+          </TabsList>
 
          <TabsContent value="geral" className="space-y-6">
            <Card>

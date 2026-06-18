@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
  import { useToast } from "@/hooks/use-toast";
+import LandingLiveEditor from "@/components/LandingLiveEditor";
 
   export default function Settings() {
     const navigate = useNavigate();

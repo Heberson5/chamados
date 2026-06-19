@@ -54,6 +54,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
       });
      const [sessionTimeout, setSessionTimeout] = useState("300");
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
+     const [accessWarnings, setAccessWarnings] = useState({ pre_minutes: 30, final_minutes: 5, browser_notify: true });
     const defaultMenuOrder = [
       { id: '1', label: "Painel", path: "/dashboard", visible: true },
       { id: '2', label: "Chamados", path: "/chamados", visible: true },

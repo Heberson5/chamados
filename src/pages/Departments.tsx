@@ -9,6 +9,7 @@
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import AccessScheduleEditor from "@/components/AccessScheduleEditor";
  
  export default function Departments() {
    const navigate = useNavigate();
@@ -18,7 +19,8 @@
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
    const [newDept, setNewDept] = useState({ nome: "", descricao: "" });
-   const [editDept, setEditDept] = useState<any>(null);
+  const [editDept, setEditDept] = useState<any>(null);
+  const [newDeptSched, setNewDeptSched] = useState<any>(null);
  
     const fetchDepartments = async () => {
       setLoading(true);
@@ -87,7 +89,8 @@
      const { error } = await supabase.from("departamentos").insert({
        nome: newDept.nome,
        descricao: newDept.descricao,
-       organization_id: profile?.organization_id
+      organization_id: profile?.organization_id,
+      access_schedule: newDeptSched
      });
  
      if (error) {
@@ -96,6 +99,7 @@
        toast({ title: "Sucesso", description: "Departamento criado com sucesso." });
        setIsAddDialogOpen(false);
        setNewDept({ nome: "", descricao: "" });
+      setNewDeptSched(null);
        fetchDepartments();
      }
    };
@@ -104,7 +108,8 @@
      if (!editDept.nome) return;
      const { error } = await supabase.from("departamentos").update({
        nome: editDept.nome,
-       descricao: editDept.descricao
+      descricao: editDept.descricao,
+      access_schedule: editDept.access_schedule || null
      }).eq("id", editDept.id);
  
      if (error) {
@@ -215,6 +220,7 @@
                <Label>Descrição</Label>
                <Input value={newDept.descricao} onChange={e => setNewDept({ ...newDept, descricao: e.target.value })} />
              </div>
+            <AccessScheduleEditor value={newDeptSched} onChange={setNewDeptSched} />
            </div>
            <DialogFooter>
              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
@@ -236,6 +242,7 @@
                  <Label>Descrição</Label>
                  <Input value={editDept.descricao} onChange={e => setEditDept({ ...editDept, descricao: e.target.value })} />
                </div>
+              <AccessScheduleEditor value={editDept.access_schedule} onChange={(v) => setEditDept({ ...editDept, access_schedule: v })} />
              </div>
            )}
            <DialogFooter>

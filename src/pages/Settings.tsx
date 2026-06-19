@@ -176,6 +176,8 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
             if (sTimeout) setSessionTimeout(sTimeout.value as string);
              if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
              if (eLayout) setEmailLayout(eLayout.value as string);
+              const aWarn = data.find(s => s.key === 'access_warnings');
+              if (aWarn?.value) setAccessWarnings({ ...accessWarnings, ...(aWarn.value as any) });
           }
        };
        loadSettings();

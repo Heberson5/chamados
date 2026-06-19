@@ -85,6 +85,11 @@ export default function Permissions() {
   };
 
   const handleDeleteRole = async (id: string) => {
+    const role = roles.find(r => r.id === id);
+    if (role && String(role.name).toLowerCase() === 'master') {
+      toast({ variant: "destructive", title: "Operação bloqueada", description: "O perfil Master não pode ser excluído." });
+      return;
+    }
     if (!confirm("Deseja realmente excluir esta permissão?")) return;
     setIsLoading(true);
     try {

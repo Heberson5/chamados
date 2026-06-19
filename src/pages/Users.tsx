@@ -373,6 +373,10 @@ import { usePermissions } from "@/hooks/usePermissions";
                    <Badge variant={user.ativo ? "default" : "secondary"}>
                      {user.ativo ? "Ativo" : "Inativo"}
                    </Badge>
+                   <Badge variant="outline" className={`ml-2 gap-1 ${onlineUsers.has(user.id) ? 'border-green-500 text-green-600' : 'border-slate-300 text-muted-foreground'}`}>
+                     <Circle size={8} className={onlineUsers.has(user.id) ? 'fill-green-500 text-green-500' : 'fill-slate-400 text-slate-400'} />
+                     {onlineUsers.has(user.id) ? 'Online' : 'Offline'}
+                   </Badge>
                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

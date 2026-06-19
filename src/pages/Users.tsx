@@ -6,7 +6,7 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { useToast } from "@/hooks/use-toast";
-  import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones, Building2 } from "lucide-react";
+  import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones, Building2, LogOut, Circle } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Input } from "@/components/ui/input";
@@ -17,11 +17,14 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { getPasswordPolicy, validatePassword, describePolicy, type PasswordPolicy } from "@/lib/passwordPolicy";
  import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
  import { Check, X } from "lucide-react";
+ import AccessScheduleEditor from "@/components/AccessScheduleEditor";
+ import { useOnlineUsers } from "@/hooks/useOnlineUsers";
  
  type Regra = Database["public"]["Enums"]["regra"];
  
   export default function Users() {
     const navigate = useNavigate();
+    const onlineUsers = useOnlineUsers();
    const [users, setUsers] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const { toast } = useToast();

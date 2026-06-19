@@ -85,6 +85,11 @@ export default function Permissions() {
   };
 
   const handleDeleteRole = async (id: string) => {
+    const role = roles.find(r => r.id === id);
+    if (role && String(role.name).toLowerCase() === 'master') {
+      toast({ variant: "destructive", title: "Operação bloqueada", description: "O perfil Master não pode ser excluído." });
+      return;
+    }
     if (!confirm("Deseja realmente excluir esta permissão?")) return;
     setIsLoading(true);
     try {
@@ -180,7 +185,14 @@ export default function Permissions() {
               }}>
                 <Pencil size={14} />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteRole(role.id)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive"
+                disabled={String(role.name).toLowerCase() === 'master'}
+                title={String(role.name).toLowerCase() === 'master' ? 'O perfil Master não pode ser excluído' : 'Excluir'}
+                onClick={() => handleDeleteRole(role.id)}
+              >
                 <Trash2 size={14} />
               </Button>
             </div>
@@ -346,6 +358,7 @@ export default function Permissions() {
                          </div>
                          <Switch 
                            checked={(selectedRole.permissions || []).includes(menu.id)} 
+                            disabled={String(selectedRole.name).toLowerCase() === 'master' && menu.id === 'permissoes'}
                            onCheckedChange={(checked) => {
                              const currentPerms = selectedRole.permissions || [];
                              let nextPerms = [];

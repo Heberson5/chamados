@@ -412,6 +412,25 @@ import { usePermissions } from "@/hooks/usePermissions";
                              {user.ativo ? <PowerOff size={14} /> : <Power size={14} />}
                              {user.ativo ? 'Desativar' : 'Ativar'}
                            </DropdownMenuItem>
+                           <DropdownMenuItem
+                             className="gap-2"
+                             disabled={!onlineUsers.has(user.id)}
+                             onClick={async () => {
+                               const ch = supabase.channel(`force-logout-${user.id}`);
+                               await new Promise<void>((resolve) => {
+                                 ch.subscribe(async (st: string) => {
+                                   if (st === 'SUBSCRIBED') {
+                                     await ch.send({ type: 'broadcast', event: 'logout', payload: {} });
+                                     supabase.removeChannel(ch);
+                                     resolve();
+                                   }
+                                 });
+                               });
+                               toast({ title: 'Desconectado', description: `${user.nome} foi desconectado.` });
+                             }}
+                           >
+                             <LogOut size={14} /> Desconectar agora
+                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDeleteRequest(user)} className="gap-2 text-destructive">
                             <Trash2 size={14} /> Excluir
                           </DropdownMenuItem>

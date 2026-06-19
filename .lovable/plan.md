@@ -1,51 +1,58 @@
-## Plano de implementação
+# Plano de Implementação
 
-São 6 frentes distintas. Vou executar em sequência, mas confirme antes para evitar retrabalho — algumas afetam regras críticas (transferência de chamado, gatilhos de e-mail).
+## 1. Permissões — correções
+- Investigar `src/pages/Permissions.tsx` e endpoint de update em `role_definitions` para descobrir por que a edição não está salvando (provável erro de RLS ou estado controlado).
+- Bloquear na UI e no backend:
+  - Perfil "Master" não pode ser excluído nem ter permissões removidas.
+  - Permissão do menu "permissoes" não pode ser desativada para o Master.
+- Adicionar verificação no `Permissions.tsx` (botões desabilitados + tooltip) e policy/trigger no banco impedindo `DELETE` ou `UPDATE` que remova `permissoes` do role "Master".
 
-### 1. Sidebar – só ícone de tema (UserMenu)
-- Mover o botão de troca de tema do `Sidebar.tsx` para dentro do `UserMenu` como um `DropdownMenuItem` logo abaixo de "Trocar Senha".
-- Mostrar apenas o ícone (Sun/Moon/Monitor) + tooltip; ciclar entre claro/escuro/automático.
+## 2. Favicon na tela de login
+- Hoje o favicon é definido em `index.html` estaticamente. Criar um hook/componente `useFavicon` que lê `branding.favicon` (ou `companyLogo`) de `system_settings` e injeta `<link rel="icon">` dinamicamente.
+- Aplicar em `Login.tsx` (e Layout, para manter consistente após login).
 
-### 2. Auditoria – filtro de período
-- Adicionar `DateRangePicker` (Popover + Calendar `mode="range"`) em `Audit.tsx`.
-- Padrão = hoje (00:00 → 23:59). Botões rápidos: Hoje, 7d, 30d, Limpar.
-- Filtrar `created_at` no fetch.
+## 3. Logoff automático por inatividade
+- O `useSessionTimeout` lê `system_settings.session_timeout` mas o valor pode estar salvo em outro formato (objeto `{value: number}`). Validar leitura e padronizar.
+- Garantir que o timer é iniciado/reiniciado corretamente e dispara `supabase.auth.signOut()`.
 
-### 3. Permissões – corrigir edição
-- Bug: `upsert` sem `onConflict` falha quando `id` existe porque PostgREST não detecta conflito. Trocar para fluxo explícito: se `selectedRole.id` → `update().eq('id', id)`; senão → `insert()`.
-- Adicionar `select().single()` para retornar o registro e tratar erro silencioso (`if (data)` ignora erro).
+## 4. Desconectar usuário em tempo real (force logout)
+- Em `Users.tsx`, botão "Desconectar" por usuário (apenas Admin/Master).
+- Implementar via canal Realtime broadcast: backend envia evento em canal `force-logout:{user_id}`; cliente escuta em `Layout.tsx` e faz `signOut()`.
+- Alternativa server-side: edge function `admin-force-logout` que chama `auth.admin.signOut(user_id)` usando service role, e também emite broadcast para fechar imediatamente abas abertas.
 
-### 4. Relatórios – modernizar + transferências
-- Novo layout responsivo: cards KPI (total, abertos, encerrados, SLA violado, tempo médio de atendimento, taxa de reabertura).
-- Filtros de período + departamento + técnico.
-- Gráficos adicionais: chamados por dia (linha), por departamento, por categoria, evolução SLA.
-- **Nova seção "Transferências"**: tabela + gráfico — total de transferências por técnico (origem/destino), por departamento, e tempo médio que o chamado ficou com o técnico anterior antes da transferência (calculado de `transferencias_chamado.transferido_em` − `chamado.atendido_em` ou `transferencia` anterior).
+## 5. Horários permitidos de acesso
+- Migration: adicionar colunas `access_schedule jsonb` em `profiles` e `departamentos` (`{enabled, days:[0-6], start:'HH:MM', end:'HH:MM', timezone}`).
+- UI: editor de horários em `Users.tsx` (por usuário) e `Departments.tsx` (por departamento). Usuário herda do departamento se não tiver próprio.
+- Login: após autenticar, verificar horário; se fora, exibir pop-up "Fora do horário permitido" e deslogar.
+- Em sessão ativa: hook `useAccessSchedule` calcula tempo restante até `end`.
+  - Quando restar X minutos (configurável, default 30): pop-up + Notification API ("restam X minutos…").
+  - Após fechar pop-up: timer regressivo fixo no topo (`AccessCountdownBar` em `Layout.tsx`).
+  - Quando restar Y minutos (default 5): segundo pop-up.
+  - Ao expirar: logoff automático.
 
-### 5. Transferência de chamados
-- Frontend (`Chamados.tsx` / detalhe): botão "Transferir" disponível para quem tem permissão `chamados:transferir` (já existe na lista de ações granulares).
-- Modal lista técnicos elegíveis (`pode_receber_chamados = true` e mesmo `department_id`, ou todos com permissão de atendimento) + campo "Motivo".
-- Antes de confirmar: `AlertDialog` avisando "O chamado será transferido. Para você ele ficará marcado como ENCERRADO (somente visualização) e não poderá ser reaberto."
-- Backend (migration):
-  - Trigger / RPC `transferir_chamado(chamado_id, novo_tecnico_id, motivo)` que:
-    1. Insere em `transferencias_chamado`.
-    2. Atualiza `chamados.tecnico_id` para o novo.
-    3. Não altera o status real (continua ABERTO/EM_ATENDIMENTO para o novo técnico).
-  - Para o técnico anterior, criar visão "Encerrado/somente leitura" no frontend: se `usuario != tecnico_id atual` mas existe registro em `transferencias_chamado` onde `tecnico_anterior_id = auth.uid()`, esconder ações de edição/reabertura.
-- Permitir INSERT em `transferencias_chamado` para técnicos (hoje só tem SELECT).
+## 6. Configurações → Notificações
+- Aba/seção em `Settings.tsx` (já existe Notificações? adicionar campos):
+  - `pre_warning_minutes` (default 30)
+  - `final_warning_minutes` (default 5)
+  - Toggle para notificações do navegador (pede `Notification.requestPermission()`).
+- Salvar em `system_settings.access_schedule_warnings`.
 
-### 6. Gatilhos de e-mail
-- Revisar `supabase/functions/send-email`, `forgot-password`, `change-password-secure`.
-- Verificar logs recentes (`edge_function_logs`) por falhas.
-- Garantir: tratamento de erro com retry, validação de `RESEND_API_KEY`/`LOVABLE_API_KEY`, fallback de logs em `email_send_log`.
-- Confirmar que os triggers de DB (chamado aberto, encerrado, transferido, senha provisória) realmente chamam a edge function.
+## 7. Status Online em Usuários
+- Usar Supabase Realtime Presence em canal global `presence:users`.
+- `Layout.tsx` faz `track({user_id, online_at})` ao montar; desconecta ao desmontar (cobre fechar navegador/aba).
+- `Users.tsx` assina o mesmo canal e marca cada linha com badge verde "Online" / cinza "Offline".
+- Logoff automático ao desligar/reiniciar: garantido pelo `beforeunload` + presença Realtime (servidor remove presença quando socket cai). Adicionar handler `beforeunload` que chama `supabase.auth.signOut()` apenas se configurado, ou apenas remover presença (manter sessão para reabertura).
+  - **Decisão necessária**: signOut em `beforeunload` significa que recarregar a página exige login novamente. Recomendo apenas remover presença e manter a sessão; logoff "real" só por inatividade/horário. Confirmar com o usuário se quiser logoff forçado ao fechar.
 
----
+## Detalhes Técnicos
+- Migrations:
+  - `ALTER TABLE profiles ADD COLUMN access_schedule jsonb;`
+  - `ALTER TABLE departamentos ADD COLUMN access_schedule jsonb;`
+  - Trigger/policy protegendo role "Master" em `role_definitions`.
+  - Seed: `system_settings.access_schedule_warnings = {pre:30, final:5, browser_notify:true}`.
+- Edge function: `admin-force-logout` (service role, valida que requester é admin/master).
+- Componentes novos: `AccessScheduleEditor.tsx`, `AccessCountdownBar.tsx`, `useAccessSchedule.tsx`, `useFavicon.tsx`, `useOnlineUsers.tsx`.
+- Arquivos editados: `Login.tsx`, `Layout.tsx`, `Settings.tsx`, `Users.tsx`, `Departments.tsx`, `Permissions.tsx`, `useSessionTimeout.tsx`.
 
-### Ordem sugerida de entrega
-1, 2, 3 (rápidos, baixo risco) → 5 (migração + UI) → 4 (depende de 5 para dados de transferência) → 6 (auditoria + ajustes).
-
-### Confirme antes de eu começar:
-- **Transferência**: quem pode transferir = qualquer usuário com permissão `chamados:transferir`, certo? E o destino só pode ser quem tem `pode_receber_chamados = true`?
-- **Relatórios**: quer manter export PDF/Excel atuais e adicionar uma aba "Transferências", ou refazer toda a página em abas (Visão Geral / SLA / Transferências / Exportar)?
-
-Posso prosseguir?
+## Pergunta antes de implementar
+Logoff ao fechar navegador/desligar PC: você quer **(a)** apenas marcar offline (sessão continua válida ao reabrir, mais conveniente) ou **(b)** signOut real (precisa logar de novo sempre que abrir)?

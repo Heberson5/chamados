@@ -54,6 +54,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
       });
      const [sessionTimeout, setSessionTimeout] = useState("300");
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
+     const [accessWarnings, setAccessWarnings] = useState({ pre_minutes: 30, final_minutes: 5, browser_notify: true });
     const defaultMenuOrder = [
       { id: '1', label: "Painel", path: "/dashboard", visible: true },
       { id: '2', label: "Chamados", path: "/chamados", visible: true },
@@ -175,6 +176,8 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
             if (sTimeout) setSessionTimeout(sTimeout.value as string);
              if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
              if (eLayout) setEmailLayout(eLayout.value as string);
+              const aWarn = data.find(s => s.key === 'access_warnings');
+              if (aWarn?.value) setAccessWarnings({ ...accessWarnings, ...(aWarn.value as any) });
           }
        };
        loadSettings();
@@ -199,7 +202,8 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                  { key: 'email_templates', value: emailTemplates },
                  { key: 'email_layout', value: emailLayout },
                 { key: 'layout_settings', value: layoutConfig },
-                { key: 'session_timeout', value: sessionTimeout }
+                { key: 'session_timeout', value: sessionTimeout },
+                { key: 'access_warnings', value: accessWarnings }
             ];
 
             if (isMaster) {
@@ -372,6 +376,44 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                 </div>
              </CardContent>
            </Card>
+           {isAdmin && (
+             <Card>
+               <CardHeader>
+                 <div className="flex items-center gap-2">
+                   <Bell className="h-5 w-5 text-primary" />
+                   <CardTitle>Avisos de Encerramento de Acesso</CardTitle>
+                 </div>
+                 <CardDescription>Configure quando alertar o usuário sobre o fim do horário permitido.</CardDescription>
+               </CardHeader>
+               <CardContent className="space-y-6">
+                 <div className="flex items-center justify-between">
+                   <div className="space-y-0.5">
+                     <Label>Aviso prévio (minutos antes do fim)</Label>
+                     <p className="text-sm text-muted-foreground">Pop-up + notificação avisando que o expediente está acabando.</p>
+                   </div>
+                   <div className="w-24">
+                     <Input type="number" value={accessWarnings.pre_minutes} onChange={e => setAccessWarnings({ ...accessWarnings, pre_minutes: Number(e.target.value) })} />
+                   </div>
+                 </div>
+                 <div className="flex items-center justify-between border-t pt-4">
+                   <div className="space-y-0.5">
+                     <Label>Aviso final (minutos antes do fim)</Label>
+                     <p className="text-sm text-muted-foreground">Segundo alerta crítico antes do logoff.</p>
+                   </div>
+                   <div className="w-24">
+                     <Input type="number" value={accessWarnings.final_minutes} onChange={e => setAccessWarnings({ ...accessWarnings, final_minutes: Number(e.target.value) })} />
+                   </div>
+                 </div>
+                 <div className="flex items-center justify-between border-t pt-4">
+                   <div className="space-y-0.5">
+                     <Label>Notificações do navegador</Label>
+                     <p className="text-sm text-muted-foreground">Mostra alertas mesmo com a aba em segundo plano.</p>
+                   </div>
+                   <Switch checked={accessWarnings.browser_notify} onCheckedChange={v => setAccessWarnings({ ...accessWarnings, browser_notify: v })} />
+                 </div>
+               </CardContent>
+             </Card>
+           )}
          </TabsContent>
 
          {isAdmin && (

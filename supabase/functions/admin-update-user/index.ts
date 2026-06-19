@@ -67,6 +67,7 @@ Deno.serve(async (req) => {
         pode_receber_chamados,
         department_id,
         admin_departments,
+        access_schedule,
     } = body;
 
     if (!user_id) {
@@ -132,6 +133,7 @@ Deno.serve(async (req) => {
       if (pode_receber_chamados !== undefined) profilePayload.pode_receber_chamados = pode_receber_chamados;
       if (department_id !== undefined) profilePayload.department_id = department_id;
       if (admin_departments !== undefined) profilePayload.admin_departments = admin_departments;
+      if (access_schedule !== undefined) profilePayload.access_schedule = access_schedule;
 
     if (Object.keys(profilePayload).length > 0) {
       const { error: profErr } = await admin

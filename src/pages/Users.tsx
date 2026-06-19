@@ -6,7 +6,7 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { useToast } from "@/hooks/use-toast";
-  import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones, Building2 } from "lucide-react";
+  import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones, Building2, LogOut, Circle } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Input } from "@/components/ui/input";
@@ -17,11 +17,14 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { getPasswordPolicy, validatePassword, describePolicy, type PasswordPolicy } from "@/lib/passwordPolicy";
  import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
  import { Check, X } from "lucide-react";
+ import AccessScheduleEditor from "@/components/AccessScheduleEditor";
+ import { useOnlineUsers } from "@/hooks/useOnlineUsers";
  
  type Regra = Database["public"]["Enums"]["regra"];
  
   export default function Users() {
     const navigate = useNavigate();
+    const onlineUsers = useOnlineUsers();
    const [users, setUsers] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const { toast } = useToast();
@@ -74,6 +77,7 @@ import { usePermissions } from "@/hooks/usePermissions";
              pode_receber_chamados: editUser.pode_receber_chamados,
              department_id: editUser.department_id || null,
              admin_departments: editUser.admin_departments || [],
+            access_schedule: editUser.access_schedule ?? null,
            },
          });
         if (error) throw error;
@@ -369,6 +373,10 @@ import { usePermissions } from "@/hooks/usePermissions";
                    <Badge variant={user.ativo ? "default" : "secondary"}>
                      {user.ativo ? "Ativo" : "Inativo"}
                    </Badge>
+                   <Badge variant="outline" className={`ml-2 gap-1 ${onlineUsers.has(user.id) ? 'border-green-500 text-green-600' : 'border-slate-300 text-muted-foreground'}`}>
+                     <Circle size={8} className={onlineUsers.has(user.id) ? 'fill-green-500 text-green-500' : 'fill-slate-400 text-slate-400'} />
+                     {onlineUsers.has(user.id) ? 'Online' : 'Offline'}
+                   </Badge>
                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -403,6 +411,29 @@ import { usePermissions } from "@/hooks/usePermissions";
                            <DropdownMenuItem onClick={() => toggleStatus(user)} className="gap-2">
                              {user.ativo ? <PowerOff size={14} /> : <Power size={14} />}
                              {user.ativo ? 'Desativar' : 'Ativar'}
+                           </DropdownMenuItem>
+                           <DropdownMenuItem
+                             className="gap-2"
+                             onClick={async () => {
+                               try {
+                                 const ch = supabase.channel(`force-logout-${user.id}`);
+                                 await new Promise<void>((resolve) => {
+                                   ch.subscribe(async (st: string) => {
+                                     if (st === 'SUBSCRIBED') {
+                                       await ch.send({ type: 'broadcast', event: 'logout', payload: {} });
+                                       supabase.removeChannel(ch);
+                                       resolve();
+                                     }
+                                   });
+                                 });
+                                 await supabase.functions.invoke('admin-force-logout', { body: { user_id: user.id } });
+                                 toast({ title: 'Desconectado', description: `${user.nome} foi desconectado.` });
+                               } catch (err: any) {
+                                 toast({ variant: 'destructive', title: 'Erro', description: err.message });
+                               }
+                             }}
+                           >
+                             <LogOut size={14} /> Desconectar agora
                            </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDeleteRequest(user)} className="gap-2 text-destructive">
                             <Trash2 size={14} /> Excluir
@@ -759,6 +790,10 @@ import { usePermissions } from "@/hooks/usePermissions";
                        </div>
                      </div>
                    )}
+                   <AccessScheduleEditor
+                     value={editUser.access_schedule}
+                     onChange={(v) => setEditUser({ ...editUser, access_schedule: v })}
+                   />
                </div>
              )}
              <DialogFooter>

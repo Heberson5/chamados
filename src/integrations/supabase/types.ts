@@ -440,6 +440,7 @@ export type Database = {
       }
       departamentos: {
         Row: {
+          access_schedule: Json | null
           created_at: string
           descricao: string | null
           id: string
@@ -449,6 +450,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_schedule?: Json | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -458,6 +460,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_schedule?: Json | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -1013,6 +1016,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_schedule: Json | null
           admin_departments: string[] | null
           ativo: boolean | null
           atualizado_em: string | null
@@ -1022,10 +1026,12 @@ export type Database = {
           deletado_em: string | null
           department_id: string | null
           email: string
+          force_logout_at: string | null
           gerado_em: string | null
           id: string
           id_numerico: number
           is_master: boolean | null
+          last_seen_at: string | null
           must_change_password: boolean | null
           nivel: Database["public"]["Enums"]["nivel_tecnico"] | null
           nome: string | null
@@ -1043,6 +1049,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          access_schedule?: Json | null
           admin_departments?: string[] | null
           ativo?: boolean | null
           atualizado_em?: string | null
@@ -1052,10 +1059,12 @@ export type Database = {
           deletado_em?: string | null
           department_id?: string | null
           email: string
+          force_logout_at?: string | null
           gerado_em?: string | null
           id: string
           id_numerico?: never
           is_master?: boolean | null
+          last_seen_at?: string | null
           must_change_password?: boolean | null
           nivel?: Database["public"]["Enums"]["nivel_tecnico"] | null
           nome?: string | null
@@ -1073,6 +1082,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          access_schedule?: Json | null
           admin_departments?: string[] | null
           ativo?: boolean | null
           atualizado_em?: string | null
@@ -1082,10 +1092,12 @@ export type Database = {
           deletado_em?: string | null
           department_id?: string | null
           email?: string
+          force_logout_at?: string | null
           gerado_em?: string | null
           id?: string
           id_numerico?: never
           is_master?: boolean | null
+          last_seen_at?: string | null
           must_change_password?: boolean | null
           nivel?: Database["public"]["Enums"]["nivel_tecnico"] | null
           nome?: string | null

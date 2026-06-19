@@ -351,6 +351,7 @@ export default function Permissions() {
                          </div>
                          <Switch 
                            checked={(selectedRole.permissions || []).includes(menu.id)} 
+                            disabled={String(selectedRole.name).toLowerCase() === 'master' && menu.id === 'permissoes'}
                            onCheckedChange={(checked) => {
                              const currentPerms = selectedRole.permissions || [];
                              let nextPerms = [];

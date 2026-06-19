@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { useBranding } from "@/hooks/useBranding";
 import { useToast } from "@/hooks/use-toast";
+import { evaluateSchedule, loadEffectiveSchedule } from "@/lib/accessSchedule";
 
 export default function Login() {
   const { toast } = useToast();
@@ -57,6 +58,19 @@ export default function Login() {
       if (data?.value) {
         setLanding({ ...defaultLanding, ...(data.value as any) });
       }
+      // Apply favicon from branding even before auth
+      const { data: brand } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "layout_settings")
+        .maybeSingle();
+      const v = brand?.value as any;
+      if (v?.companyFavicon) {
+        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+        if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+        link.href = v.companyFavicon;
+      }
+      if (v?.companyName) document.title = v.companyName;
     })();
   }, []);
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -108,6 +122,22 @@ export default function Login() {
           : error.message,
       });
     } else {
+      // Verify access schedule
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const sched = await loadEffectiveSchedule(user.id);
+        const status = evaluateSchedule(sched);
+        if (status.hasSchedule && !status.allowed) {
+          await supabase.auth.signOut();
+          toast({
+            variant: "destructive",
+            title: "Fora do horário permitido",
+            description: "Seu acesso está restrito ao horário definido pelo administrador.",
+          });
+          setLoading(false);
+          return;
+        }
+      }
       navigate("/dashboard");
     }
     setLoading(false);

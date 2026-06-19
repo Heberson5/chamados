@@ -414,19 +414,23 @@ import { usePermissions } from "@/hooks/usePermissions";
                            </DropdownMenuItem>
                            <DropdownMenuItem
                              className="gap-2"
-                             disabled={!onlineUsers.has(user.id)}
                              onClick={async () => {
-                               const ch = supabase.channel(`force-logout-${user.id}`);
-                               await new Promise<void>((resolve) => {
-                                 ch.subscribe(async (st: string) => {
-                                   if (st === 'SUBSCRIBED') {
-                                     await ch.send({ type: 'broadcast', event: 'logout', payload: {} });
-                                     supabase.removeChannel(ch);
-                                     resolve();
-                                   }
+                               try {
+                                 const ch = supabase.channel(`force-logout-${user.id}`);
+                                 await new Promise<void>((resolve) => {
+                                   ch.subscribe(async (st: string) => {
+                                     if (st === 'SUBSCRIBED') {
+                                       await ch.send({ type: 'broadcast', event: 'logout', payload: {} });
+                                       supabase.removeChannel(ch);
+                                       resolve();
+                                     }
+                                   });
                                  });
-                               });
-                               toast({ title: 'Desconectado', description: `${user.nome} foi desconectado.` });
+                                 await supabase.functions.invoke('admin-force-logout', { body: { user_id: user.id } });
+                                 toast({ title: 'Desconectado', description: `${user.nome} foi desconectado.` });
+                               } catch (err: any) {
+                                 toast({ variant: 'destructive', title: 'Erro', description: err.message });
+                               }
                              }}
                            >
                              <LogOut size={14} /> Desconectar agora

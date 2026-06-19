@@ -77,6 +77,7 @@ import { usePermissions } from "@/hooks/usePermissions";
              pode_receber_chamados: editUser.pode_receber_chamados,
              department_id: editUser.department_id || null,
              admin_departments: editUser.admin_departments || [],
+            access_schedule: editUser.access_schedule ?? null,
            },
          });
         if (error) throw error;

@@ -786,6 +786,10 @@ import { usePermissions } from "@/hooks/usePermissions";
                        </div>
                      </div>
                    )}
+                   <AccessScheduleEditor
+                     value={editUser.access_schedule}
+                     onChange={(v) => setEditUser({ ...editUser, access_schedule: v })}
+                   />
                </div>
              )}
              <DialogFooter>

@@ -202,7 +202,8 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                  { key: 'email_templates', value: emailTemplates },
                  { key: 'email_layout', value: emailLayout },
                 { key: 'layout_settings', value: layoutConfig },
-                { key: 'session_timeout', value: sessionTimeout }
+                { key: 'session_timeout', value: sessionTimeout },
+                { key: 'access_warnings', value: accessWarnings }
             ];
 
             if (isMaster) {

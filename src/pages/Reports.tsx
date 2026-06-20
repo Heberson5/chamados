@@ -4,9 +4,9 @@
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
   import { FileSpreadsheet, FileText, ArrowRightLeft, Clock, Users as UsersIcon, Ticket as TicketIcon, AlertOctagon } from "lucide-react";
- import * as XLSX from 'xlsx';
  import jsPDF from 'jspdf';
  import autoTable from 'jspdf-autotable';
+  import { exportStyledExcel } from "@/lib/excelReport";
    import { useToast } from "@/hooks/use-toast";
  import { usePermissions } from "@/hooks/usePermissions";
  import { useBranding } from "@/hooks/useBranding";
@@ -223,18 +223,17 @@
         const layout = await getReportSettings();
         const visibleColumns = layout.columns.filter((c: any) => c.visible);
 
-        const dataToExport = tickets.map(t => {
-          const row: any = {};
-          visibleColumns.forEach((col: any) => {
-            row[col.label] = formatCellValue(t, col.field);
-          });
-          return row;
+        await exportStyledExcel({
+          filename: "Relatorio_Chamados.xlsx",
+          sheetName: "Chamados",
+          headerText: layout.headerText || branding.companyName || "Relatório de Chamados",
+          footerText: layout.footerText || "Relatório gerado pelo sistema",
+          headerColor: layout.headerColor || "#000000",
+          headerTextColor: layout.headerTextColor || "#ffffff",
+          logoDataUrl: layout.showLogo ? (branding.companyLogo || null) : null,
+          columns: visibleColumns.map((c: any) => ({ label: c.label })),
+          rows: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.field))),
         });
-
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-         const workbook = XLSX.utils.book_new();
-         XLSX.utils.book_append_sheet(workbook, worksheet, "Chamados");
-         XLSX.writeFile(workbook, "Relatorio_Chamados.xlsx");
          toast({ title: "Sucesso", description: "Excel exportado com sucesso!" });
        } catch (error: any) {
          toast({ variant: "destructive", title: "Erro ao exportar Excel", description: error.message });

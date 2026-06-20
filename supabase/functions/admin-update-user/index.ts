@@ -101,6 +101,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Block deactivation of Master users via this endpoint.
+    if (targetIsMaster && body.ativo === false) {
+      return new Response(JSON.stringify({ error: "Usuário Master não pode ser desativado." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Block users from deactivating themselves.
+    if (user_id === caller.id && body.ativo === false) {
+      return new Response(JSON.stringify({ error: "Você não pode desativar a si mesmo." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Admins cannot promote/demote to/from Master.
     if (regra && regra === "MASTER" && !callerIsMaster) {
       return new Response(JSON.stringify({ error: "Apenas Master pode atribuir Master" }), {

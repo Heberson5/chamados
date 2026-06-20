@@ -10,6 +10,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { Loader2 } from "lucide-react";
 import AccessGuard from "./AccessGuard";
+import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -20,6 +21,8 @@ export default function Layout() {
   
   // Inactivity timer
   useSessionTimeout();
+  // Register this session in the global presence channel (singleton)
+  useOnlineUsers();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -39,21 +42,13 @@ export default function Layout() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Realtime presence (Online status) + force logout listener
+  // Force logout listener
   useEffect(() => {
     let cancelled = false;
-    let channel: any = null;
     let logoutChannel: any = null;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
-
-      channel = supabase.channel("online-users");
-      channel.subscribe(async (status: string) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
-        }
-      });
 
       logoutChannel = supabase.channel(`force-logout-${user.id}`);
       logoutChannel
@@ -65,7 +60,6 @@ export default function Layout() {
     })();
     return () => {
       cancelled = true;
-      if (channel) supabase.removeChannel(channel);
       if (logoutChannel) supabase.removeChannel(logoutChannel);
     };
   }, [navigate]);

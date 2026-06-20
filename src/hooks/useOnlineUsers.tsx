@@ -10,24 +10,35 @@ let refCount = 0;
 
 function ensureChannel(userId: string | null) {
   if (sharedChannel) return sharedChannel;
-  const ch = supabase.channel("online-users", {
-    config: { presence: { key: userId || crypto.randomUUID() } },
-  });
-  ch.on("presence", { event: "sync" }, () => {
-    const state = ch.presenceState() as Record<string, { user_id?: string }[]>;
-    const ids = new Set<string>();
-    Object.values(state).forEach((arr) =>
-      arr.forEach((p) => p.user_id && ids.add(p.user_id))
-    );
-    currentIds = ids;
-    listeners.forEach((l) => l(ids));
-  }).subscribe(async (status) => {
-    if (status === "SUBSCRIBED" && userId) {
-      await ch.track({ user_id: userId, online_at: new Date().toISOString() });
-    }
-  });
-  sharedChannel = ch;
-  return ch;
+  try {
+    const ch = supabase.channel("online-users", {
+      config: { presence: { key: userId || crypto.randomUUID() } },
+    });
+    ch.on("presence", { event: "sync" }, () => {
+      try {
+        const state = ch.presenceState() as Record<string, { user_id?: string }[]>;
+        const ids = new Set<string>();
+        Object.values(state).forEach((arr) =>
+          arr.forEach((p) => p.user_id && ids.add(p.user_id))
+        );
+        currentIds = ids;
+        listeners.forEach((l) => {
+          try { l(ids); } catch (e) { console.warn("presence listener error", e); }
+        });
+      } catch (e) { console.warn("presence sync error", e); }
+    }).subscribe(async (status) => {
+      try {
+        if (status === "SUBSCRIBED" && userId) {
+          await ch.track({ user_id: userId, online_at: new Date().toISOString() });
+        }
+      } catch (e) { console.warn("presence track error", e); }
+    });
+    sharedChannel = ch;
+    return ch;
+  } catch (e) {
+    console.warn("ensureChannel failed", e);
+    return null;
+  }
 }
 
 export function useOnlineUsers() {

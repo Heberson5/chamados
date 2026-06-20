@@ -1,58 +1,57 @@
-# Plano de Implementação
+## Plano de Implementação
 
-## 1. Permissões — correções
-- Investigar `src/pages/Permissions.tsx` e endpoint de update em `role_definitions` para descobrir por que a edição não está salvando (provável erro de RLS ou estado controlado).
-- Bloquear na UI e no backend:
-  - Perfil "Master" não pode ser excluído nem ter permissões removidas.
-  - Permissão do menu "permissoes" não pode ser desativada para o Master.
-- Adicionar verificação no `Permissions.tsx` (botões desabilitados + tooltip) e policy/trigger no banco impedindo `DELETE` ou `UPDATE` que remova `permissoes` do role "Master".
+Vou executar 6 mudanças, agrupadas por área. Todas em uma única rodada de implementação.
 
-## 2. Favicon na tela de login
-- Hoje o favicon é definido em `index.html` estaticamente. Criar um hook/componente `useFavicon` que lê `branding.favicon` (ou `companyLogo`) de `system_settings` e injeta `<link rel="icon">` dinamicamente.
-- Aplicar em `Login.tsx` (e Layout, para manter consistente após login).
+### 1. Error Boundary global (anti tela branca)
+- Criar `src/components/ErrorBoundary.tsx` (classe React) que captura erros de render, incluindo falhas do Realtime/Presence.
+- Tela de fallback com mensagem amigável e botões "Tentar novamente" e "Recarregar".
+- Envolver `<App />` em `src/main.tsx`.
+- Endurecer `useOnlineUsers` para envolver `subscribe/track` em try/catch e não derrubar a árvore se o canal falhar.
 
-## 3. Logoff automático por inatividade
-- O `useSessionTimeout` lê `system_settings.session_timeout` mas o valor pode estar salvo em outro formato (objeto `{value: number}`). Validar leitura e padronizar.
-- Garantir que o timer é iniciado/reiniciado corretamente e dispara `supabase.auth.signOut()`.
+### 2. Permissões editáveis
+- Investigar e corrigir o salvamento de permissões em `Permissions.tsx` (provavelmente o estado de checkboxes não está sendo persistido / `update` falhando por RLS ou payload).
+- Garantir que toggles dos itens funcionem mesmo após carregar o registro salvo.
+- Manter regra: perfil Master não pode perder `permissoes` nem ser excluído (já existe no trigger).
 
-## 4. Desconectar usuário em tempo real (force logout)
-- Em `Users.tsx`, botão "Desconectar" por usuário (apenas Admin/Master).
-- Implementar via canal Realtime broadcast: backend envia evento em canal `force-logout:{user_id}`; cliente escuta em `Layout.tsx` e faz `signOut()`.
-- Alternativa server-side: edge function `admin-force-logout` que chama `auth.admin.signOut(user_id)` usando service role, e também emite broadcast para fechar imediatamente abas abertas.
+### 3. Horário de acesso por dia da semana
+- Trocar formato de `access_schedule` para:
+  ```
+  { enabled: bool, days: { "0": {enabled, start, end}, ..., "6": {...} } }
+  ```
+- Refatorar `AccessScheduleEditor.tsx` para mostrar cada dia da semana com seu próprio par início/fim e toggle individual.
+- Atualizar `src/lib/accessSchedule.ts` (`evaluateSchedule`) para aplicar horário do dia corrente.
+- Manter retrocompatibilidade: se vier o formato antigo (`days[], start, end`), converter na leitura.
+- Usado tanto em Usuários quanto Departamentos sem mudança de schema (campo já é JSONB).
 
-## 5. Horários permitidos de acesso
-- Migration: adicionar colunas `access_schedule jsonb` em `profiles` e `departamentos` (`{enabled, days:[0-6], start:'HH:MM', end:'HH:MM', timezone}`).
-- UI: editor de horários em `Users.tsx` (por usuário) e `Departments.tsx` (por departamento). Usuário herda do departamento se não tiver próprio.
-- Login: após autenticar, verificar horário; se fora, exibir pop-up "Fora do horário permitido" e deslogar.
-- Em sessão ativa: hook `useAccessSchedule` calcula tempo restante até `end`.
-  - Quando restar X minutos (configurável, default 30): pop-up + Notification API ("restam X minutos…").
-  - Após fechar pop-up: timer regressivo fixo no topo (`AccessCountdownBar` em `Layout.tsx`).
-  - Quando restar Y minutos (default 5): segundo pop-up.
-  - Ao expirar: logoff automático.
+### 4. Excel com mesma formatação do PDF
+- Criar helper `src/lib/excelReport.ts` usando `xlsx-js-style` (ou `exceljs` se já presente). Verificar dependências.
+- Aplicar: logo da empresa no topo (via `addImage` se `exceljs`), cores de cabeçalho iguais ao PDF, larguras de coluna, bordas, alinhamento e linhas zebra.
+- Substituir geração atual de Excel em `Reports.tsx` por esse helper, passando os mesmos dados/colunas do PDF.
 
-## 6. Configurações → Notificações
-- Aba/seção em `Settings.tsx` (já existe Notificações? adicionar campos):
-  - `pre_warning_minutes` (default 30)
-  - `final_warning_minutes` (default 5)
-  - Toggle para notificações do navegador (pede `Notification.requestPermission()`).
-- Salvar em `system_settings.access_schedule_warnings`.
+### 5. Proteções do Master e auto-ação
+- UI em `Users.tsx`: ocultar usuários Master para quem NÃO é Master. Desabilitar botões "Desativar" e "Desconectar" se:
+  - alvo é Master, ou
+  - alvo é o próprio usuário logado.
+- Backend (camada de proteção real):
+  - Trigger SQL `protect_master_profile` que bloqueia `UPDATE profiles SET ativo=false` quando o alvo é Master.
+  - Edge function `admin-force-logout` valida: alvo não pode ser Master e não pode ser o próprio solicitante; retorna 403 caso contrário.
+  - Edge function `admin-update-user` aplica as mesmas regras antes de desativar.
 
-## 7. Status Online em Usuários
-- Usar Supabase Realtime Presence em canal global `presence:users`.
-- `Layout.tsx` faz `track({user_id, online_at})` ao montar; desconecta ao desmontar (cobre fechar navegador/aba).
-- `Users.tsx` assina o mesmo canal e marca cada linha com badge verde "Online" / cinza "Offline".
-- Logoff automático ao desligar/reiniciar: garantido pelo `beforeunload` + presença Realtime (servidor remove presença quando socket cai). Adicionar handler `beforeunload` que chama `supabase.auth.signOut()` apenas se configurado, ou apenas remover presença (manter sessão para reabertura).
-  - **Decisão necessária**: signOut em `beforeunload` significa que recarregar a página exige login novamente. Recomendo apenas remover presença e manter a sessão; logoff "real" só por inatividade/horário. Confirmar com o usuário se quiser logoff forçado ao fechar.
+### 6. Tooltips no menu lateral recolhido
+- Em `Sidebar.tsx`, quando `collapsed`, envolver cada botão de menu em `<Tooltip>` (shadcn `tooltip`) mostrando o nome à direita.
+- Adicionar `<TooltipProvider>` no topo do sidebar.
 
-## Detalhes Técnicos
-- Migrations:
-  - `ALTER TABLE profiles ADD COLUMN access_schedule jsonb;`
-  - `ALTER TABLE departamentos ADD COLUMN access_schedule jsonb;`
-  - Trigger/policy protegendo role "Master" em `role_definitions`.
-  - Seed: `system_settings.access_schedule_warnings = {pre:30, final:5, browser_notify:true}`.
-- Edge function: `admin-force-logout` (service role, valida que requester é admin/master).
-- Componentes novos: `AccessScheduleEditor.tsx`, `AccessCountdownBar.tsx`, `useAccessSchedule.tsx`, `useFavicon.tsx`, `useOnlineUsers.tsx`.
-- Arquivos editados: `Login.tsx`, `Layout.tsx`, `Settings.tsx`, `Users.tsx`, `Departments.tsx`, `Permissions.tsx`, `useSessionTimeout.tsx`.
+### Arquivos a criar
+- `src/components/ErrorBoundary.tsx`
+- `src/lib/excelReport.ts`
+- Migration SQL: trigger `protect_master_profile_deactivation`
 
-## Pergunta antes de implementar
-Logoff ao fechar navegador/desligar PC: você quer **(a)** apenas marcar offline (sessão continua válida ao reabrir, mais conveniente) ou **(b)** signOut real (precisa logar de novo sempre que abrir)?
+### Arquivos a editar
+- `src/main.tsx`, `src/hooks/useOnlineUsers.tsx`
+- `src/pages/Permissions.tsx`
+- `src/components/AccessScheduleEditor.tsx`, `src/lib/accessSchedule.ts`
+- `src/pages/Reports.tsx`
+- `src/pages/Users.tsx`, `supabase/functions/admin-force-logout/index.ts`, `supabase/functions/admin-update-user/index.ts`
+- `src/components/Sidebar.tsx`
+
+Posso prosseguir?

@@ -55,30 +55,39 @@ export default function Permissions() {
         can_edit: !!selectedRole.can_edit,
         can_delete: !!selectedRole.can_delete,
         can_inactivate: !!selectedRole.can_inactivate,
-        permissions: selectedRole.permissions ?? [],
+        permissions: Array.from(new Set(selectedRole.permissions ?? [])),
       };
 
       let error: any = null;
+      let rows: any[] | null = null;
       if (selectedRole.id) {
         const res = await supabase
           .from("role_definitions")
           .update(payload)
-          .eq("id", selectedRole.id);
+          .eq("id", selectedRole.id)
+          .select();
         error = res.error;
+        rows = res.data;
       } else {
         const res = await supabase
           .from("role_definitions")
-          .insert(payload);
+          .insert(payload)
+          .select();
         error = res.error;
+        rows = res.data;
       }
 
       if (error) throw error;
+      if (!rows || rows.length === 0) {
+        throw new Error("Nenhuma linha foi alterada. Verifique se você tem permissão para editar este perfil.");
+      }
       toast({ title: "Sucesso", description: "Permissão salva com sucesso!" });
       setIsDialogOpen(false);
       setSelectedRole(null);
       fetchRoles();
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Erro ao salvar", description: error.message });
+      console.error("Save role error", error);
+      toast({ variant: "destructive", title: "Erro ao salvar", description: error.message || String(error) });
     } finally {
       setIsLoading(false);
     }
@@ -178,9 +187,10 @@ export default function Permissions() {
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
         {roles.map((role) => (
           <Card key={role.id} className="flex flex-col h-full min-h-[480px] border-2 hover:border-primary/20 transition-all relative group">
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-2 right-2 flex gap-1 opacity-70 hover:opacity-100 transition-opacity">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                setSelectedRole(role);
+                // Deep clone so edits don't mutate the list state
+                setSelectedRole({ ...role, permissions: [...(role.permissions || [])] });
                 setIsDialogOpen(true);
               }}>
                 <Pencil size={14} />

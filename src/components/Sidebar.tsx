@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
+ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
   import { usePermissions } from "@/hooks/usePermissions";
  import UserMenu from "./UserMenu";
  import { useBranding } from "@/hooks/useBranding";
@@ -109,23 +110,34 @@ interface SidebarProps {
       </div>
  
        <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
-         {menuItems.map((item) => (
-           <Button
-             key={item.path}
-             variant={location.pathname === item.path ? "secondary" : "ghost"}
-             className={cn(
-               "w-full justify-start",
-               collapsed ? "px-2" : "px-4"
-             )}
-              onClick={() => {
-                navigate(item.path);
-                if (window.innerWidth < 768 && onMobileClose) onMobileClose();
-              }}
-           >
-             <item.icon size={20} className={cn(!collapsed && "mr-2")} />
-             {!collapsed && <span>{item.label}</span>}
-           </Button>
-         ))}
+         <TooltipProvider delayDuration={150}>
+           {menuItems.map((item) => {
+             const button = (
+               <Button
+                 key={item.path}
+                 variant={location.pathname === item.path ? "secondary" : "ghost"}
+                 className={cn(
+                   "w-full justify-start",
+                   collapsed ? "px-2" : "px-4"
+                 )}
+                 onClick={() => {
+                   navigate(item.path);
+                   if (window.innerWidth < 768 && onMobileClose) onMobileClose();
+                 }}
+               >
+                 <item.icon size={20} className={cn(!collapsed && "mr-2")} />
+                 {!collapsed && <span>{item.label}</span>}
+               </Button>
+             );
+             if (!collapsed) return <div key={item.path}>{button}</div>;
+             return (
+               <Tooltip key={item.path}>
+                 <TooltipTrigger asChild>{button}</TooltipTrigger>
+                 <TooltipContent side="right">{item.label}</TooltipContent>
+               </Tooltip>
+             );
+           })}
+         </TooltipProvider>
        </nav>
  
        <div className="p-2 border-t space-y-2">

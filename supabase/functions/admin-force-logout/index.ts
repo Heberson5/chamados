@@ -27,6 +27,16 @@ Deno.serve(async (req) => {
     const { user_id } = await req.json();
     if (!user_id) return new Response(JSON.stringify({ error: "user_id obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    if (user_id === caller.id) {
+      return new Response(JSON.stringify({ error: "Você não pode desconectar a si mesmo." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { data: target } = await admin.from("profiles").select("regra, is_master").eq("id", user_id).single();
+    const targetIsMaster = target?.is_master || target?.regra === "MASTER";
+    if (targetIsMaster) {
+      return new Response(JSON.stringify({ error: "Usuário Master não pode ser desconectado." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     await admin.auth.admin.signOut(user_id);
     await admin.from("profiles").update({ force_logout_at: new Date().toISOString() }).eq("id", user_id);
 

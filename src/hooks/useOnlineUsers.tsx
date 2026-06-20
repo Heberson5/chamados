@@ -5,15 +5,15 @@ export function useOnlineUsers() {
   const [online, setOnline] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const channel = supabase.channel("online-users", { config: { presence: { key: "" } } });
-
-    channel.on("presence", { event: "sync" }, () => {
-      const state = channel.presenceState() as Record<string, { user_id: string }[]>;
-      const ids = new Set<string>();
-      Object.values(state).forEach(arr => arr.forEach(p => p.user_id && ids.add(p.user_id)));
-      setOnline(ids);
-    });
-    channel.subscribe();
+    const channel = supabase
+      .channel("online-users", { config: { presence: { key: "" } } })
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState() as Record<string, { user_id: string }[]>;
+        const ids = new Set<string>();
+        Object.values(state).forEach(arr => arr.forEach(p => p.user_id && ids.add(p.user_id)));
+        setOnline(ids);
+      })
+      .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, []);

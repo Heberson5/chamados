@@ -27,6 +27,7 @@ import { usePermissions } from "@/hooks/usePermissions";
     const onlineUsers = useOnlineUsers();
    const [users, setUsers] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
+   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
    const { toast } = useToast();
    const [selectedUser, setSelectedUser] = useState<any>(null);
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -161,6 +162,15 @@ import { usePermissions } from "@/hooks/usePermissions";
    };
  
    const toggleStatus = async (user: any) => {
+     const isTargetMaster = user.is_master || user.regra === "MASTER";
+     if (isTargetMaster) {
+       toast({ variant: "destructive", title: "Operação bloqueada", description: "Usuário Master não pode ser desativado." });
+       return;
+     }
+     if (currentUserId && user.id === currentUserId) {
+       toast({ variant: "destructive", title: "Operação bloqueada", description: "Você não pode desativar a si mesmo." });
+       return;
+     }
      const { error } = await supabase
        .from("profiles")
        .update({ ativo: !user.ativo })
@@ -260,6 +270,7 @@ import { usePermissions } from "@/hooks/usePermissions";
      (async () => {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;
+       setCurrentUserId(user.id);
        const { data: prof } = await supabase
          .from("profiles")
          .select("regra, is_master")

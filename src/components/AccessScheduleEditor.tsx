@@ -1,15 +1,12 @@
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
 
-export interface AccessSchedule {
-  enabled?: boolean;
-  days?: number[]; // 0=Sun..6=Sat
-  start?: string;  // 'HH:MM'
-  end?: string;
-}
+import type { AccessSchedule, DaySchedule } from "@/lib/accessSchedule";
+export type { AccessSchedule } from "@/lib/accessSchedule";
 
-const DAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 const DAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 interface Props {
@@ -17,13 +14,39 @@ interface Props {
   onChange: (v: AccessSchedule | null) => void;
 }
 
+function normalize(value: AccessSchedule | null | undefined): AccessSchedule {
+  // Convert legacy format to perDay
+  if (value?.perDay) return { enabled: !!value.enabled, perDay: value.perDay };
+  const perDay: Record<string, DaySchedule> = {};
+  for (let i = 0; i < 7; i++) {
+    const enabledDay = !!value && Array.isArray(value.days) && value.days.includes(i);
+    perDay[String(i)] = {
+      enabled: enabledDay || (i >= 1 && i <= 5 && !value),
+      start: value?.start || (i === 6 ? "07:30" : "08:00"),
+      end: value?.end || (i === 6 ? "11:30" : "18:00"),
+    };
+  }
+  return { enabled: !!value?.enabled, perDay };
+}
+
 export default function AccessScheduleEditor({ value, onChange }: Props) {
-  const sched: AccessSchedule = value || { enabled: false, days: [1,2,3,4,5], start: "08:00", end: "18:00" };
+  const sched = normalize(value);
   const update = (patch: Partial<AccessSchedule>) => onChange({ ...sched, ...patch });
 
-  const toggleDay = (d: number) => {
-    const days = sched.days || [];
-    update({ days: days.includes(d) ? days.filter(x => x !== d) : [...days, d].sort() });
+  const updateDay = (d: number, patch: Partial<DaySchedule>) => {
+    const perDay = { ...(sched.perDay || {}) };
+    perDay[String(d)] = { ...(perDay[String(d)] || {}), ...patch };
+    update({ perDay });
+  };
+
+  const copyToAll = (d: number) => {
+    const src = sched.perDay?.[String(d)];
+    if (!src) return;
+    const perDay: Record<string, DaySchedule> = {};
+    for (let i = 0; i < 7; i++) {
+      perDay[String(i)] = { ...src };
+    }
+    update({ perDay });
   };
 
   return (
@@ -31,36 +54,50 @@ export default function AccessScheduleEditor({ value, onChange }: Props) {
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label className="text-sm font-semibold">Restringir horário de acesso</Label>
-          <p className="text-[10px] text-muted-foreground">Bloqueia o login fora do horário definido.</p>
+          <p className="text-[10px] text-muted-foreground">Cada dia da semana pode ter seu próprio horário.</p>
         </div>
         <Switch checked={!!sched.enabled} onCheckedChange={v => update({ enabled: v })} />
       </div>
       {sched.enabled && (
-        <>
-          <div className="flex gap-1">
-            {DAYS.map((d, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => toggleDay(i)}
-                title={DAY_NAMES[i]}
-                className={`flex-1 h-8 rounded text-xs font-bold border ${(sched.days || []).includes(i) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground'}`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Início</Label>
-              <Input type="time" value={sched.start || "08:00"} onChange={e => update({ start: e.target.value })} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Fim</Label>
-              <Input type="time" value={sched.end || "18:00"} onChange={e => update({ end: e.target.value })} />
-            </div>
-          </div>
-        </>
+        <div className="space-y-2">
+          {DAY_NAMES.map((name, i) => {
+            const day = sched.perDay?.[String(i)] || { enabled: false, start: "08:00", end: "18:00" };
+            return (
+              <div key={i} className="flex items-center gap-2 border rounded p-2 bg-background">
+                <Switch
+                  checked={!!day.enabled}
+                  onCheckedChange={v => updateDay(i, { enabled: v })}
+                />
+                <span className="text-xs font-semibold w-10">{name}</span>
+                <Input
+                  type="time"
+                  value={day.start || "08:00"}
+                  disabled={!day.enabled}
+                  onChange={e => updateDay(i, { start: e.target.value })}
+                  className="h-8 text-xs"
+                />
+                <span className="text-xs text-muted-foreground">às</span>
+                <Input
+                  type="time"
+                  value={day.end || "18:00"}
+                  disabled={!day.enabled}
+                  onChange={e => updateDay(i, { end: e.target.value })}
+                  className="h-8 text-xs"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 shrink-0"
+                  title="Copiar este horário para todos os dias"
+                  onClick={() => copyToAll(i)}
+                >
+                  <Copy size={12} />
+                </Button>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

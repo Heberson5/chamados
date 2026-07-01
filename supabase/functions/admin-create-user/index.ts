@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     const { data: callerProfile } = await admin
       .from("profiles")
-      .select("regra, is_master")
+      .select("regra, is_master, organization_id")
       .eq("id", caller.id)
       .single();
 
@@ -62,6 +62,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const callerIsMaster = callerProfile?.is_master || callerProfile?.regra === "MASTER";
 
     const body = await req.json();
     const {
@@ -79,6 +81,14 @@ Deno.serve(async (req) => {
         department_id,
         admin_departments,
     } = body;
+
+    // Only Master can create Master users
+    if (regra === "MASTER" && !callerIsMaster) {
+      return new Response(JSON.stringify({ error: "Apenas Master pode criar usuário Master" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!email || !nome) {
       return new Response(JSON.stringify({ error: "Campos obrigatórios faltando" }), {

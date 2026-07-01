@@ -20,9 +20,10 @@ Deno.serve(async (req) => {
     if (!caller) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const admin = createClient(supabaseUrl, serviceKey);
-    const { data: callerProfile } = await admin.from("profiles").select("regra, is_master").eq("id", caller.id).single();
+    const { data: callerProfile } = await admin.from("profiles").select("regra, is_master, organization_id").eq("id", caller.id).single();
     const ok = callerProfile?.is_master || callerProfile?.regra === "MASTER" || callerProfile?.regra === "ADMIN";
     if (!ok) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const callerIsMaster = callerProfile?.is_master || callerProfile?.regra === "MASTER";
 
     const { user_id } = await req.json();
     if (!user_id) return new Response(JSON.stringify({ error: "user_id obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -31,10 +32,13 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Você não pode desconectar a si mesmo." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: target } = await admin.from("profiles").select("regra, is_master").eq("id", user_id).single();
+    const { data: target } = await admin.from("profiles").select("regra, is_master, organization_id").eq("id", user_id).single();
     const targetIsMaster = target?.is_master || target?.regra === "MASTER";
     if (targetIsMaster) {
       return new Response(JSON.stringify({ error: "Usuário Master não pode ser desconectado." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (!callerIsMaster && callerProfile?.organization_id !== target?.organization_id) {
+      return new Response(JSON.stringify({ error: "Você não pode desconectar usuários de outra organização." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     await admin.auth.admin.signOut(user_id);

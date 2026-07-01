@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
     const { data: callerProfile } = await admin
       .from("profiles")
-      .select("regra, is_master")
+      .select("regra, is_master, organization_id")
       .eq("id", caller.id)
       .single();
 
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     // Load target profile
     const { data: target } = await admin
       .from("profiles")
-      .select("id, regra, is_master, email")
+      .select("id, regra, is_master, email, organization_id")
       .eq("id", user_id)
       .single();
 
@@ -92,6 +92,14 @@ Deno.serve(async (req) => {
     }
 
     const targetIsMaster = target.is_master || target.regra === "MASTER";
+
+    // Cross-organization boundary: non-master admins can only manage users of their own organization
+    if (!callerIsMaster && callerProfile?.organization_id !== target.organization_id) {
+      return new Response(JSON.stringify({ error: "Você não pode gerenciar usuários de outra organização." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Admins cannot edit Master users; only Master can edit Master.
     if (targetIsMaster && !callerIsMaster) {

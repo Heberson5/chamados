@@ -238,7 +238,7 @@ import { format, parseISO } from "date-fns";
     };
  
    return (
-     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+     <div className="p-4 md:p-8 w-full space-y-6">
        <div>
          <h1 className="text-3xl font-bold tracking-tight">Auditoria do Sistema</h1>
          <p className="text-muted-foreground">Monitore as ações e a navegação de todos os usuários cadastrados.</p>

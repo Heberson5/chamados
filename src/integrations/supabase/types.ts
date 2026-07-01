@@ -966,10 +966,44 @@ export type Database = {
           },
         ]
       }
+      organization_email_settings: {
+        Row: {
+          created_at: string
+          extra: Json
+          organization_id: string
+          sender_email: string
+          sender_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          extra?: Json
+          organization_id: string
+          sender_email?: string
+          sender_name?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          extra?: Json
+          organization_id?: string
+          sender_email?: string
+          sender_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_email_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
-          email_settings: Json | null
           id: string
           id_numerico: number
           name: string
@@ -977,7 +1011,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          email_settings?: Json | null
           id?: string
           id_numerico?: never
           name: string
@@ -985,7 +1018,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          email_settings?: Json | null
           id?: string
           id_numerico?: never
           name?: string

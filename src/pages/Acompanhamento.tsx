@@ -241,7 +241,7 @@ export default function Acompanhamento() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+    <div className="p-4 md:p-8 w-full space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Acompanhamento de Chamados</h1>

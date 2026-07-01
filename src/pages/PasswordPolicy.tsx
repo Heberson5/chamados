@@ -72,7 +72,7 @@ export default function PasswordPolicyPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-3xl mx-auto w-full space-y-6 animate-fade-in">
+    <div className="p-4 md:p-8 w-full space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
         <ShieldCheck className="text-primary" />
         <div>

@@ -1582,6 +1582,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_chamado: { Args: { _chamado_id: string }; Returns: boolean }
       check_is_master: { Args: never; Returns: boolean }
       check_password_history: {
         Args: { p_password: string; p_user_id: string }

@@ -1,6 +1,7 @@
   import RichTextEditor from "@/components/RichTextEditor";
 
  import { useState, useEffect } from "react";
+ import DOMPurify from "dompurify";
  import { supabase } from "@/integrations/supabase/client";
  import { usePermissions } from "@/hooks/usePermissions";
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -361,7 +362,7 @@ import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, Boo
                         <div className="space-y-12">
                           {/* General Intro Section */}
                           <section className="prose prose-slate dark:prose-invert max-w-none">
-                            <div dangerouslySetInnerHTML={{ __html: manual.content }} />
+                            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(manual.content || "") }} />
                           </section>
 
                           {/* Dynamic Menu Sections */}
@@ -395,7 +396,7 @@ import { Loader2, Save, Edit3, Eye, Crown, Shield, Wrench, User, HelpCircle, Boo
                                     className="prose prose-slate dark:prose-invert max-w-none text-sm 
                                                prose-p:text-muted-foreground prose-p:leading-relaxed
                                                prose-li:text-muted-foreground prose-strong:text-foreground"
-                                    dangerouslySetInnerHTML={{ __html: section.content }} 
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(section.content || "") }} 
                                   />
                                 </div>
                               ))}

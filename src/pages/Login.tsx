@@ -99,15 +99,16 @@ export default function Login() {
   };
 
 
+  // Ao abrir a tela de login, encerra qualquer sessão anterior para forçar
+  // que o usuário digite e-mail e senha novamente (sem login automático).
   useEffect(() => {
-    const checkSession = async () => {
+    (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        await supabase.auth.signOut();
       }
-    };
-    checkSession();
-  }, [navigate]);
+    })();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

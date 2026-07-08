@@ -187,8 +187,8 @@ export default function Permissions() {
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
         {roles.map((role) => (
           <Card key={role.id} className="flex flex-col h-full min-h-[480px] border-2 hover:border-primary/20 transition-all relative group">
-            <div className="absolute top-2 right-2 flex gap-1 opacity-70 hover:opacity-100 transition-opacity">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+            <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-70 hover:opacity-100 transition-opacity">
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Editar ${role.name}`} onClick={() => {
                 // Deep clone so edits don't mutate the list state
                 setSelectedRole({ ...role, permissions: [...(role.permissions || [])] });
                 setIsDialogOpen(true);
@@ -199,6 +199,7 @@ export default function Permissions() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-destructive"
+                aria-label={`Excluir ${role.name}`}
                 disabled={String(role.name).toLowerCase() === 'master'}
                 title={String(role.name).toLowerCase() === 'master' ? 'O perfil Master não pode ser excluído' : 'Excluir'}
                 onClick={() => handleDeleteRole(role.id)}

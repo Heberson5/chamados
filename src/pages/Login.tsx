@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/ThemeProvider";
 import { Sun, Moon, Monitor, Ticket, CheckCircle2, Mail, Lock, KeyRound, ArrowRight, Loader2 } from "lucide-react";
@@ -313,14 +314,13 @@ export default function Login() {
               </div>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                <Input 
-                  id="password" 
-                  type="password" 
+                <PasswordInput
+                  id="password"
                   placeholder="••••••••"
-                  className="h-14 pl-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary rounded-2xl transition-all font-medium"
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  required 
+                  className="h-14 pl-12 pr-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary rounded-2xl transition-all font-medium"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
               </div>
             </div>

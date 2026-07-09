@@ -207,14 +207,29 @@ import { usePermissions } from "@/hooks/usePermissions";
      if (openTickets && openTickets.length > 0) {
        setIsReassignDialogOpen(true);
      } else {
-       if (confirm(`Deseja realmente excluir o usuário ${user.nome}?`)) {
-         const { error } = await supabase.from("profiles").update({ deletado_em: new Date().toISOString(), ativo: false }).eq("id", user.id);
-         if (error) toast({ variant: "destructive", title: "Erro", description: error.message });
-         else {
-           toast({ title: "Sucesso", description: "Usuário removido." });
-           fetchUsers();
-         }
-       }
+      const hard = isCurrentMaster;
+      const msg = hard
+        ? `Excluir PERMANENTEMENTE o usuário ${user.nome}? Esta ação não pode ser desfeita.`
+        : `Deseja realmente excluir o usuário ${user.nome}?`;
+      if (!confirm(msg)) return;
+      if (hard) {
+        const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+          body: { user_id: user.id },
+        });
+        if (error || (data as any)?.error) {
+          toast({ variant: "destructive", title: "Erro", description: (error as any)?.message ?? (data as any)?.error });
+        } else {
+          toast({ title: "Usuário excluído", description: "Removido permanentemente." });
+          fetchUsers();
+        }
+      } else {
+        const { error } = await supabase.from("profiles").update({ deletado_em: new Date().toISOString(), ativo: false }).eq("id", user.id);
+        if (error) toast({ variant: "destructive", title: "Erro", description: error.message });
+        else {
+          toast({ title: "Sucesso", description: "Usuário removido." });
+          fetchUsers();
+        }
+      }
      }
    };
  
@@ -223,8 +238,16 @@ import { usePermissions } from "@/hooks/usePermissions";
      setLoading(true);
      try {
        await supabase.from("chamados").update({ usuario_id: reassignToId }).eq("usuario_id", selectedUser.id);
-       await supabase.from("profiles").update({ deletado_em: new Date().toISOString(), ativo: false }).eq("id", selectedUser.id);
-       toast({ title: "Sucesso", description: "Chamados remanejados e usuário removido." });
+      if (isCurrentMaster) {
+        const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+          body: { user_id: selectedUser.id },
+        });
+        if (error || (data as any)?.error) throw new Error((error as any)?.message ?? (data as any)?.error);
+        toast({ title: "Sucesso", description: "Chamados remanejados e usuário excluído permanentemente." });
+      } else {
+        await supabase.from("profiles").update({ deletado_em: new Date().toISOString(), ativo: false }).eq("id", selectedUser.id);
+        toast({ title: "Sucesso", description: "Chamados remanejados e usuário removido." });
+      }
        setIsReassignDialogOpen(false);
        fetchUsers();
      } catch (error: any) {

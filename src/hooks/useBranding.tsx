@@ -117,20 +117,6 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener("branding:updated", onLocalUpdate);
 
-    // Hide Lovable badge style (preserved alternative approach)
-    const style = document.createElement("style");
-    style.innerHTML = `
-      #lovable-badge,
-      .lovable-badge,
-      [href*="lovable.dev"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-      }
-    `;
-    document.head.appendChild(style);
-
     return () => {
       supabase.removeChannel(channel);
       window.removeEventListener("branding:updated", onLocalUpdate);

@@ -10,6 +10,7 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Switch } from "@/components/ui/switch";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Input } from "@/components/ui/input";
+  import { PasswordInput } from "@/components/ui/password-input";
  import { Label } from "@/components/ui/label";
  import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -51,6 +52,8 @@ import { usePermissions } from "@/hooks/usePermissions";
      const [policy, setPolicy] = useState<PasswordPolicy | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editUser, setEditUser] = useState<any>(null);
+    const [editPassword, setEditPassword] = useState("");
+    const [saving, setSaving] = useState(false);
      const [currentRole, setCurrentRole] = useState<{ regra: string; is_master: boolean } | null>(null);
      const [departments, setDepartments] = useState<any[]>([]);
 
@@ -62,7 +65,14 @@ import { usePermissions } from "@/hooks/usePermissions";
          toast({ variant: "destructive", title: "Erro", description: "O departamento é obrigatório para este nível de acesso." });
          return;
        }
-      setLoading(true);
+      if (editPassword && policy) {
+        const v = validatePassword(editPassword, policy);
+        if (!v.valid) {
+          toast({ variant: "destructive", title: "Senha inválida", description: v.errors.join(", ") });
+          return;
+        }
+      }
+      setSaving(true);
        try {
          const { data, error } = await supabase.functions.invoke("admin-update-user", {
            body: {
@@ -79,17 +89,19 @@ import { usePermissions } from "@/hooks/usePermissions";
              department_id: editUser.department_id || null,
              admin_departments: editUser.admin_departments || [],
             access_schedule: editUser.access_schedule ?? null,
+            password: editPassword || undefined,
            },
          });
         if (error) throw error;
         if ((data as any)?.error) throw new Error((data as any).error);
         toast({ title: "Sucesso", description: "Usuário atualizado com sucesso." });
         setIsEditDialogOpen(false);
+        setEditPassword("");
         fetchUsers();
       } catch (error: any) {
         toast({ variant: "destructive", title: "Erro", description: error.message });
       } finally {
-        setLoading(false);
+        setSaving(false);
       }
     };
    const handleAddUser = async () => {

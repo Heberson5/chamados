@@ -427,6 +427,7 @@ import { usePermissions } from "@/hooks/usePermissions";
                         <DropdownMenuContent align="end">
                            <DropdownMenuItem onClick={() => {
                              setEditUser(user);
+                             setEditPassword("");
                              setIsEditDialogOpen(true);
                            }} className="gap-2">
                              <Pencil size={14} /> Editar

@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
         department_id,
         admin_departments,
         access_schedule,
+        password,
     } = body;
 
     if (!user_id) {
@@ -140,6 +141,24 @@ Deno.serve(async (req) => {
         email_confirm: true,
       });
       if (emailErr) throw emailErr;
+    }
+
+    // Update password if provided (Master/Admin only, and Admin cannot change Master's password)
+    if (password && typeof password === "string" && password.length > 0) {
+      if (targetIsMaster && !callerIsMaster) {
+        return new Response(JSON.stringify({ error: "Apenas Master pode alterar a senha de um Master." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (password.length < 8) {
+        return new Response(JSON.stringify({ error: "A senha deve ter no mínimo 8 caracteres." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: pwdErr } = await admin.auth.admin.updateUserById(user_id, { password });
+      if (pwdErr) throw pwdErr;
     }
 
     const profilePayload: Record<string, unknown> = {};

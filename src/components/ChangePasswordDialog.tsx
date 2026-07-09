@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2 } from "lucide-react";
@@ -108,11 +109,11 @@ export default function ChangePasswordDialog({ open, onOpenChange, forced, onSuc
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="new-pwd">Nova senha</Label>
-            <Input id="new-pwd" type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} autoFocus />
+            <PasswordInput id="new-pwd" value={pwd} onChange={(e) => setPwd(e.target.value)} autoFocus />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm-pwd">Confirmar nova senha</Label>
-            <Input id="confirm-pwd" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <PasswordInput id="confirm-pwd" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </div>
 
           <div className="rounded-md border p-3 text-sm space-y-1 bg-muted/30">

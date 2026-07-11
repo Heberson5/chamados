@@ -732,15 +732,16 @@ interface ChamadosKanbanProps {
            collisionDetection={closestCorners} 
            onDragEnd={handleDragEnd}
          >
-           <div className="flex flex-col md:flex-row gap-6 h-full min-h-[600px] overflow-x-auto pb-4 custom-scrollbar">
+            <div className="flex flex-col md:flex-row gap-6 items-start min-h-[600px] overflow-x-auto pb-4 custom-scrollbar">
              {kanbanCols.map((column) => (
-               <div 
-                 key={column.id} 
-                 className="flex flex-col rounded-xl border bg-card/50 p-4 min-w-[320px] max-w-[400px] flex-shrink-0"
-                 style={{ 
-                   borderTop: `4px solid ${column.color_hex || 'hsl(var(--primary))'}`,
-                 }}
-               >
+                <DroppableColumn
+                  key={column.id}
+                  id={column.id}
+                  className="flex flex-col rounded-xl border bg-card/50 p-4 min-w-[320px] xl:min-w-[360px] w-full md:w-[360px] xl:w-[400px] flex-shrink-0"
+                  style={{
+                    borderTop: `4px solid ${column.color_hex || 'hsl(var(--primary))'}`,
+                  }}
+                >
                  <div className="flex items-center justify-between mb-4 px-2">
                  <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
                    {column.title}
@@ -761,7 +762,7 @@ interface ChamadosKanbanProps {
                     .map(t => t.id)} 
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
+                   <div className="flex-1 space-y-4 pr-1">
                     {tickets
                       .filter((t) => {
                         const transferred = transferredAwayIds.has(t.id);
@@ -793,7 +794,7 @@ interface ChamadosKanbanProps {
                    )}
                  </div>
                </SortableContext>
-             </div>
+              </DroppableColumn>
            ))}
          </div>
        </DndContext>

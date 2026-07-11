@@ -62,6 +62,57 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_logs: {
+        Row: {
+          created_at: string
+          destino: string
+          erro: string | null
+          finalizado_em: string | null
+          id: string
+          iniciado_em: string
+          status: string
+          storage_path: string | null
+          tabelas_incluidas: string[] | null
+          tamanho_bytes: number | null
+          tipo: string
+          total_registros: number | null
+          usuario_email: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          destino?: string
+          erro?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          status?: string
+          storage_path?: string | null
+          tabelas_incluidas?: string[] | null
+          tamanho_bytes?: number | null
+          tipo: string
+          total_registros?: number | null
+          usuario_email?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          destino?: string
+          erro?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          status?: string
+          storage_path?: string | null
+          tabelas_incluidas?: string[] | null
+          tamanho_bytes?: number | null
+          tipo?: string
+          total_registros?: number | null
+          usuario_email?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       baixas: {
         Row: {
           aprovado_gestor_em: string | null
@@ -191,6 +242,54 @@ export type Database = {
         }
         Relationships: []
       }
+      chamado_statuses: {
+        Row: {
+          ativo: boolean
+          cor: string
+          created_at: string
+          id: string
+          is_cancelado: boolean
+          is_encerrado: boolean
+          is_inicial: boolean
+          is_pausa: boolean
+          key: string
+          label: string
+          legacy_enum: string | null
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          id?: string
+          is_cancelado?: boolean
+          is_encerrado?: boolean
+          is_inicial?: boolean
+          is_pausa?: boolean
+          key: string
+          label: string
+          legacy_enum?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          id?: string
+          is_cancelado?: boolean
+          is_encerrado?: boolean
+          is_inicial?: boolean
+          is_pausa?: boolean
+          key?: string
+          label?: string
+          legacy_enum?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chamados: {
         Row: {
           aguardando_usuario_em: string | null
@@ -208,6 +307,7 @@ export type Database = {
           id_numerico: number
           os: string
           pausado_em: string | null
+          previsao_conclusao: string | null
           prioridade: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada: string | null
           prioridade_alterada_por: string | null
@@ -217,6 +317,7 @@ export type Database = {
           sla_violado: boolean | null
           sla_violado_em: string | null
           status: Database["public"]["Enums"]["chamado_status"] | null
+          status_id: string | null
           tecnico_id: string | null
           tempo_total_aguardando_usuario: number | null
           tempo_total_pausado: number | null
@@ -241,6 +342,7 @@ export type Database = {
           id_numerico?: never
           os: string
           pausado_em?: string | null
+          previsao_conclusao?: string | null
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
@@ -250,6 +352,7 @@ export type Database = {
           sla_violado?: boolean | null
           sla_violado_em?: string | null
           status?: Database["public"]["Enums"]["chamado_status"] | null
+          status_id?: string | null
           tecnico_id?: string | null
           tempo_total_aguardando_usuario?: number | null
           tempo_total_pausado?: number | null
@@ -274,6 +377,7 @@ export type Database = {
           id_numerico?: never
           os?: string
           pausado_em?: string | null
+          previsao_conclusao?: string | null
           prioridade?: Database["public"]["Enums"]["prioridade_chamado"] | null
           prioridade_alterada?: string | null
           prioridade_alterada_por?: string | null
@@ -283,6 +387,7 @@ export type Database = {
           sla_violado?: boolean | null
           sla_violado_em?: string | null
           status?: Database["public"]["Enums"]["chamado_status"] | null
+          status_id?: string | null
           tecnico_id?: string | null
           tempo_total_aguardando_usuario?: number | null
           tempo_total_pausado?: number | null
@@ -318,6 +423,13 @@ export type Database = {
             columns: ["prioridade_id"]
             isOneToOne: false
             referencedRelation: "chamados_prioridades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamados_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "chamado_statuses"
             referencedColumns: ["id"]
           },
           {

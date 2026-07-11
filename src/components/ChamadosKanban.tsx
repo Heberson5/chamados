@@ -28,7 +28,8 @@ import { Label } from "@/components/ui/label";
     useSensor, 
     useSensors, 
     DragOverlay,
-    defaultDropAnimationSideEffects
+    defaultDropAnimationSideEffects,
+    useDroppable
   } from "@dnd-kit/core";
   import { 
     arrayMove, 
@@ -337,9 +338,16 @@ interface ChamadosKanbanProps {
       const { active, over } = event;
       if (!over) return;
  
-     const ticketId = active.id;
-     const newStatus = over.id;
-     const currentStatus = active.data.current.columnId;
+      const ticketId = active.id;
+      // over.id can be a column id (when dropping on empty area) OR another
+      // ticket id (when hovering over a card). Resolve the target column via
+      // the sortable containerId that dnd-kit exposes on the over item.
+      const overContainerId = over.data?.current?.sortable?.containerId;
+      const newStatus = overContainerId ?? over.id;
+      const currentStatus = active.data.current.columnId;
+
+      // Guard: only accept known column ids (avoids sending a ticket UUID as status)
+      if (!kanbanCols.some((c) => c.id === newStatus)) return;
  
      if (newStatus === currentStatus) return;
      if (currentStatus === "ENCERRADO" && newStatus !== "ENCERRADO") {

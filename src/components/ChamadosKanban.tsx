@@ -39,6 +39,20 @@ import { Label } from "@/components/ui/label";
     useSortable
   } from "@dnd-kit/sortable";
   import { CSS } from "@dnd-kit/utilities";
+
+  function DroppableColumn({ id, children, className, style }: any) {
+    const { setNodeRef, isOver } = useDroppable({ id });
+    return (
+      <div
+        ref={setNodeRef}
+        className={`${className} ${isOver ? "ring-2 ring-primary/40" : ""}`}
+        style={style}
+      >
+        {children}
+      </div>
+    );
+  }
+
   const getSLAInfo = (ticket: any) => {
     if (ticket.status === "ENCERRADO") {
       return { label: "FINALIZADO", color: "bg-blue-500" };

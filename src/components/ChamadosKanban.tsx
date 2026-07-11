@@ -28,7 +28,8 @@ import { Label } from "@/components/ui/label";
     useSensor, 
     useSensors, 
     DragOverlay,
-    defaultDropAnimationSideEffects
+    defaultDropAnimationSideEffects,
+    useDroppable
   } from "@dnd-kit/core";
   import { 
     arrayMove, 
@@ -38,6 +39,20 @@ import { Label } from "@/components/ui/label";
     useSortable
   } from "@dnd-kit/sortable";
   import { CSS } from "@dnd-kit/utilities";
+
+  function DroppableColumn({ id, children, className, style }: any) {
+    const { setNodeRef, isOver } = useDroppable({ id });
+    return (
+      <div
+        ref={setNodeRef}
+        className={`${className} ${isOver ? "ring-2 ring-primary/40" : ""}`}
+        style={style}
+      >
+        {children}
+      </div>
+    );
+  }
+
   const getSLAInfo = (ticket: any) => {
     if (ticket.status === "ENCERRADO") {
       return { label: "FINALIZADO", color: "bg-blue-500" };
@@ -337,9 +352,16 @@ interface ChamadosKanbanProps {
       const { active, over } = event;
       if (!over) return;
  
-     const ticketId = active.id;
-     const newStatus = over.id;
-     const currentStatus = active.data.current.columnId;
+      const ticketId = active.id;
+      // over.id can be a column id (when dropping on empty area) OR another
+      // ticket id (when hovering over a card). Resolve the target column via
+      // the sortable containerId that dnd-kit exposes on the over item.
+      const overContainerId = over.data?.current?.sortable?.containerId;
+      const newStatus = overContainerId ?? over.id;
+      const currentStatus = active.data.current.columnId;
+
+      // Guard: only accept known column ids (avoids sending a ticket UUID as status)
+      if (!kanbanCols.some((c) => c.id === newStatus)) return;
  
      if (newStatus === currentStatus) return;
      if (currentStatus === "ENCERRADO" && newStatus !== "ENCERRADO") {
@@ -710,15 +732,16 @@ interface ChamadosKanbanProps {
            collisionDetection={closestCorners} 
            onDragEnd={handleDragEnd}
          >
-           <div className="flex flex-col md:flex-row gap-6 h-full min-h-[600px] overflow-x-auto pb-4 custom-scrollbar">
+            <div className="flex flex-col md:flex-row gap-6 items-start min-h-[600px] overflow-x-auto pb-4 custom-scrollbar">
              {kanbanCols.map((column) => (
-               <div 
-                 key={column.id} 
-                 className="flex flex-col rounded-xl border bg-card/50 p-4 min-w-[320px] max-w-[400px] flex-shrink-0"
-                 style={{ 
-                   borderTop: `4px solid ${column.color_hex || 'hsl(var(--primary))'}`,
-                 }}
-               >
+                <DroppableColumn
+                  key={column.id}
+                  id={column.id}
+                  className="flex flex-col rounded-xl border bg-card/50 p-4 min-w-[320px] xl:min-w-[360px] w-full md:w-[360px] xl:w-[400px] flex-shrink-0"
+                  style={{
+                    borderTop: `4px solid ${column.color_hex || 'hsl(var(--primary))'}`,
+                  }}
+                >
                  <div className="flex items-center justify-between mb-4 px-2">
                  <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
                    {column.title}
@@ -739,7 +762,7 @@ interface ChamadosKanbanProps {
                     .map(t => t.id)} 
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 custom-scrollbar">
+                   <div className="flex-1 space-y-4 pr-1">
                     {tickets
                       .filter((t) => {
                         const transferred = transferredAwayIds.has(t.id);
@@ -771,7 +794,7 @@ interface ChamadosKanbanProps {
                    )}
                  </div>
                </SortableContext>
-             </div>
+              </DroppableColumn>
            ))}
          </div>
        </DndContext>

@@ -170,17 +170,27 @@ export default function Chamados() {
         uploadedUrls.push(publicUrl);
       }
 
+         // Resolve status inicial dinamicamente a partir de chamado_statuses
+         const { data: initialStatus } = await supabase
+           .from("chamado_statuses")
+           .select("legacy_enum")
+           .eq("is_inicial", true)
+           .eq("ativo", true)
+           .maybeSingle();
+         const initialStatusEnum = (initialStatus?.legacy_enum as any) || "ABERTO";
+
          const insertData: any = {
            titulo: newTicket.titulo || "Sem título",
            descricao: newTicket.descricao,
            prioridade_id: newTicket.prioridade_id,
            usuario_id: user.id,
            department_id: userProfile?.department_id,
-           status: "EM_ATENDIMENTO",
+           status: initialStatusEnum,
            anexos: uploadedUrls.length > 0 ? uploadedUrls : null,
-           tecnico_id: newTicket.tecnico_id,
-           atendido_em: new Date().toISOString()
          };
+         if (newTicket.tecnico_id && newTicket.tecnico_id !== "none") {
+           insertData.tecnico_id = newTicket.tecnico_id;
+         }
 
         const { data: insertedTicket, error: insertError } = await supabase
           .from("chamados")

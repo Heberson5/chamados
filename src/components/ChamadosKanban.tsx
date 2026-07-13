@@ -364,11 +364,7 @@ interface ChamadosKanbanProps {
       if (!kanbanCols.some((c) => c.id === newStatus)) return;
  
      if (newStatus === currentStatus) return;
-     if (currentStatus === "ENCERRADO" && newStatus !== "ENCERRADO") {
-       toast({ variant: "destructive", title: "Ação não permitida", description: "Chamados encerrados não podem ser arrastados. Use o botão Reabrir." });
-       return;
-     }
- 
+
       try {
         const updates: any = { status: newStatus };
         const now = new Date().toISOString();
@@ -404,18 +400,24 @@ interface ChamadosKanbanProps {
          .select(`*, owner:profiles!chamados_usuario_id_fkey(email, nome, sobrenome)`)
          .single();
  
-       if (error) throw error;
-       toast({ title: "Status atualizado", description: `Chamado movido para ${newStatus}` });
+        if (error) throw error;
+        const colLabel = kanbanCols.find((c) => c.id === newStatus)?.title || newStatus;
+        toast({ title: "Status atualizado", description: `Chamado movido para ${colLabel}` });
        onUpdate();
  
        // Send status change email
        if (updatedTicket && updatedTicket.owner) {
-         import("@/utils/email").then(({ sendTemplatedEmail }) => {
-           sendTemplatedEmail(updatedTicket.owner.email, "status_change", {
+          import("@/utils/email").then(async ({ sendTemplatedEmail }) => {
+            const { data: st } = await supabase
+              .from("chamado_statuses")
+              .select("label")
+              .eq("key", updatedTicket.status)
+              .maybeSingle();
+            sendTemplatedEmail(updatedTicket.owner.email, "status_change", {
              user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
              os: updatedTicket.os || "",
              titulo: updatedTicket.titulo,
-             status: updatedTicket.status
+              status: st?.label || updatedTicket.status
            });
          });
        }
@@ -562,13 +564,18 @@ interface ChamadosKanbanProps {
          .single();
  
        if (updatedTicket && updatedTicket.owner) {
-         import("@/utils/email").then(({ sendTemplatedEmail }) => {
+          import("@/utils/email").then(async ({ sendTemplatedEmail }) => {
            const trigger = action === "encerrar" ? "ticket_closed" : "status_change";
-           sendTemplatedEmail(updatedTicket.owner.email, trigger, {
+            const { data: st } = await supabase
+              .from("chamado_statuses")
+              .select("label")
+              .eq("key", updatedTicket.status)
+              .maybeSingle();
+            sendTemplatedEmail(updatedTicket.owner.email, trigger, {
              user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
              os: updatedTicket.os || "",
              titulo: updatedTicket.titulo,
-             status: updatedTicket.status,
+              status: st?.label || updatedTicket.status,
              descricao: updatedTicket.descricao
            });
          });

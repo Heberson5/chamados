@@ -6,10 +6,15 @@
  import Color from '@tiptap/extension-color';
  import { TextStyle } from '@tiptap/extension-text-style';
  import Highlight from '@tiptap/extension-highlight';
+import Image from '@tiptap/extension-image';
+import Youtube from '@tiptap/extension-youtube';
+import { useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
  import { 
    Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, 
    AlignLeft, AlignCenter, AlignRight, Link as LinkIcon, 
-   Heading1, Heading2, Heading3, Highlighter, Quote, Undo, Redo, Eraser
+  Heading1, Heading2, Heading3, Highlighter, Quote, Undo, Redo, Eraser,
+  ImagePlus, Youtube as YoutubeIcon, Film, Image as ImageIconLucide
  } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  
@@ -21,6 +26,7 @@
  }
  
  const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
    const editor = useEditor({
      extensions: [
        StarterKit,
@@ -29,11 +35,21 @@
          openOnClick: false,
        }),
        TextAlign.configure({
-         types: ['heading', 'paragraph'],
+        types: ['heading', 'paragraph', 'image'],
        }),
        TextStyle,
        Color,
        Highlight,
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: { class: 'rounded-md max-w-full h-auto inline-block' },
+      }),
+      Youtube.configure({
+        controls: true,
+        nocookie: true,
+        HTMLAttributes: { class: 'rounded-md w-full aspect-video my-4' },
+      }),
      ],
      content: content,
      onUpdate: ({ editor }) => {
@@ -45,8 +61,58 @@
      return null;
    }
  
+  const handleImageUpload = async (file: File) => {
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `help/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage
+        .from('ticket-attachments')
+        .upload(fileName, file, { upsert: false });
+      if (error) throw error;
+      const { data } = supabase.storage.from('ticket-attachments').getPublicUrl(fileName);
+      editor.chain().focus().setImage({ src: data.publicUrl }).run();
+    } catch (e) {
+      // Fallback: embed as base64
+      const reader = new FileReader();
+      reader.onload = () => {
+        editor.chain().focus().setImage({ src: reader.result as string }).run();
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const insertVideoLink = () => {
+    const url = window.prompt('Cole o link do vídeo (YouTube, Vimeo, etc):');
+    if (!url) return;
+    const trimmed = url.trim();
+    // YouTube
+    if (/youtube\.com|youtu\.be/.test(trimmed)) {
+      editor.chain().focus().setYoutubeVideo({ src: trimmed, width: 640, height: 360 }).run();
+      return;
+    }
+    // Vimeo / others: embed via iframe HTML
+    let embed = trimmed;
+    const vimeoMatch = trimmed.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vimeoMatch) {
+      embed = `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+    const html = `<div class="video-embed my-4"><iframe src="${embed}" class="rounded-md w-full aspect-video" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen frameborder="0"></iframe></div><p></p>`;
+    editor.chain().focus().insertContent(html).run();
+  };
+
    return (
      <div className="border rounded-md overflow-hidden bg-background">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleImageUpload(f);
+          e.target.value = '';
+        }}
+      />
        <div className="flex flex-wrap items-center gap-1 p-1 bg-muted/50 border-b">
          <Button
            type="button"
@@ -204,6 +270,42 @@
          >
            <Eraser className="h-4 w-4" />
          </Button>
+
+        <Separator />
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title="Inserir imagem (upload)"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <ImagePlus className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title="Imagem por URL"
+          onClick={() => {
+            const url = window.prompt('URL da imagem:');
+            if (url) editor.chain().focus().setImage({ src: url }).run();
+          }}
+        >
+          <ImageIconLucide className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title="Inserir vídeo (YouTube / Vimeo / outros)"
+          onClick={insertVideoLink}
+        >
+          <Film className="h-4 w-4" />
+        </Button>
          
          <Separator />
          

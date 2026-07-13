@@ -400,8 +400,9 @@ interface ChamadosKanbanProps {
          .select(`*, owner:profiles!chamados_usuario_id_fkey(email, nome, sobrenome)`)
          .single();
  
-       if (error) throw error;
-       toast({ title: "Status atualizado", description: `Chamado movido para ${newStatus}` });
+        if (error) throw error;
+        const colLabel = kanbanCols.find((c) => c.id === newStatus)?.title || newStatus;
+        toast({ title: "Status atualizado", description: `Chamado movido para ${colLabel}` });
        onUpdate();
  
        // Send status change email

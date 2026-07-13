@@ -621,6 +621,31 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                                />
                             </div>
                           </div>
+                          <div className="md:col-span-2 flex flex-wrap gap-4 pt-1">
+                            {[
+                              { key: "is_inicial", label: "Status inicial" },
+                              { key: "is_pausa", label: "Pausa" },
+                              { key: "is_encerrado", label: "Encerrado" },
+                              { key: "is_cancelado", label: "Cancelado" },
+                            ].map((flag) => (
+                              <label key={flag.key} className="flex items-center gap-2 text-xs cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={!!col[flag.key]}
+                                  onChange={(e) => {
+                                    const nc = [...kanbanConfig];
+                                    if (flag.key === "is_inicial" && e.target.checked) {
+                                      // apenas uma coluna pode ser inicial
+                                      nc.forEach((c: any) => { c.is_inicial = false; });
+                                    }
+                                    nc[idx][flag.key] = e.target.checked;
+                                    setKanbanConfig(nc);
+                                  }}
+                                />
+                                {flag.label}
+                              </label>
+                            ))}
+                          </div>
                         </div>
                         <div className="flex flex-col gap-1 pt-4">
                           <Button 

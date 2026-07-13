@@ -69,7 +69,7 @@ import { Label } from "@/components/ui/label";
     return { label: "NO PRAZO", color: "bg-green-500" };
   };
 
-  function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
+ function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender }: any) {
    const isReadOnly = !!ticket.__transferredAway;
    const {
      attributes,
@@ -177,7 +177,7 @@ import { Label } from "@/components/ui/label";
              <Button 
                size="sm" 
                className="flex-1 gap-2 text-[10px] h-8"
-               onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "atender"); }}
+             onClick={(e) => { e.stopPropagation(); onAtender ? onAtender(ticket) : onAction(ticket.id, "atender"); }}
              >
                <Play size={12} /> Atender
              </Button>
@@ -429,6 +429,9 @@ interface ChamadosKanbanProps {
   const [closureNote, setClosureNote] = useState("");
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isPrevisaoDialogOpen, setIsPrevisaoDialogOpen] = useState(false);
+  const [previsaoValue, setPrevisaoValue] = useState<string>("");
+  const [previsaoTicket, setPrevisaoTicket] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSendingComment, setIsSendingComment] = useState(false);
@@ -492,7 +495,7 @@ interface ChamadosKanbanProps {
        loadData();
      }, []);
 
-    const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario") => {
+    const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario", extra?: { previsao?: string | null }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -508,6 +511,9 @@ interface ChamadosKanbanProps {
         updates.status = "EM_ATENDIMENTO";
         updates.tecnico_id = user.id;
           updates.atendido_em = now;
+          if (extra?.previsao) {
+            updates.previsao_conclusao = new Date(extra.previsao).toISOString();
+          }
        } else if (action === "reabrir") {
          updates.status = "EM_ATENDIMENTO";
          updates.encerrado_em = null;
@@ -786,6 +792,7 @@ interface ChamadosKanbanProps {
                           onDetails={openDetails}
                           onAction={handleAction}
                           onOpenClosure={openClosureDialog}
+                          onAtender={(t: any) => { setPrevisaoTicket(t); setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}
                         />
                       ))}
                     
@@ -1093,6 +1100,42 @@ interface ChamadosKanbanProps {
             </div>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={isPrevisaoDialogOpen} onOpenChange={setIsPrevisaoDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Atender chamado {previsaoTicket?.os}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Previsão de conclusão (opcional)</Label>
+            <Input
+              type="datetime-local"
+              value={previsaoValue}
+              onChange={(e) => setPrevisaoValue(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Informe uma data/hora estimada para a conclusão. Pode deixar em branco.
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsPrevisaoDialogOpen(false)}>Cancelar</Button>
+          <Button
+            onClick={async () => {
+              if (previsaoTicket) {
+                await handleAction(previsaoTicket.id, "atender", { previsao: previsaoValue || null });
+              }
+              setIsPrevisaoDialogOpen(false);
+              setPrevisaoTicket(null);
+              setPrevisaoValue("");
+            }}
+          >
+            <Play size={14} className="mr-2" /> Atender
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
     </>

@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
    Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, 
    AlignLeft, AlignCenter, AlignRight, Link as LinkIcon, 
   Heading1, Heading2, Heading3, Highlighter, Quote, Undo, Redo, Eraser,
-  ImagePlus, Youtube as YoutubeIcon, Film
+  ImagePlus, Youtube as YoutubeIcon, Film, Image as ImageIconLucide
  } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  
@@ -294,7 +294,7 @@ import { supabase } from '@/integrations/supabase/client';
             if (url) editor.chain().focus().setImage({ src: url }).run();
           }}
         >
-          <ImageIconInline />
+          <ImageIconLucide className="h-4 w-4" />
         </Button>
         <Button
           type="button"

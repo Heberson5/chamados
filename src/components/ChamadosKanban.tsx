@@ -1102,6 +1102,42 @@ interface ChamadosKanbanProps {
         )}
       </DialogContent>
     </Dialog>
+
+    <Dialog open={isPrevisaoDialogOpen} onOpenChange={setIsPrevisaoDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Atender chamado {previsaoTicket?.os}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Previsão de conclusão (opcional)</Label>
+            <Input
+              type="datetime-local"
+              value={previsaoValue}
+              onChange={(e) => setPrevisaoValue(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Informe uma data/hora estimada para a conclusão. Pode deixar em branco.
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsPrevisaoDialogOpen(false)}>Cancelar</Button>
+          <Button
+            onClick={async () => {
+              if (previsaoTicket) {
+                await handleAction(previsaoTicket.id, "atender", { previsao: previsaoValue || null });
+              }
+              setIsPrevisaoDialogOpen(false);
+              setPrevisaoTicket(null);
+              setPrevisaoValue("");
+            }}
+          >
+            <Play size={14} className="mr-2" /> Atender
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }

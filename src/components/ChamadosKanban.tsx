@@ -792,6 +792,7 @@ interface ChamadosKanbanProps {
                           onDetails={openDetails}
                           onAction={handleAction}
                           onOpenClosure={openClosureDialog}
+                          onAtender={(t: any) => { setPrevisaoTicket(t); setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}
                         />
                       ))}
                     

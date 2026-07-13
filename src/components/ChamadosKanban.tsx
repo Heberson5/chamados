@@ -364,11 +364,7 @@ interface ChamadosKanbanProps {
       if (!kanbanCols.some((c) => c.id === newStatus)) return;
  
      if (newStatus === currentStatus) return;
-     if (currentStatus === "ENCERRADO" && newStatus !== "ENCERRADO") {
-       toast({ variant: "destructive", title: "Ação não permitida", description: "Chamados encerrados não podem ser arrastados. Use o botão Reabrir." });
-       return;
-     }
- 
+
       try {
         const updates: any = { status: newStatus };
         const now = new Date().toISOString();

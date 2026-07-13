@@ -429,6 +429,9 @@ interface ChamadosKanbanProps {
   const [closureNote, setClosureNote] = useState("");
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isPrevisaoDialogOpen, setIsPrevisaoDialogOpen] = useState(false);
+  const [previsaoValue, setPrevisaoValue] = useState<string>("");
+  const [previsaoTicket, setPrevisaoTicket] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSendingComment, setIsSendingComment] = useState(false);
@@ -492,7 +495,7 @@ interface ChamadosKanbanProps {
        loadData();
      }, []);
 
-    const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario") => {
+    const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario", extra?: { previsao?: string | null }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -508,6 +511,9 @@ interface ChamadosKanbanProps {
         updates.status = "EM_ATENDIMENTO";
         updates.tecnico_id = user.id;
           updates.atendido_em = now;
+          if (extra?.previsao) {
+            updates.previsao_conclusao = new Date(extra.previsao).toISOString();
+          }
        } else if (action === "reabrir") {
          updates.status = "EM_ATENDIMENTO";
          updates.encerrado_em = null;

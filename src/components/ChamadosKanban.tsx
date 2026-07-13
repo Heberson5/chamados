@@ -69,7 +69,7 @@ import { Label } from "@/components/ui/label";
     return { label: "NO PRAZO", color: "bg-green-500" };
   };
 
-  function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure }: any) {
+ function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender }: any) {
    const isReadOnly = !!ticket.__transferredAway;
    const {
      attributes,

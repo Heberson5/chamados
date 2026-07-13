@@ -177,7 +177,7 @@ import { Label } from "@/components/ui/label";
              <Button 
                size="sm" 
                className="flex-1 gap-2 text-[10px] h-8"
-               onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "atender"); }}
+             onClick={(e) => { e.stopPropagation(); onAtender ? onAtender(ticket) : onAction(ticket.id, "atender"); }}
              >
                <Play size={12} /> Atender
              </Button>

@@ -521,13 +521,13 @@ export default function Chamados() {
         ) : (
         <>
         <TabsContent value="list" className="flex-1 md:min-h-0 flex-col data-[state=active]:flex">
-          <div className="flex justify-start mb-2">
-            <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
-          </div>
           <div className="bg-card rounded-md border shadow-sm overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 px-2">
+                    <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+                  </TableHead>
                   {isColVisible("chamado") && <SortableTableHead label="Chamado" sortKey="chamado" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
                   {isColVisible("descricao") && <SortableTableHead label="Descrição" sortKey="descricao" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
                   {isColVisible("sla") && <SortableTableHead label="SLA Status" sortKey="sla" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
@@ -545,6 +545,7 @@ export default function Chamados() {
                   const sla = getSLAStatus(ticket);
                   return (
                     <TableRow key={ticket.id} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="w-10 px-2" />
                       {isColVisible("chamado") && (
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
@@ -698,7 +699,7 @@ export default function Chamados() {
                 })}
                 {sortedTickets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 2} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                          <AlertTriangle size={32} className="text-warning" />
                         <p>Nenhum chamado encontrado para os filtros atuais.</p>

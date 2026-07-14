@@ -180,13 +180,13 @@ import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibil
          </Button>
        </div>
  
-       <div className="flex justify-start mb-2">
-         <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
-       </div>
        <div className="bg-card rounded-md border shadow-sm">
          <Table>
            <TableHeader>
               <TableRow>
+                <TableHead className="w-10 px-2">
+                  <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+                </TableHead>
                 {isColVisible("id") && <SortableTableHead label="ID" sortKey="id" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="w-16" />}
                {isColVisible("nome") && <SortableTableHead label="Nome" sortKey="nome" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                {isColVisible("descricao") && <SortableTableHead label="Descrição" sortKey="descricao" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
@@ -196,13 +196,14 @@ import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibil
             <TableBody>
               {sortedDepartments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 2} className="text-center py-10 text-muted-foreground">
                     Nenhum departamento encontrado.
                   </TableCell>
                 </TableRow>
               ) : (
                 sortedDepartments.map((dept) => (
                   <TableRow key={dept.id}>
+                    <TableCell className="w-10 px-2" />
                     {isColVisible("id") && <TableCell className="text-xs font-mono text-muted-foreground">
                       {dept.sequencial_id}
                     </TableCell>}

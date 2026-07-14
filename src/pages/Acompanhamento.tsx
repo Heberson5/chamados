@@ -379,13 +379,13 @@ export default function Acompanhamento() {
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
             <>
-            <div className="flex justify-start mb-2">
-              <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
-            </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10 px-2">
+                      <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+                    </TableHead>
                     {isColVisible("os") && <SortableTableHead label="OS" sortKey="os" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                     {isColVisible("titulo") && <SortableTableHead label="Título" sortKey="titulo" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                     {isColVisible("status") && <SortableTableHead label="Status" sortKey="status" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
@@ -400,6 +400,7 @@ export default function Acompanhamento() {
                 <TableBody>
                   {sortedFiltered.map(t => (
                     <TableRow key={t.id}>
+                      <TableCell className="w-10 px-2" />
                       {isColVisible("os") && <TableCell className="font-mono text-xs">{t.os}</TableCell>}
                       {isColVisible("titulo") && <TableCell className="max-w-[220px] truncate">{t.titulo || "-"}</TableCell>}
                       {isColVisible("status") && (
@@ -437,7 +438,7 @@ export default function Acompanhamento() {
                   ))}
                   {sortedFiltered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 2} className="text-center py-8 text-muted-foreground">
                         Nenhum chamado encontrado com os filtros aplicados.
                       </TableCell>
                     </TableRow>

@@ -18,13 +18,14 @@ interface ColumnVisibilityMenuProps {
   columns: ColumnDef[];
   isVisible: (key: string) => boolean;
   onToggle: (key: string) => void;
+  className?: string;
 }
 
-export function ColumnVisibilityMenu({ columns, isVisible, onToggle }: ColumnVisibilityMenuProps) {
+export function ColumnVisibilityMenu({ columns, isVisible, onToggle, className }: ColumnVisibilityMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" title="Mostrar/ocultar colunas">
+        <Button variant="ghost" size="icon" className={className ?? "h-7 w-7 shrink-0"} title="Mostrar/ocultar colunas">
           <MoreVertical size={16} />
         </Button>
       </DropdownMenuTrigger>

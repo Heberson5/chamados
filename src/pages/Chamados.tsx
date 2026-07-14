@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon } from "lucide-react";
+import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon, Play, CheckCircle, Pause, RotateCcw, Eye } from "lucide-react";
 import ChamadosKanban from "@/components/ChamadosKanban";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,45 @@ export default function Chamados() {
     const [priorities, setPriorities] = useState<any[]>([]);
     const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
+
+   const runAction = async (ticket: any, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar") => {
+     try {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) return;
+       const now = new Date().toISOString();
+       const updates: any = {};
+       if (action === "atender") {
+         updates.status = "EM_ATENDIMENTO";
+         updates.tecnico_id = user.id;
+         if (!ticket.atendido_em) updates.atendido_em = now;
+       } else if (action === "encerrar") {
+         updates.status = "ENCERRADO";
+         updates.encerrado_em = now;
+         if (!ticket.atendido_em) updates.atendido_em = now;
+         updates.descricao_encerramento = ticket.descricao_encerramento || "Encerrado via lista";
+       } else if (action === "reabrir") {
+         updates.status = "EM_ATENDIMENTO";
+         updates.encerrado_em = null;
+         updates.reaberto = true;
+       } else if (action === "pausar") {
+         updates.status = "PAUSADO";
+         updates.pausado_em = now;
+       } else if (action === "retomar") {
+         updates.status = "EM_ATENDIMENTO";
+         if (ticket.status === "PAUSADO" && ticket.pausado_em) {
+           const diff = Math.floor((Date.now() - new Date(ticket.pausado_em).getTime()) / 1000);
+           updates.tempo_total_pausado = (ticket.tempo_total_pausado || 0) + diff;
+           updates.pausado_em = null;
+         }
+       }
+       const { error } = await supabase.from("chamados").update(updates).eq("id", ticket.id);
+       if (error) throw error;
+       toast({ title: "Chamado atualizado", description: `Ação: ${action}` });
+       await fetchTickets();
+     } catch (e: any) {
+       toast({ variant: "destructive", title: "Erro", description: e.message });
+     }
+   };
 
    const fetchTickets = useCallback(async () => {
      const { data, error } = await supabase
@@ -454,6 +493,7 @@ export default function Chamados() {
                   <TableHead>Anexos</TableHead>
                   <TableHead>Criado em</TableHead>
                   <TableHead>Finalizado em</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -562,12 +602,41 @@ export default function Chamados() {
                       <TableCell className="text-sm whitespace-nowrap">
                         {ticket.encerrado_em ? format(new Date(ticket.encerrado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
                       </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          {ticket.status === "ABERTO" && (
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1" onClick={() => runAction(ticket, "atender")}>
+                              <Play size={12} /> Atender
+                            </Button>
+                          )}
+                          {ticket.status === "EM_ATENDIMENTO" && (
+                            <>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-emerald-600" onClick={() => runAction(ticket, "encerrar")}>
+                                <CheckCircle size={12} /> Encerrar
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-slate-600" onClick={() => runAction(ticket, "pausar")}>
+                                <Pause size={12} /> Pausar
+                              </Button>
+                            </>
+                          )}
+                          {(ticket.status === "PAUSADO" || ticket.status === "AGUARDANDO_USUARIO") && (
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-amber-600" onClick={() => runAction(ticket, "retomar")}>
+                              <Play size={12} /> Retomar
+                            </Button>
+                          )}
+                          {ticket.status === "ENCERRADO" && (
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1" onClick={() => runAction(ticket, "reabrir")}>
+                              <RotateCcw size={12} /> Reabrir
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
                 {filteredTickets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                          <AlertTriangle size={32} className="text-warning" />
                         <p>Nenhum chamado encontrado para os filtros atuais.</p>

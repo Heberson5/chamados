@@ -126,6 +126,15 @@ Deno.serve(async (req) => {
 
     if (!userId) throw new Error("Falha ao criar usuário");
 
+    // Respeita a política configurada em Configurações > Segurança de Senhas
+    // (force_change_on_first_login) em vez de sempre forçar a troca.
+    const { data: policySetting } = await admin
+      .from("system_settings")
+      .select("value")
+      .eq("key", "password_policy")
+      .maybeSingle();
+    const forceChangeOnFirstLogin = (policySetting?.value as any)?.force_change_on_first_login !== false;
+
     // Upsert profile with extra fields + must_change_password
     const profilePayload: Record<string, unknown> = {
       id: userId,
@@ -135,7 +144,7 @@ Deno.serve(async (req) => {
       regra,
       is_master: regra === "MASTER",
       ativo: true,
-      must_change_password: true,
+      must_change_password: forceChangeOnFirstLogin,
       password_changed_at: new Date().toISOString(),
     };
     if (telefone !== undefined) profilePayload.telefone = telefone;

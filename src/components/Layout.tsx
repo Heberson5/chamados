@@ -192,7 +192,7 @@ export default function Layout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AccessGuard />
         {/* Mobile Header */}
-        <header className="flex items-center justify-between p-4 border-b md:hidden shrink-0">
+        <header className="flex items-center justify-between p-4 border-b md:hidden shrink-0 shadow-md shadow-black/10 relative z-10">
           <button
             type="button"
             onClick={() => navigate("/dashboard")}

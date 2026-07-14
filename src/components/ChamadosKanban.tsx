@@ -116,7 +116,7 @@ import { Label } from "@/components/ui/label";
  
      return (
        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-4">
-          <Card className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
+          <Card className={`cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
            <CardHeader className="p-4 pb-2">
            <div className="flex justify-between items-start mb-2">
             <Badge 

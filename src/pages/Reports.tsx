@@ -11,11 +11,15 @@
  import { usePermissions } from "@/hooks/usePermissions";
  import { useBranding } from "@/hooks/useBranding";
   import { getPriorityLabel } from "@/lib/utils/priority";
-  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart } from 'recharts';
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
  import { SortableTableHead } from "@/components/SortableTableHead";
  import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
+ import FlexibleChart from "@/components/FlexibleChart";
+ import ChartSettingsButton from "@/components/ChartSettingsButton";
+ import { useChartSettings } from "@/hooks/useChartSettings";
+ import type { ChartType } from "@/lib/chartSettings";
+ import PdfExportDialog, { type PdfExportMode } from "@/components/PdfExportDialog";
 
  export default function Reports() {
    const { branding } = useBranding();
@@ -252,38 +256,42 @@
        }
      };
  
-   const exportToPDF = async () => {
+   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+
+   const exportToPDF = async (mode: PdfExportMode) => {
      try {
        const layout = await getReportSettings();
        const visibleColumns = layout.columns.filter((c: any) => c.visible);
-       const orientation = visibleColumns.length > 5 ? 'landscape' : 'portrait';
+       const includeList = mode !== "charts";
+       const includeCharts = mode !== "list";
+       const orientation = includeList && visibleColumns.length > 5 ? 'landscape' : 'portrait';
        const doc = new jsPDF({ orientation });
- 
+
        const pageWidth = doc.internal.pageSize.getWidth();
        const pageHeight = doc.internal.pageSize.getHeight();
- 
+
        // Header background
        doc.setFillColor(layout.headerColor || "#000000");
        doc.rect(0, 0, pageWidth, 25, 'F');
-       
+
        // Add Logo if available and showLogo is true
        let headerTextX = 15;
        const alignment = layout.logoAlignment || 'left';
- 
+
         if (layout.showLogo && branding.companyLogo) {
           try {
             const logoW = layout.logoWidth || 18;
             const logoH = layout.logoHeight || 18;
             const logoY = (25 - logoH) / 2;
             let logoX = 10;
-            
+
             if (alignment === 'center') {
               logoX = (pageWidth / 2) - (logoW / 2);
               headerTextX = (pageWidth / 2);
             } else {
               headerTextX = 15 + logoW + 2;
             }
-  
+
             doc.addImage(branding.companyLogo, 'PNG', logoX, logoY, logoW, logoH, undefined, 'FAST');
           } catch (e) {
             console.error("Error adding logo to PDF:", e);
@@ -291,7 +299,7 @@
         } else if (alignment === 'center') {
          headerTextX = (pageWidth / 2);
        }
- 
+
         if (layout.headerTextColor) {
           const hex = layout.headerTextColor.replace('#', '');
           const r = parseInt(hex.substring(0, 2), 16);
@@ -302,45 +310,72 @@
           doc.setTextColor(255, 255, 255);
         }
        doc.setFontSize(18);
-       
+
         const headerText = layout.headerText || branding.companyName || "Relatório de Chamados";
-        
+
         if (alignment === 'center') {
           doc.text(headerText, headerTextX, 18, { align: 'center' });
         } else {
           doc.text(headerText, headerTextX, 16);
         }
- 
-       autoTable(doc, {
-         startY: 35,
-         head: [visibleColumns.map((c: any) => c.label)],
-         body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.field))),
-         theme: 'striped',
-          headStyles: { 
-            fillColor: layout.headerColor || [0, 0, 0],
-            textColor: layout.headerTextColor || "#ffffff",
-            fontSize: orientation === 'landscape' ? 10 : 9
-          },
-         styles: {
-           fontSize: orientation === 'landscape' ? 9 : 8,
-           cellPadding: 2
+
+       let cursorY = 35;
+
+       if (includeCharts) {
+         const chartsEl = document.getElementById("pdf-charts-section");
+         if (chartsEl) {
+           const html2canvas = (await import("html2canvas")).default;
+           const canvas = await html2canvas(chartsEl, { scale: 2, backgroundColor: "#ffffff" });
+           const imgData = canvas.toDataURL("image/png");
+           const imgWidth = pageWidth - 20;
+           const imgHeight = (canvas.height * imgWidth) / canvas.width;
+           let heightLeft = imgHeight;
+           let position = cursorY;
+           doc.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+           heightLeft -= pageHeight - position;
+           while (heightLeft > 0) {
+             doc.addPage();
+             position = heightLeft - imgHeight;
+             doc.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+             heightLeft -= pageHeight;
+           }
+           cursorY = pageHeight - heightLeft + 10;
+           if (includeList) doc.addPage();
          }
-       });
- 
+       }
+
+       if (includeList) {
+         autoTable(doc, {
+           startY: includeCharts ? 15 : cursorY,
+           head: [visibleColumns.map((c: any) => c.label)],
+           body: tickets.map(t => visibleColumns.map((col: any) => formatCellValue(t, col.field))),
+           theme: 'striped',
+            headStyles: {
+              fillColor: layout.headerColor || [0, 0, 0],
+              textColor: layout.headerTextColor || "#ffffff",
+              fontSize: orientation === 'landscape' ? 10 : 9
+            },
+           styles: {
+             fontSize: orientation === 'landscape' ? 9 : 8,
+             cellPadding: 2
+           }
+         });
+       }
+
        const pageCount = (doc as any).internal.getNumberOfPages();
        for (let i = 1; i <= pageCount; i++) {
          doc.setPage(i);
          doc.setFontSize(9);
          doc.setTextColor(100);
          const printDate = new Date().toLocaleString('pt-BR');
-         
+
          // Footer (Responsive positioning)
          const footerY = pageHeight - 10;
          doc.text(layout.footerText || "Relatório gerado pelo sistema", 15, footerY - 5);
          doc.text(`Impresso em: ${printDate}`, 15, footerY);
          doc.text(`Página ${i} de ${pageCount}`, pageWidth - 40, footerY);
        }
- 
+
        doc.save("Relatorio_Chamados.pdf");
        toast({ title: "Sucesso", description: "PDF exportado com sucesso!" });
      } catch (error: any) {
@@ -357,7 +392,9 @@
         }
       }, [permsLoading, hasPermission, navigate]);
   
-     const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--destructive))'];
+     const { getSetting, updateSetting } = useChartSettings();
+     const ALL_TYPES: ChartType[] = ["pizza", "rosca", "barras", "linha", "area"];
+     const MULTI_SERIES_TYPES: ChartType[] = ["barras", "linha", "area"];
 
      const transferColumns: ColumnDef[] = [
        { key: "os", label: "OS" },
@@ -392,7 +429,7 @@
            <Button variant="outline" onClick={exportToExcel} className="gap-2">
              <FileSpreadsheet size={18} /> Excel
            </Button>
-           <Button variant="outline" onClick={exportToPDF} className="gap-2">
+           <Button variant="outline" onClick={() => setPdfDialogOpen(true)} className="gap-2">
              <FileText size={18} /> PDF
            </Button>
          </div>
@@ -429,89 +466,62 @@
            </CardContent></Card>
          </div>
  
+         <div id="pdf-charts-section" className="space-y-8">
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle>Status dos Chamados</CardTitle>
+               <ChartSettingsButton
+                 value={getSetting("reports_status", { type: "pizza", color: "#1d2025", legend: "automatica" })}
+                 allowedTypes={ALL_TYPES}
+                 onChange={(patch) => updateSetting("reports_status", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <PieChart>
-                   <defs>
-                     <filter id="reportsPieShadow" x="-20%" y="-20%" width="140%" height="140%">
-                       <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity={0.25} />
-                     </filter>
-                   </defs>
-                   <Pie
-                     data={stats.byStatus}
-                     cx="50%"
-                     cy="45%"
-                     outerRadius={70}
-                     cornerRadius={6}
-                     paddingAngle={3}
-                     dataKey="value"
-                     style={{ filter: "url(#reportsPieShadow)" }}
-                     animationDuration={600}
-                   >
-                     {stats.byStatus.map((entry, index) => (
-                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />
-                     ))}
-                   </Pie>
-                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} formatter={(value: number, name: string) => [value, name]} />
-                   <Legend
-                     verticalAlign="bottom"
-                     height={56}
-                     wrapperStyle={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis" }}
-                     formatter={(value: string) => (value.length > 18 ? `${value.slice(0, 18)}…` : value)}
-                   />
-                 </PieChart>
-               </ResponsiveContainer>
+               <FlexibleChart
+                 {...getSetting("reports_status", { type: "pizza", color: "#1d2025", legend: "automatica" })}
+                 data={stats.byStatus}
+                 xKey="name"
+                 series={[{ dataKey: "value", name: "Total" }]}
+               />
              </CardContent>
            </Card>
 
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle>Prioridade dos Chamados</CardTitle>
+               <ChartSettingsButton
+                 value={getSetting("reports_priority", { type: "barras", color: "#4747eb", legend: "automatica" })}
+                 allowedTypes={ALL_TYPES}
+                 onChange={(patch) => updateSetting("reports_priority", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={stats.byPriority}>
-                   <defs>
-                     <linearGradient id="colorReportsPrioridade" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.95} />
-                       <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.55} />
-                     </linearGradient>
-                   </defs>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                   <XAxis dataKey="name" stroke="currentColor" />
-                   <YAxis stroke="currentColor" />
-                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
-                   <Bar dataKey="value" name="Total" fill="url(#colorReportsPrioridade)" radius={[8, 8, 0, 0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
-                 </BarChart>
-               </ResponsiveContainer>
+               <FlexibleChart
+                 {...getSetting("reports_priority", { type: "barras", color: "#4747eb", legend: "automatica" })}
+                 data={stats.byPriority}
+                 xKey="name"
+                 series={[{ dataKey: "value", name: "Total" }]}
+               />
              </CardContent>
            </Card>
 
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle>Performance de Técnicos</CardTitle>
+               <ChartSettingsButton
+                 value={getSetting("reports_technicians", { type: "barras", color: "#1d2025", legend: "automatica" })}
+                 allowedTypes={ALL_TYPES}
+                 onChange={(patch) => updateSetting("reports_technicians", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={stats.byTechnician}>
-                   <defs>
-                     <linearGradient id="colorReportsTecnicos" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.95} />
-                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
-                     </linearGradient>
-                   </defs>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                   <XAxis dataKey="name" stroke="currentColor" />
-                   <YAxis stroke="currentColor" />
-                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
-                   <Bar dataKey="resolvidos" name="Atendimentos" fill="url(#colorReportsTecnicos)" radius={[8, 8, 0, 0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
-                 </BarChart>
-               </ResponsiveContainer>
+               <FlexibleChart
+                 {...getSetting("reports_technicians", { type: "barras", color: "#1d2025", legend: "automatica" })}
+                 data={stats.byTechnician}
+                 xKey="name"
+                 series={[{ dataKey: "resolvidos", name: "Atendimentos" }]}
+               />
              </CardContent>
            </Card>
          </div>
@@ -519,64 +529,51 @@
          {/* Transferências */}
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle className="flex items-center gap-2"><UsersIcon size={18}/> Transferências por Técnico</CardTitle>
+               <ChartSettingsButton
+                 value={getSetting("reports_transfers_tec", { type: "barras", color: "#dc2828", legend: "automatica" })}
+                 allowedTypes={MULTI_SERIES_TYPES}
+                 onChange={(patch) => updateSetting("reports_transfers_tec", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[320px]">
                {transferStats.byTec.length === 0 ? (
                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Nenhuma transferência registrada.</div>
                ) : (
-                 <ResponsiveContainer width="100%" height="100%">
-                   <BarChart data={transferStats.byTec}>
-                     <defs>
-                       <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
-                         <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.95} />
-                         <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.55} />
-                       </linearGradient>
-                       <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
-                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.95} />
-                         <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
-                       </linearGradient>
-                     </defs>
-                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                     <XAxis dataKey="nome" stroke="currentColor" tick={{ fontSize: 11 }} />
-                     <YAxis stroke="currentColor" />
-                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
-                     <Legend />
-                     <Bar dataKey="saidas" name="Transferiu" fill="url(#colorSaidas)" radius={[8,8,0,0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
-                     <Bar dataKey="entradas" name="Recebeu" fill="url(#colorEntradas)" radius={[8,8,0,0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
-                   </BarChart>
-                 </ResponsiveContainer>
+                 <FlexibleChart
+                   {...getSetting("reports_transfers_tec", { type: "barras", color: "#dc2828", legend: "automatica" })}
+                   data={transferStats.byTec}
+                   xKey="nome"
+                   series={[{ dataKey: "saidas", name: "Transferiu" }, { dataKey: "entradas", name: "Recebeu" }]}
+                 />
                )}
              </CardContent>
            </Card>
 
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle className="flex items-center gap-2"><ArrowRightLeft size={18}/> Transferências por Departamento</CardTitle>
+               <ChartSettingsButton
+                 value={getSetting("reports_transfers_dept", { type: "barras", color: "#4747eb", legend: "automatica" })}
+                 allowedTypes={ALL_TYPES}
+                 onChange={(patch) => updateSetting("reports_transfers_dept", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[320px]">
                {transferStats.byDept.length === 0 ? (
                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Nenhuma transferência registrada.</div>
                ) : (
-                 <ResponsiveContainer width="100%" height="100%">
-                   <BarChart data={transferStats.byDept}>
-                     <defs>
-                       <linearGradient id="colorDept" x1="0" y1="0" x2="0" y2="1">
-                         <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.95} />
-                         <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.55} />
-                       </linearGradient>
-                     </defs>
-                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                     <XAxis dataKey="dept" stroke="currentColor" tick={{ fontSize: 11 }} />
-                     <YAxis stroke="currentColor" />
-                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
-                     <Bar dataKey="total" name="Transferências" fill="url(#colorDept)" radius={[8,8,0,0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
-                   </BarChart>
-                 </ResponsiveContainer>
+                 <FlexibleChart
+                   {...getSetting("reports_transfers_dept", { type: "barras", color: "#4747eb", legend: "automatica" })}
+                   data={transferStats.byDept}
+                   xKey="dept"
+                   series={[{ dataKey: "total", name: "Transferências" }]}
+                 />
                )}
              </CardContent>
            </Card>
+         </div>
          </div>
 
          <Card>
@@ -621,6 +618,7 @@
          </Card>
        </>
        )}
+       <PdfExportDialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen} onConfirm={exportToPDF} />
      </div>
    );
  }

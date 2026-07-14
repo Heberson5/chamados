@@ -25,9 +25,10 @@
       const { data, error } = await supabase
         .from("chamados")
         .select(`
-          *, 
+          *,
           tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome),
-          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome)
+          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome),
+          prioridade_obj:prioridade_id(id, nome, cor, ordem)
         `);
        
        if (data) setTickets(data);
@@ -94,7 +95,7 @@
        const byTechnician = Object.keys(technicianCounts).map(name => ({ name, resolvidos: technicianCounts[name] }));
  
         const priorityCounts = tickets.reduce((acc: any, t) => {
-          const label = getPriorityLabel(t.prioridade);
+          const label = t.prioridade_obj?.nome || getPriorityLabel(t.prioridade);
           acc[label] = (acc[label] || 0) + 1;
           return acc;
         }, {});
@@ -206,7 +207,7 @@
         case 'titulo': return ticket.titulo;
         case 'descricao': return ticket.descricao;
         case 'status': return ticket.status;
-        case 'prioridade': return getPriorityLabel(ticket.prioridade);
+        case 'prioridade': return ticket.prioridade_obj?.nome || getPriorityLabel(ticket.prioridade);
         case 'gerado_em': return new Date(ticket.gerado_em).toLocaleDateString('pt-BR');
         case 'encerrado_em': return ticket.encerrado_em ? new Date(ticket.encerrado_em).toLocaleDateString('pt-BR') : '-';
         case 'atendido_em': return ticket.atendido_em ? new Date(ticket.atendido_em).toLocaleDateString('pt-BR') : '-';

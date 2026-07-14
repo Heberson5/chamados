@@ -12,6 +12,7 @@ import { Ticket, CheckCircle2, Clock, Users, Filter, Loader2, User as UserIcon, 
  import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/ThemeProvider";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useOnlineUsers } from "@/hooks/useOnlineUsers";
  
   function formatMinutes(min: number): string {
     if (!min || min <= 0) return "0 min";
@@ -27,6 +28,7 @@ import { usePermissions } from "@/hooks/usePermissions";
  export default function Dashboard() {
    const navigate = useNavigate();
   const { theme } = useTheme();
+  const onlineUsers = useOnlineUsers();
    const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -83,7 +85,7 @@ import { usePermissions } from "@/hooks/usePermissions";
   const fetchData = async () => {
     try {
       const [ticketsRes, profilesRes, statusesRes] = await Promise.all([
-        supabase.from("chamados").select("*").order('gerado_em', { ascending: false }),
+        supabase.from("chamados").select("*, prioridade_obj:prioridade_id(id, nome, cor, ordem)").order('gerado_em', { ascending: false }),
         supabase.from("profiles").select("*").eq('ativo', true),
         supabase.from("chamado_statuses").select("*").eq("ativo", true).order("ordem", { ascending: true })
       ]);
@@ -165,7 +167,7 @@ import { usePermissions } from "@/hooks/usePermissions";
   
          // By Priority
          const priorityCounts = filteredTickets.reduce((acc: any, t) => {
-           const label = getPriorityLabel(t.prioridade);
+           const label = t.prioridade_obj?.nome || getPriorityLabel(t.prioridade);
            acc[label] = (acc[label] || 0) + 1;
            return acc;
          }, {});
@@ -351,6 +353,7 @@ import { usePermissions } from "@/hooks/usePermissions";
        { title: "Tempo Médio Conclusão", value: formatMinutes(stats.avgCompletionTime), icon: CheckCircle2, color: "text-green-600" },
        { title: "Tempo Total Pausado", value: formatMinutes(stats.totalPausedTime), icon: Pause, color: "text-slate-600" },
        { title: "Aguardando Usuário", value: formatMinutes(stats.totalWaitingTime), icon: History, color: "text-indigo-600" },
+       { title: "Usuários Online", value: `${onlineUsers.size}/${profiles.length}`, icon: Users, color: "text-emerald-600" },
      ];
 
    if (loading) {
@@ -466,7 +469,7 @@ import { usePermissions } from "@/hooks/usePermissions";
          </div>
        </Card>
        
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-6">
          {cards.map((card) => (
            <Card key={card.title} className="hover:shadow-md transition-shadow">
              <CardHeader className="flex flex-row items-center justify-between pb-2">

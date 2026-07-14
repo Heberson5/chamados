@@ -411,7 +411,7 @@ interface ChamadosKanbanProps {
             const { data: st } = await supabase
               .from("chamado_statuses")
               .select("label")
-              .eq("key", updatedTicket.status)
+              .eq("legacy_enum", updatedTicket.status)
               .maybeSingle();
             sendTemplatedEmail(updatedTicket.owner.email, "status_change", {
              user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
@@ -586,7 +586,7 @@ interface ChamadosKanbanProps {
             const { data: st } = await supabase
               .from("chamado_statuses")
               .select("label")
-              .eq("key", updatedTicket.status)
+              .eq("legacy_enum", updatedTicket.status)
               .maybeSingle();
             sendTemplatedEmail(updatedTicket.owner.email, trigger, {
              user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,

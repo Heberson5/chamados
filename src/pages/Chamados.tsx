@@ -14,6 +14,9 @@ import { useToast } from "@/hooks/use-toast";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { getPriorityLabel } from "@/lib/utils/priority";
+ import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
+ import { SortableTableHead } from "@/components/SortableTableHead";
+ import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
 
 export default function Chamados() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -308,6 +311,34 @@ export default function Chamados() {
       return matchesSearch && matchesStatus && matchesView;
     });
 
+    const listColumns: ColumnDef[] = [
+      { key: "chamado", label: "Chamado" },
+      { key: "descricao", label: "Descrição" },
+      { key: "sla", label: "SLA Status" },
+      { key: "status", label: "Status" },
+      { key: "prioridade", label: "Prioridade" },
+      { key: "responsavel", label: "Responsável / Interações" },
+      { key: "anexos", label: "Anexos" },
+      { key: "criado_em", label: "Criado em" },
+      { key: "finalizado_em", label: "Finalizado em" },
+    ];
+    const { isVisible: isColVisible, toggle: toggleColumn } = useColumnVisibility(listColumns.map(c => c.key));
+    const getListSortValue = (t: any, key: string) => {
+      switch (key) {
+        case "chamado": return t.titulo || t.os || "";
+        case "descricao": return t.descricao || "";
+        case "sla": return getSLAStatus(t).label;
+        case "status": return t.status || "";
+        case "prioridade": return t.prioridade_obj?.ordem ?? t.prioridade ?? "";
+        case "responsavel": return t.tecnico ? `${t.tecnico.nome} ${t.tecnico.sobrenome || ""}` : "";
+        case "anexos": return t.anexos?.length || 0;
+        case "criado_em": return t.gerado_em ? new Date(t.gerado_em).getTime() : null;
+        case "finalizado_em": return t.encerrado_em ? new Date(t.encerrado_em).getTime() : null;
+        default: return "";
+      }
+    };
+    const { sortedData: sortedTickets, sortKey: listSortKey, sortDirection: listSortDirection, requestSort: requestListSort } = useSortableTable(filteredTickets, getListSortValue);
+
   return (
     <div className="p-4 md:p-8 w-full md:h-full flex flex-col gap-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
@@ -490,27 +521,31 @@ export default function Chamados() {
         ) : (
         <>
         <TabsContent value="list" className="flex-1 md:min-h-0 flex-col data-[state=active]:flex">
+          <div className="flex justify-start mb-2">
+            <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+          </div>
           <div className="bg-card rounded-md border shadow-sm overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Chamado</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>SLA Status</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Responsável / Interações</TableHead>
-                  <TableHead>Anexos</TableHead>
-                  <TableHead>Criado em</TableHead>
-                  <TableHead>Finalizado em</TableHead>
+                  {isColVisible("chamado") && <SortableTableHead label="Chamado" sortKey="chamado" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
+                  {isColVisible("descricao") && <SortableTableHead label="Descrição" sortKey="descricao" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
+                  {isColVisible("sla") && <SortableTableHead label="SLA Status" sortKey="sla" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
+                  {isColVisible("status") && <SortableTableHead label="Status" sortKey="status" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
+                  {isColVisible("prioridade") && <SortableTableHead label="Prioridade" sortKey="prioridade" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
+                  {isColVisible("responsavel") && <SortableTableHead label="Responsável / Interações" sortKey="responsavel" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
+                  {isColVisible("anexos") && <SortableTableHead label="Anexos" sortKey="anexos" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
+                  {isColVisible("criado_em") && <SortableTableHead label="Criado em" sortKey="criado_em" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
+                  {isColVisible("finalizado_em") && <SortableTableHead label="Finalizado em" sortKey="finalizado_em" currentSortKey={listSortKey} direction={listSortDirection} onSort={requestListSort} />}
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTickets.map((ticket) => {
+                {sortedTickets.map((ticket) => {
                   const sla = getSLAStatus(ticket);
                   return (
                     <TableRow key={ticket.id} className="hover:bg-muted/50 transition-colors">
+                      {isColVisible("chamado") && (
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
                            <span className="font-bold">{ticket.titulo || "Sem título"}</span>
@@ -522,6 +557,8 @@ export default function Chamados() {
                           )}
                         </div>
                       </TableCell>
+                      )}
+                      {isColVisible("descricao") && (
                       <TableCell className="max-w-xs md:max-w-md truncate">
                         <div className="flex flex-col gap-1">
                           <span className="truncate">{ticket.descricao}</span>
@@ -537,6 +574,8 @@ export default function Chamados() {
                           </div>
                         </div>
                       </TableCell>
+                      )}
+                      {isColVisible("sla") && (
                       <TableCell>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
@@ -550,15 +589,19 @@ export default function Chamados() {
                           )}
                         </div>
                       </TableCell>
+                      )}
+                      {isColVisible("status") && (
                       <TableCell>
                         <Badge variant={
-                          ticket.status === 'ABERTO' ? 'default' : 
+                          ticket.status === 'ABERTO' ? 'default' :
                           ticket.status === 'EM_ATENDIMENTO' ? 'secondary' :
                           ticket.status === 'ENCERRADO' ? 'outline' : 'destructive'
                         }>
                           {ticket.status}
                         </Badge>
                       </TableCell>
+                      )}
+                      {isColVisible("prioridade") && (
                         <TableCell>
                           {ticket.prioridade_obj ? (
                             <Badge variant="outline" className="border-none" style={{ backgroundColor: `${ticket.prioridade_obj.cor}20`, color: ticket.prioridade_obj.cor }}>
@@ -574,6 +617,8 @@ export default function Chamados() {
                             </Badge>
                           )}
                         </TableCell>
+                      )}
+                      {isColVisible("responsavel") && (
                       <TableCell className="text-sm">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
@@ -593,6 +638,8 @@ export default function Chamados() {
                           </span>
                         </div>
                       </TableCell>
+                      )}
+                      {isColVisible("anexos") && (
                       <TableCell>
                         {ticket.anexos && ticket.anexos.length > 0 ? (
                           <div className="flex gap-1">
@@ -606,12 +653,17 @@ export default function Chamados() {
                           <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      )}
+                      {isColVisible("criado_em") && (
                       <TableCell className="text-sm whitespace-nowrap">
                         {ticket.gerado_em ? format(new Date(ticket.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
                       </TableCell>
+                      )}
+                      {isColVisible("finalizado_em") && (
                       <TableCell className="text-sm whitespace-nowrap">
                         {ticket.encerrado_em ? format(new Date(ticket.encerrado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
                       </TableCell>
+                      )}
                       <TableCell className="text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           {ticket.status === "ABERTO" && (
@@ -644,9 +696,9 @@ export default function Chamados() {
                     </TableRow>
                   );
                 })}
-                {filteredTickets.length === 0 && (
+                {sortedTickets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                          <AlertTriangle size={32} className="text-warning" />
                         <p>Nenhum chamado encontrado para os filtros atuais.</p>

@@ -16,7 +16,10 @@ import { format, parseISO } from "date-fns";
   import { usePermissions } from "@/hooks/usePermissions";
   import { useNavigate } from "react-router-dom";
  import { ptBR } from "date-fns/locale";
- 
+ import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
+ import { SortableTableHead } from "@/components/SortableTableHead";
+ import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
+
   export default function Audit() {
     const navigate = useNavigate();
     const { hasPermission, loading: permsLoading } = usePermissions();
@@ -236,7 +239,29 @@ import { format, parseISO } from "date-fns";
         return date;
       }
     };
- 
+
+    const listColumns: ColumnDef[] = [
+      { key: "id", label: "#" },
+      { key: "usuario", label: "Usuário / E-mail" },
+      { key: "acao", label: "Ação" },
+      { key: "local", label: "Local / Tabela" },
+      { key: "registro_id", label: "ID Registro" },
+      { key: "data", label: "Data/Hora" },
+    ];
+    const { isVisible: isColVisible, toggle: toggleColumn } = useColumnVisibility(listColumns.map(c => c.key));
+    const getSortValue = (log: any, key: string) => {
+      switch (key) {
+        case "id": return log.id ?? "";
+        case "usuario": return log.profiles ? `${log.profiles.nome} ${log.profiles.sobrenome}` : (log.user_email || "Sistema");
+        case "acao": return translateAction(log.action);
+        case "local": return log.path ? translatePath(log.path) : translateTable(log.table_name);
+        case "registro_id": return ["INSERT", "UPDATE", "DELETE"].includes(log.action) ? (log.record_id_numerico ?? 0) : 0;
+        case "data": return log.created_at ? new Date(log.created_at).getTime() : null;
+        default: return "";
+      }
+    };
+    const { sortedData: sortedLogs, sortKey, sortDirection, requestSort } = useSortableTable(filteredLogs, getSortValue);
+
    return (
      <div className="p-4 md:p-8 w-full space-y-6">
        <div>
@@ -304,27 +329,31 @@ import { format, parseISO } from "date-fns";
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
+          <>
+          <div className="flex justify-start mb-2">
+            <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+          </div>
           <div className="overflow-x-auto -mx-6">
             <div className="min-w-[800px] px-6">
               <Table>
                 <TableHeader>
                   <TableRow>
-                  <TableHead className="w-16">#</TableHead>
-                  <TableHead>Usuário / E-mail</TableHead>
-                    <TableHead>Ação</TableHead>
-                    <TableHead>Local / Tabela</TableHead>
-                    <TableHead>ID Registro</TableHead>
-                    <TableHead>Data/Hora</TableHead>
+                  {isColVisible("id") && <SortableTableHead label="#" sortKey="id" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="w-16" />}
+                  {isColVisible("usuario") && <SortableTableHead label="Usuário / E-mail" sortKey="usuario" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("acao") && <SortableTableHead label="Ação" sortKey="acao" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("local") && <SortableTableHead label="Local / Tabela" sortKey="local" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("registro_id") && <SortableTableHead label="ID Registro" sortKey="registro_id" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("data") && <SortableTableHead label="Data/Hora" sortKey="data" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                {filteredLogs.map((log) => (
+                {sortedLogs.map((log) => (
                   <TableRow key={log.id}>
-                      <TableCell className="text-xs font-mono text-muted-foreground">
+                      {isColVisible("id") && <TableCell className="text-xs font-mono text-muted-foreground">
                         {log.id}
-                      </TableCell>
-                      <TableCell className="font-medium text-xs">
+                      </TableCell>}
+                      {isColVisible("usuario") && <TableCell className="font-medium text-xs">
                           <div className="flex items-center gap-2">
                             <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden border shrink-0">
                               {log.profiles?.avatar_url ? (
@@ -338,8 +367,8 @@ import { format, parseISO } from "date-fns";
                               <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{log.user_email}</span>
                             </div>
                           </div>
-                        </TableCell>
-                      <TableCell>
+                        </TableCell>}
+                      {isColVisible("acao") && <TableCell>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           log.action === 'INSERT' ? 'bg-green-100 text-green-700' :
                           log.action === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
@@ -348,8 +377,8 @@ import { format, parseISO } from "date-fns";
                         }`}>
                            {translateAction(log.action)}
                         </span>
-                      </TableCell>
-                      <TableCell className="text-xs">
+                      </TableCell>}
+                      {isColVisible("local") && <TableCell className="text-xs">
                         {log.path ? (
                           <div className="flex items-center gap-1">
                             <MousePointer2 size={10} />
@@ -358,19 +387,19 @@ import { format, parseISO } from "date-fns";
                         ) : (
                           <span className="truncate max-w-[150px]">{translateTable(log.table_name)}</span>
                         )}
-                      </TableCell>
-                      <TableCell className="text-[10px] font-mono text-muted-foreground">
+                      </TableCell>}
+                      {isColVisible("registro_id") && <TableCell className="text-[10px] font-mono text-muted-foreground">
                         {["INSERT","UPDATE","DELETE"].includes(log.action)
                           ? (log.record_id_numerico ?? "-")
                           : "-"}
-                      </TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">
+                      </TableCell>}
+                      {isColVisible("data") && <TableCell className="text-xs whitespace-nowrap">
                         {formatCuiabaTime(log.created_at)}
-                      </TableCell>
+                      </TableCell>}
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8"
                           onClick={() => setSelectedLog(log)}
                         >
@@ -379,9 +408,9 @@ import { format, parseISO } from "date-fns";
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredLogs.length === 0 && (
+                  {sortedLogs.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-8 text-muted-foreground">
                         Nenhum log encontrado.
                       </TableCell>
                     </TableRow>
@@ -390,6 +419,7 @@ import { format, parseISO } from "date-fns";
               </Table>
             </div>
           </div>
+          </>
           )}
          </CardContent>
         </Card>

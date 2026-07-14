@@ -12,7 +12,11 @@
  import { useBranding } from "@/hooks/useBranding";
   import { getPriorityLabel } from "@/lib/utils/priority";
   import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart } from 'recharts';
- 
+ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+ import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
+ import { SortableTableHead } from "@/components/SortableTableHead";
+ import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
+
  export default function Reports() {
    const { branding } = useBranding();
      const navigate = useNavigate();
@@ -347,7 +351,29 @@
       }, [permsLoading, hasPermission, navigate]);
   
      const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--destructive))'];
- 
+
+     const transferColumns: ColumnDef[] = [
+       { key: "os", label: "OS" },
+       { key: "de", label: "De" },
+       { key: "para", label: "Para" },
+       { key: "departamento", label: "Departamento" },
+       { key: "motivo", label: "Motivo" },
+       { key: "data", label: "Data" },
+     ];
+     const { isVisible: isTransferColVisible, toggle: toggleTransferColumn } = useColumnVisibility(transferColumns.map(c => c.key));
+     const getTransferSortValue = (t: any, key: string) => {
+       switch (key) {
+         case "os": return t.chamado?.os || "";
+         case "de": return t.tecnico_anterior ? `${t.tecnico_anterior.nome} ${t.tecnico_anterior.sobrenome ?? ""}` : "";
+         case "para": return t.tecnico_novo ? `${t.tecnico_novo.nome} ${t.tecnico_novo.sobrenome ?? ""}` : "";
+         case "departamento": return t.chamado?.departamento?.nome || "";
+         case "motivo": return t.motivo || "";
+         case "data": return t.transferido_em ? new Date(t.transferido_em).getTime() : null;
+         default: return "";
+       }
+     };
+     const { sortedData: sortedTransfers, sortKey: transferSortKey, sortDirection: transferSortDirection, requestSort: requestTransferSort } = useSortableTable(transfers.slice(0, 20), getTransferSortValue);
+
    return (
      <div className="p-4 md:p-8 w-full space-y-8 animate-fade-in">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -548,34 +574,37 @@
              <CardTitle className="flex items-center gap-2"><ArrowRightLeft size={18}/> Últimas Transferências</CardTitle>
            </CardHeader>
            <CardContent>
+             <div className="flex justify-start mb-2">
+               <ColumnVisibilityMenu columns={transferColumns} isVisible={isTransferColVisible} onToggle={toggleTransferColumn} />
+             </div>
              <div className="overflow-x-auto">
-               <table className="w-full text-sm">
-                 <thead>
-                   <tr className="text-left text-xs uppercase text-muted-foreground border-b">
-                     <th className="py-2 pr-2">OS</th>
-                     <th className="py-2 pr-2">De</th>
-                     <th className="py-2 pr-2">Para</th>
-                     <th className="py-2 pr-2">Departamento</th>
-                     <th className="py-2 pr-2">Motivo</th>
-                     <th className="py-2 pr-2">Data</th>
-                   </tr>
-                 </thead>
-                 <tbody>
-                   {transfers.slice(0, 20).map((t) => (
-                     <tr key={t.id} className="border-b hover:bg-muted/40">
-                       <td className="py-2 pr-2 font-mono text-xs">{t.chamado?.os || "-"}</td>
-                       <td className="py-2 pr-2 text-xs">{t.tecnico_anterior ? `${t.tecnico_anterior.nome} ${t.tecnico_anterior.sobrenome ?? ""}` : "-"}</td>
-                       <td className="py-2 pr-2 text-xs">{t.tecnico_novo ? `${t.tecnico_novo.nome} ${t.tecnico_novo.sobrenome ?? ""}` : "-"}</td>
-                       <td className="py-2 pr-2 text-xs">{t.chamado?.departamento?.nome || "-"}</td>
-                       <td className="py-2 pr-2 text-xs max-w-[260px] truncate" title={t.motivo}>{t.motivo}</td>
-                       <td className="py-2 pr-2 text-xs whitespace-nowrap">{new Date(t.transferido_em).toLocaleString('pt-BR')}</td>
-                     </tr>
+               <Table>
+                 <TableHeader>
+                   <TableRow>
+                     {isTransferColVisible("os") && <SortableTableHead label="OS" sortKey="os" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
+                     {isTransferColVisible("de") && <SortableTableHead label="De" sortKey="de" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
+                     {isTransferColVisible("para") && <SortableTableHead label="Para" sortKey="para" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
+                     {isTransferColVisible("departamento") && <SortableTableHead label="Departamento" sortKey="departamento" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
+                     {isTransferColVisible("motivo") && <SortableTableHead label="Motivo" sortKey="motivo" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
+                     {isTransferColVisible("data") && <SortableTableHead label="Data" sortKey="data" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {sortedTransfers.map((t) => (
+                     <TableRow key={t.id}>
+                       {isTransferColVisible("os") && <TableCell className="font-mono text-xs">{t.chamado?.os || "-"}</TableCell>}
+                       {isTransferColVisible("de") && <TableCell className="text-xs">{t.tecnico_anterior ? `${t.tecnico_anterior.nome} ${t.tecnico_anterior.sobrenome ?? ""}` : "-"}</TableCell>}
+                       {isTransferColVisible("para") && <TableCell className="text-xs">{t.tecnico_novo ? `${t.tecnico_novo.nome} ${t.tecnico_novo.sobrenome ?? ""}` : "-"}</TableCell>}
+                       {isTransferColVisible("departamento") && <TableCell className="text-xs">{t.chamado?.departamento?.nome || "-"}</TableCell>}
+                       {isTransferColVisible("motivo") && <TableCell className="text-xs max-w-[260px] truncate" title={t.motivo}>{t.motivo}</TableCell>}
+                       {isTransferColVisible("data") && <TableCell className="text-xs whitespace-nowrap">{new Date(t.transferido_em).toLocaleString('pt-BR')}</TableCell>}
+                     </TableRow>
                    ))}
-                   {transfers.length === 0 && (
-                     <tr><td colSpan={6} className="text-center py-6 text-muted-foreground text-sm">Nenhuma transferência registrada.</td></tr>
+                   {sortedTransfers.length === 0 && (
+                     <TableRow><TableCell colSpan={transferColumns.filter(c => isTransferColVisible(c.key)).length} className="text-center py-6 text-muted-foreground text-sm">Nenhuma transferência registrada.</TableCell></TableRow>
                    )}
-                 </tbody>
-               </table>
+                 </TableBody>
+               </Table>
              </div>
            </CardContent>
          </Card>

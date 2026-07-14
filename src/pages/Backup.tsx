@@ -12,6 +12,9 @@ import { Navigate } from "react-router-dom";
 import { Download, Upload, Loader2, RefreshCw, Database } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
+import { SortableTableHead } from "@/components/SortableTableHead";
+import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
 
 export default function Backup() {
   const { isMaster, loading } = usePermissions();
@@ -27,6 +30,32 @@ export default function Backup() {
   }, []);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  const logColumns: ColumnDef[] = [
+    { key: "tipo", label: "Tipo" },
+    { key: "status", label: "Status" },
+    { key: "iniciado", label: "Iniciado" },
+    { key: "finalizado", label: "Finalizado" },
+    { key: "registros", label: "Registros" },
+    { key: "tamanho", label: "Tamanho" },
+    { key: "usuario", label: "Usuário" },
+    { key: "erro", label: "Erro" },
+  ];
+  const { isVisible: isColVisible, toggle: toggleColumn } = useColumnVisibility(logColumns.map(c => c.key));
+  const getLogSortValue = (l: any, key: string) => {
+    switch (key) {
+      case "tipo": return l.tipo || "";
+      case "status": return l.status || "";
+      case "iniciado": return l.iniciado_em ? new Date(l.iniciado_em).getTime() : null;
+      case "finalizado": return l.finalizado_em ? new Date(l.finalizado_em).getTime() : null;
+      case "registros": return l.total_registros ?? 0;
+      case "tamanho": return l.tamanho_bytes ?? 0;
+      case "usuario": return l.usuario_email || "";
+      case "erro": return l.erro || "";
+      default: return "";
+    }
+  };
+  const { sortedData: sortedLogs, sortKey, sortDirection, requestSort } = useSortableTable(logs, getLogSortValue);
 
   if (loading) return <div className="p-8"><Loader2 className="animate-spin" /></div>;
   if (!isMaster) return <Navigate to="/unauthorized" replace />;
@@ -163,38 +192,41 @@ export default function Backup() {
           <Button size="sm" variant="ghost" onClick={fetchLogs}><RefreshCw size={14} /></Button>
         </CardHeader>
         <CardContent>
+          <div className="flex justify-start mb-2">
+            <ColumnVisibilityMenu columns={logColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Iniciado</TableHead>
-                <TableHead>Finalizado</TableHead>
-                <TableHead>Registros</TableHead>
-                <TableHead>Tamanho</TableHead>
-                <TableHead>Usuário</TableHead>
-                <TableHead>Erro</TableHead>
+                {isColVisible("tipo") && <SortableTableHead label="Tipo" sortKey="tipo" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                {isColVisible("status") && <SortableTableHead label="Status" sortKey="status" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                {isColVisible("iniciado") && <SortableTableHead label="Iniciado" sortKey="iniciado" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                {isColVisible("finalizado") && <SortableTableHead label="Finalizado" sortKey="finalizado" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                {isColVisible("registros") && <SortableTableHead label="Registros" sortKey="registros" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                {isColVisible("tamanho") && <SortableTableHead label="Tamanho" sortKey="tamanho" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                {isColVisible("usuario") && <SortableTableHead label="Usuário" sortKey="usuario" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                {isColVisible("erro") && <SortableTableHead label="Erro" sortKey="erro" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {logs.map((l) => (
+              {sortedLogs.map((l) => (
                 <TableRow key={l.id}>
-                  <TableCell><Badge variant="outline">{l.tipo}</Badge></TableCell>
-                  <TableCell>
+                  {isColVisible("tipo") && <TableCell><Badge variant="outline">{l.tipo}</Badge></TableCell>}
+                  {isColVisible("status") && <TableCell>
                     <Badge variant={l.status === "sucesso" ? "default" : l.status === "erro" ? "destructive" : "secondary"}>
                       {l.status}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="text-xs">{format(new Date(l.iniciado_em), "dd/MM HH:mm:ss", { locale: ptBR })}</TableCell>
-                  <TableCell className="text-xs">{l.finalizado_em ? format(new Date(l.finalizado_em), "dd/MM HH:mm:ss", { locale: ptBR }) : "-"}</TableCell>
-                  <TableCell>{l.total_registros ?? "-"}</TableCell>
-                  <TableCell>{l.tamanho_bytes ? `${Math.round(l.tamanho_bytes / 1024)} KB` : "-"}</TableCell>
-                  <TableCell className="text-xs">{l.usuario_email || "-"}</TableCell>
-                  <TableCell className="text-xs text-destructive max-w-[240px] truncate">{l.erro || ""}</TableCell>
+                  </TableCell>}
+                  {isColVisible("iniciado") && <TableCell className="text-xs">{format(new Date(l.iniciado_em), "dd/MM HH:mm:ss", { locale: ptBR })}</TableCell>}
+                  {isColVisible("finalizado") && <TableCell className="text-xs">{l.finalizado_em ? format(new Date(l.finalizado_em), "dd/MM HH:mm:ss", { locale: ptBR }) : "-"}</TableCell>}
+                  {isColVisible("registros") && <TableCell>{l.total_registros ?? "-"}</TableCell>}
+                  {isColVisible("tamanho") && <TableCell>{l.tamanho_bytes ? `${Math.round(l.tamanho_bytes / 1024)} KB` : "-"}</TableCell>}
+                  {isColVisible("usuario") && <TableCell className="text-xs">{l.usuario_email || "-"}</TableCell>}
+                  {isColVisible("erro") && <TableCell className="text-xs text-destructive max-w-[240px] truncate">{l.erro || ""}</TableCell>}
                 </TableRow>
               ))}
-              {logs.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Sem registros ainda.</TableCell></TableRow>
+              {sortedLogs.length === 0 && (
+                <TableRow><TableCell colSpan={logColumns.filter(c => isColVisible(c.key)).length} className="text-center py-6 text-muted-foreground">Sem registros ainda.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

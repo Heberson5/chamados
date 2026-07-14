@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo, useCallback } from "react";
  import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import { Ticket, CheckCircle2, Clock, Users, Filter, Loader2, User as UserIcon, Play, Pause, History } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay, eachHourOfInterval, isSameHour } from "date-fns";
@@ -10,9 +9,12 @@ import { Ticket, CheckCircle2, Clock, Users, Filter, Loader2, User as UserIcon, 
   import { getPriorityLabel } from "@/lib/utils/priority";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
-import { useTheme } from "@/components/ThemeProvider";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import FlexibleChart from "@/components/FlexibleChart";
+import ChartSettingsButton from "@/components/ChartSettingsButton";
+import { useChartSettings } from "@/hooks/useChartSettings";
+import type { ChartType } from "@/lib/chartSettings";
  
   function formatMinutes(min: number): string {
     if (!min || min <= 0) return "0 min";
@@ -27,7 +29,6 @@ import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 
  export default function Dashboard() {
    const navigate = useNavigate();
-  const { theme } = useTheme();
   const onlineUsers = useOnlineUsers();
    const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState<any[]>([]);
@@ -65,22 +66,9 @@ import { useOnlineUsers } from "@/hooks/useOnlineUsers";
       }
     }, [permsLoading, hasPermission, navigate]);
  
-  const tooltipStyle = useMemo(() => {
-    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    return {
-      contentStyle: {
-        backgroundColor: isDark ? '#1e293b' : 'white',
-        borderColor: isDark ? '#334155' : '#e2e8f0',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-        color: isDark ? '#f8fafc' : '#1a202c',
-        fontSize: '12px',
-        padding: '8px 12px',
-        border: '1px solid'
-      },
-      itemStyle: { color: isDark ? '#f8fafc' : '#1a202c' }
-    };
-  }, [theme]);
+  const { getSetting, updateSetting } = useChartSettings();
+  const ALL_TYPES: ChartType[] = ["pizza", "rosca", "barras", "linha", "area"];
+  const MULTI_SERIES_TYPES: ChartType[] = ["barras", "linha", "area"];
 
   const fetchData = async () => {
     try {
@@ -488,196 +476,160 @@ import { useOnlineUsers } from "@/hooks/useOnlineUsers";
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
-               <CardTitle>Tempos Médios (min)</CardTitle>
-               <CardDescription>Eficiência operacional em minutos</CardDescription>
+             <CardHeader className="flex flex-row items-start justify-between space-y-0">
+               <div>
+                 <CardTitle>Tempos Médios (min)</CardTitle>
+                 <CardDescription>Eficiência operacional em minutos</CardDescription>
+               </div>
+               <ChartSettingsButton
+                 value={getSetting("dashboard_tempos_medios", { type: "barras", color: "#1d2025", legend: "automatica" })}
+                 allowedTypes={ALL_TYPES}
+                 onChange={(patch) => updateSetting("dashboard_tempos_medios", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={[
+               <FlexibleChart
+                 {...getSetting("dashboard_tempos_medios", { type: "barras", color: "#1d2025", legend: "automatica" })}
+                 data={[
                    { name: 'Aceite', valor: stats.avgAcceptanceTime },
                    { name: 'Conclusão', valor: stats.avgCompletionTime },
                    { name: 'Pausa', valor: stats.totalPausedTime },
                    { name: 'Espera', valor: stats.totalWaitingTime }
-                 ]}>
-                   <defs>
-                     <linearGradient id="colorTempos" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.95} />
-                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
-                     </linearGradient>
-                   </defs>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                   <XAxis dataKey="name" fontSize={12} stroke="currentColor" />
-                   <YAxis fontSize={12} stroke="currentColor" />
-                    <Tooltip {...tooltipStyle} />
-                    <Bar
-                      dataKey="valor"
-                      fill="url(#colorTempos)"
-                      radius={[8, 8, 0, 0]}
-                      className="transition-all duration-300 hover:opacity-80"
-                      animationDuration={600}
-                    />
-                 </BarChart>
-               </ResponsiveContainer>
+                 ]}
+                 xKey="name"
+                 series={[{ dataKey: "valor", name: "Minutos" }]}
+                 valueFormatter={formatMinutes}
+               />
              </CardContent>
            </Card>
 
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
-               <CardTitle>Chamados por Status</CardTitle>
-               <CardDescription>Distribuição atual de chamados</CardDescription>
+             <CardHeader className="flex flex-row items-start justify-between space-y-0">
+               <div>
+                 <CardTitle>Chamados por Status</CardTitle>
+                 <CardDescription>Distribuição atual de chamados</CardDescription>
+               </div>
+               <ChartSettingsButton
+                 value={getSetting("dashboard_por_status", { type: "rosca", color: "#1d2025", legend: "automatica" })}
+                 allowedTypes={ALL_TYPES}
+                 onChange={(patch) => updateSetting("dashboard_por_status", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <PieChart>
-                   <defs>
-                     <filter id="pieShadow" x="-20%" y="-20%" width="140%" height="140%">
-                       <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity={0.25} />
-                     </filter>
-                   </defs>
-                   <Pie
-                     data={stats.byStatus}
-                     cx="50%"
-                     cy="50%"
-                     innerRadius={60}
-                     outerRadius={82}
-                     paddingAngle={5}
-                     cornerRadius={6}
-                     dataKey="value"
-                     style={{ filter: "url(#pieShadow)" }}
-                     animationDuration={600}
-                   >
-                      {stats.byStatus.map((entry, index) => {
-                        const colors = [
-                          'hsl(var(--primary))',
-                          'hsl(var(--chart-1, 217 91% 60%))',
-                          'hsl(var(--chart-2, 142 71% 45%))',
-                          'hsl(var(--chart-3, 31 97% 55%))',
-                          'hsl(var(--chart-4, 262 83% 58%))',
-                        ];
-                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />;
-                      })}
-                   </Pie>
-                    <Tooltip {...tooltipStyle} />
-                   <Legend />
-                 </PieChart>
-               </ResponsiveContainer>
+               <FlexibleChart
+                 {...getSetting("dashboard_por_status", { type: "rosca", color: "#1d2025", legend: "automatica" })}
+                 data={stats.byStatus}
+                 xKey="name"
+                 series={[{ dataKey: "value", name: "Total" }]}
+               />
              </CardContent>
            </Card>
 
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
-               <CardTitle>Volume de Chamados</CardTitle>
-               <CardDescription>Quantidade de atendimentos no período</CardDescription>
+             <CardHeader className="flex flex-row items-start justify-between space-y-0">
+               <div>
+                 <CardTitle>Volume de Chamados</CardTitle>
+                 <CardDescription>Quantidade de atendimentos no período</CardDescription>
+               </div>
+               <ChartSettingsButton
+                 value={getSetting("dashboard_volume", { type: "area", color: "#1d2025", legend: "automatica" })}
+                 allowedTypes={MULTI_SERIES_TYPES}
+                 onChange={(patch) => updateSetting("dashboard_volume", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="colorChamados" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorSLA" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--chart-2, 142 71% 45%))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--chart-2, 142 71% 45%))" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                    <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
-                    <YAxis stroke="currentColor" fontSize={12} />
-                    <Tooltip {...tooltipStyle} />
-                    <Area type="monotone" dataKey="chamados" name="Chamados" stroke="hsl(var(--primary))" fill="url(#colorChamados)" fillOpacity={1} strokeWidth={3} />
-                    <Area type="monotone" dataKey="sla" name="Dentro do SLA" stroke="hsl(var(--chart-2, 142 71% 45%))" fill="url(#colorSLA)" fillOpacity={1} strokeWidth={3} />
-                  </AreaChart>
-               </ResponsiveContainer>
+               <FlexibleChart
+                 {...getSetting("dashboard_volume", { type: "area", color: "#1d2025", legend: "automatica" })}
+                 data={chartData}
+                 xKey="name"
+                 series={[{ dataKey: "chamados", name: "Chamados" }, { dataKey: "sla", name: "Dentro do SLA" }]}
+               />
              </CardContent>
            </Card>
   
            <Card className="hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
-               <CardTitle>Conformidade de SLA</CardTitle>
-               <CardDescription>Chamados atendidos dentro do prazo</CardDescription>
+             <CardHeader className="flex flex-row items-start justify-between space-y-0">
+               <div>
+                 <CardTitle>Conformidade de SLA</CardTitle>
+                 <CardDescription>Chamados atendidos dentro do prazo</CardDescription>
+               </div>
+               <ChartSettingsButton
+                 value={getSetting("dashboard_sla", { type: "linha", color: "#10b981", legend: "automatica" })}
+                 allowedTypes={MULTI_SERIES_TYPES}
+                 onChange={(patch) => updateSetting("dashboard_sla", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <LineChart data={chartData}>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                   <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
-                   <YAxis stroke="currentColor" fontSize={12} />
-                    <Tooltip {...tooltipStyle} />
-                   <Legend verticalAlign="top" height={36}/>
-                   <Line name="No Prazo" type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} animationDuration={600} />
-                   <Line name="Total" type="monotone" dataKey="chamados" stroke="hsl(var(--primary))" strokeWidth={1.5} strokeDasharray="5 5" dot={false} animationDuration={600} />
-                 </LineChart>
-               </ResponsiveContainer>
+               <FlexibleChart
+                 {...getSetting("dashboard_sla", { type: "linha", color: "#10b981", legend: "automatica" })}
+                 data={chartData}
+                 xKey="name"
+                 series={[{ dataKey: "sla", name: "No Prazo" }, { dataKey: "chamados", name: "Total" }]}
+               />
              </CardContent>
            </Card>
  
            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle>Distribuição por Prioridade</CardTitle>
-                <CardDescription>Volume de chamados por nível crítico</CardDescription>
+              <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                <div>
+                  <CardTitle>Distribuição por Prioridade</CardTitle>
+                  <CardDescription>Volume de chamados por nível crítico</CardDescription>
+                </div>
+                <ChartSettingsButton
+                  value={getSetting("dashboard_prioridade", { type: "barras", color: "#4747eb", legend: "automatica" })}
+                  allowedTypes={ALL_TYPES}
+                  onChange={(patch) => updateSetting("dashboard_prioridade", patch)}
+                />
               </CardHeader>
               <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.byPriority} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="colorPrioridade" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.95} />
-                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.55} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                    <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
-                    <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
-                    <Tooltip {...tooltipStyle} />
-                    <Bar dataKey="value" name="Quantidade" fill="url(#colorPrioridade)" radius={[8, 8, 0, 0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <FlexibleChart
+                  {...getSetting("dashboard_prioridade", { type: "barras", color: "#4747eb", legend: "automatica" })}
+                  data={stats.byPriority}
+                  xKey="name"
+                  series={[{ dataKey: "value", name: "Quantidade" }]}
+                />
               </CardContent>
            </Card>
 
            <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
-             <CardHeader>
-               <CardTitle>Tempos Operacionais no Período</CardTitle>
-               <CardDescription>Média diária (minutos) de espera, atendimento e conclusão</CardDescription>
+             <CardHeader className="flex flex-row items-start justify-between space-y-0">
+               <div>
+                 <CardTitle>Tempos Operacionais no Período</CardTitle>
+                 <CardDescription>Média diária (minutos) de espera, atendimento e conclusão</CardDescription>
+               </div>
+               <ChartSettingsButton
+                 value={getSetting("dashboard_tempos_operacionais", { type: "area", color: "#f59e0b", legend: "automatica" })}
+                 allowedTypes={MULTI_SERIES_TYPES}
+                 onChange={(patch) => updateSetting("dashboard_tempos_operacionais", patch)}
+               />
              </CardHeader>
              <CardContent className="h-[320px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <AreaChart data={timeSeriesData}>
-                   <defs>
-                     <linearGradient id="colorEspera" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
-                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                     </linearGradient>
-                     <linearGradient id="colorAtendimento" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                     </linearGradient>
-                     <linearGradient id="colorConclusao" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                     </linearGradient>
-                   </defs>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                   <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
-                   <YAxis stroke="currentColor" fontSize={12} tickFormatter={(v) => formatMinutes(v)} width={70} />
-                   <Tooltip {...tooltipStyle} formatter={(value: number) => formatMinutes(value)} />
-                   <Legend verticalAlign="top" height={36} />
-                   <Area type="monotone" dataKey="espera" name="Espera (aguardando início)" stroke="#f59e0b" fill="url(#colorEspera)" strokeWidth={2.5} />
-                   <Area type="monotone" dataKey="atendimento" name="Em Atendimento" stroke="#10b981" fill="url(#colorAtendimento)" strokeWidth={2.5} />
-                   <Area type="monotone" dataKey="conclusao" name="Conclusão (ciclo total)" stroke="hsl(var(--primary))" fill="url(#colorConclusao)" strokeWidth={2.5} />
-                 </AreaChart>
-               </ResponsiveContainer>
+               <FlexibleChart
+                 {...getSetting("dashboard_tempos_operacionais", { type: "area", color: "#f59e0b", legend: "automatica" })}
+                 data={timeSeriesData}
+                 xKey="name"
+                 series={[
+                   { dataKey: "espera", name: "Espera (aguardando início)" },
+                   { dataKey: "atendimento", name: "Em Atendimento" },
+                   { dataKey: "conclusao", name: "Conclusão (ciclo total)" },
+                 ]}
+                 valueFormatter={formatMinutes}
+               />
              </CardContent>
            </Card>
 
             {hasPermission("dashboard:ver_chamados_por_usuario") && (
               <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle>Chamados por Usuário</CardTitle>
-                  <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
+                <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                  <div>
+                    <CardTitle>Chamados por Usuário</CardTitle>
+                    <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
+                  </div>
+                  <ChartSettingsButton
+                    value={getSetting("dashboard_por_usuario", { type: "barras", color: "#1d2025", legend: "automatica" })}
+                    allowedTypes={ALL_TYPES}
+                    onChange={(patch) => updateSetting("dashboard_por_usuario", patch)}
+                  />
                 </CardHeader>
                 <CardContent
                   style={{ height: Math.max(300, Math.min(420, stats.byUser.length * 38 + 120)) }}
@@ -687,29 +639,13 @@ import { useOnlineUsers } from "@/hooks/useOnlineUsers";
                       Sem chamados no período selecionado.
                     </div>
                   ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={stats.byUser} margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
-                        <defs>
-                          <linearGradient id="colorUsuario" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.95} />
-                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                        <XAxis
-                          dataKey="name"
-                          stroke="currentColor"
-                          fontSize={10}
-                          interval={0}
-                          angle={-45}
-                          textAnchor="end"
-                          height={60}
-                        />
-                        <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
-                        <Tooltip {...tooltipStyle} />
-                        <Bar dataKey="value" name="Chamados" fill="url(#colorUsuario)" radius={[8, 8, 0, 0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <FlexibleChart
+                      {...getSetting("dashboard_por_usuario", { type: "barras", color: "#1d2025", legend: "automatica" })}
+                      data={stats.byUser}
+                      xKey="name"
+                      series={[{ dataKey: "value", name: "Chamados" }]}
+                      xAxisProps={{ fontSize: 10, interval: 0, angle: -45, textAnchor: "end", height: 60 }}
+                    />
                   )}
                 </CardContent>
               </Card>

@@ -90,7 +90,8 @@ export default function Layout() {
         '/usuarios': 'usuarios',
         '/permissions': 'permissoes',
         '/audit': 'audit',
-        '/settings': 'configuracoes'
+        '/settings': 'configuracoes',
+        '/backup': 'backup'
       };
 
       const requiredPermission = pageToPermission[path];

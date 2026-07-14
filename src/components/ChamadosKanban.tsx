@@ -81,7 +81,7 @@ import { Label } from "@/components/ui/label";
    } = useSortable({
      id: ticket.id,
      data: { ticket, columnId },
-      disabled: ticket.status === "ENCERRADO" || userRole === "USUARIO" || isReadOnly
+       disabled: userRole === "USUARIO" || isReadOnly
    });
  
    const style = {
@@ -444,7 +444,7 @@ interface ChamadosKanbanProps {
      { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
    ]);
 
-      const fetchAgents = useCallback(async () => {
+       const fetchAgents = useCallback(async () => {
         const { data } = await supabase
           .from("profiles")
           .select("id, nome, sobrenome")
@@ -475,22 +475,29 @@ interface ChamadosKanbanProps {
             .single();
            if (profile) {
              setUserRole(profile.is_master ? 'MASTER' : profile.regra);
-             if (profile.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config) {
-               setKanbanCols((profile.settings as any).kanban_config);
-               return; // Exit early if user has their own config
-             }
            }
          }
-   
-         const { data: settings } = await supabase
-           .from("system_settings")
-           .select("value")
-           .eq("key", "kanban_config")
-           .single();
-         
-         if (settings) {
-           setKanbanCols(settings.value as any[]);
-         }
+
+          // Load columns from chamado_statuses (source of truth). Column id
+          // maps to the legacy enum value so drag&drop writes valid values.
+          const { data: statuses } = await supabase
+            .from("chamado_statuses")
+            .select("*")
+            .eq("ativo", true)
+            .order("ordem", { ascending: true });
+          if (statuses && statuses.length > 0) {
+            setKanbanCols(
+              statuses.map((s: any) => ({
+                id: s.legacy_enum || s.key,
+                title: s.label,
+                color_hex: s.cor,
+                is_inicial: s.is_inicial,
+                is_pausa: s.is_pausa,
+                is_encerrado: s.is_encerrado,
+                is_cancelado: s.is_cancelado,
+              }))
+            );
+          }
        };
        loadData();
      }, []);

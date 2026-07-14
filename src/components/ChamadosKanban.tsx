@@ -81,7 +81,7 @@ import { Label } from "@/components/ui/label";
    } = useSortable({
      id: ticket.id,
      data: { ticket, columnId },
-      disabled: ticket.status === "ENCERRADO" || userRole === "USUARIO" || isReadOnly
+       disabled: userRole === "USUARIO" || isReadOnly
    });
  
    const style = {

@@ -10,6 +10,9 @@
  import { Label } from "@/components/ui/label";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import AccessScheduleEditor from "@/components/AccessScheduleEditor";
+import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
+import { SortableTableHead } from "@/components/SortableTableHead";
+import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
  
  export default function Departments() {
    const navigate = useNavigate();
@@ -140,7 +143,23 @@ import AccessScheduleEditor from "@/components/AccessScheduleEditor";
        navigate("/dashboard");
      }
    }, [permsLoading, hasPermission, navigate]);
- 
+
+   const listColumns: ColumnDef[] = [
+     { key: "id", label: "ID" },
+     { key: "nome", label: "Nome" },
+     { key: "descricao", label: "Descrição" },
+   ];
+   const { isVisible: isColVisible, toggle: toggleColumn } = useColumnVisibility(listColumns.map(c => c.key));
+   const getSortValue = (d: any, key: string) => {
+     switch (key) {
+       case "id": return d.sequencial_id ?? 0;
+       case "nome": return d.nome || "";
+       case "descricao": return d.descricao || "";
+       default: return "";
+     }
+   };
+   const { sortedData: sortedDepartments, sortKey, sortDirection, requestSort } = useSortableTable(departments, getSortValue);
+
    if (loading || permsLoading) {
      return (
        <div className="flex h-[50vh] items-center justify-center">
@@ -161,36 +180,39 @@ import AccessScheduleEditor from "@/components/AccessScheduleEditor";
          </Button>
        </div>
  
+       <div className="flex justify-start mb-2">
+         <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+       </div>
        <div className="bg-card rounded-md border shadow-sm">
          <Table>
            <TableHeader>
               <TableRow>
-                <TableHead className="w-16">ID</TableHead>
-               <TableHead>Nome</TableHead>
-               <TableHead>Descrição</TableHead>
+                {isColVisible("id") && <SortableTableHead label="ID" sortKey="id" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="w-16" />}
+               {isColVisible("nome") && <SortableTableHead label="Nome" sortKey="nome" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+               {isColVisible("descricao") && <SortableTableHead label="Descrição" sortKey="descricao" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                <TableHead className="text-right">Ações</TableHead>
              </TableRow>
            </TableHeader>
             <TableBody>
-              {departments.length === 0 ? (
+              {sortedDepartments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-10 text-muted-foreground">
                     Nenhum departamento encontrado.
                   </TableCell>
                 </TableRow>
               ) : (
-                departments.map((dept) => (
+                sortedDepartments.map((dept) => (
                   <TableRow key={dept.id}>
-                    <TableCell className="text-xs font-mono text-muted-foreground">
+                    {isColVisible("id") && <TableCell className="text-xs font-mono text-muted-foreground">
                       {dept.sequencial_id}
-                    </TableCell>
-                    <TableCell className="font-medium">
+                    </TableCell>}
+                    {isColVisible("nome") && <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <Building2 size={16} className="text-muted-foreground" />
                         {dept.nome}
                       </div>
-                    </TableCell>
-                    <TableCell>{dept.descricao || "-"}</TableCell>
+                    </TableCell>}
+                    {isColVisible("descricao") && <TableCell>{dept.descricao || "-"}</TableCell>}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon" onClick={() => { setEditDept(dept); setIsEditDialogOpen(true); }}>

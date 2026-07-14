@@ -20,7 +20,10 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Check, X } from "lucide-react";
  import AccessScheduleEditor from "@/components/AccessScheduleEditor";
  import { useOnlineUsers } from "@/hooks/useOnlineUsers";
- 
+ import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
+ import { SortableTableHead } from "@/components/SortableTableHead";
+ import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
+
  type Regra = Database["public"]["Enums"]["regra"];
  
   export default function Users() {
@@ -343,6 +346,27 @@ import { usePermissions } from "@/hooks/usePermissions";
        }
      }, [permsLoading, hasPermission, navigate]);
 
+     const listColumns: ColumnDef[] = [
+       { key: "id", label: "ID" },
+       { key: "usuario", label: "Usuário" },
+       { key: "email", label: "E-mail" },
+       { key: "permissao", label: "Permissão" },
+       { key: "status", label: "Status" },
+     ];
+     const { isVisible: isColVisible, toggle: toggleColumn } = useColumnVisibility(listColumns.map(c => c.key));
+     const visibleUsers = users.filter(u => isCurrentMaster ? true : !(u.is_master || u.regra === "MASTER"));
+     const getSortValue = (u: any, key: string) => {
+       switch (key) {
+         case "id": return u.id_numerico ?? 0;
+         case "usuario": return `${u.nome || ""} ${u.sobrenome || ""}`.trim();
+         case "email": return u.email || "";
+         case "permissao": return getRoleLabel(u);
+         case "status": return u.ativo ? 1 : 0;
+         default: return "";
+       }
+     };
+     const { sortedData: sortedUsers, sortKey, sortDirection, requestSort } = useSortableTable(visibleUsers, getSortValue);
+
      if ((loading || permsLoading) && users.length === 0) {
       return (
         <div className="flex h-[50vh] items-center justify-center">
@@ -363,25 +387,28 @@ import { usePermissions } from "@/hooks/usePermissions";
           </Button>
         </div>
  
+       <div className="flex justify-start mb-2">
+         <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+       </div>
        <div className="bg-card rounded-md border shadow-sm">
          <Table>
            <TableHeader>
               <TableRow>
-                <TableHead className="w-16">ID</TableHead>
-               <TableHead>Usuário</TableHead>
-               <TableHead>E-mail</TableHead>
-               <TableHead>Permissão</TableHead>
-               <TableHead>Status</TableHead>
+                {isColVisible("id") && <SortableTableHead label="ID" sortKey="id" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="w-16" />}
+               {isColVisible("usuario") && <SortableTableHead label="Usuário" sortKey="usuario" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+               {isColVisible("email") && <SortableTableHead label="E-mail" sortKey="email" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+               {isColVisible("permissao") && <SortableTableHead label="Permissão" sortKey="permissao" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+               {isColVisible("status") && <SortableTableHead label="Status" sortKey="status" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                <TableHead className="text-right">Ações</TableHead>
              </TableRow>
            </TableHeader>
            <TableBody>
-              {users.filter(u => isCurrentMaster ? true : !(u.is_master || u.regra === "MASTER")).map((user) => (
+              {sortedUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="text-xs font-mono text-muted-foreground">
+                  {isColVisible("id") && <TableCell className="text-xs font-mono text-muted-foreground">
                     {user.id_numerico}
-                  </TableCell>
-                  <TableCell className="font-medium">
+                  </TableCell>}
+                  {isColVisible("usuario") && <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs overflow-hidden border">
                         {user.avatar_url ? (
@@ -403,9 +430,9 @@ import { usePermissions } from "@/hooks/usePermissions";
                          </span>
                        </div>
                    </div>
-                 </TableCell>
-                 <TableCell>{user.email}</TableCell>
-                 <TableCell>
+                 </TableCell>}
+                 {isColVisible("email") && <TableCell>{user.email}</TableCell>}
+                 {isColVisible("permissao") && <TableCell>
                    <Badge variant="outline" className={
                      user.is_master || user.regra === 'MASTER' ? 'border-purple-500 text-purple-500 bg-purple-50' :
                      user.regra === 'ADMIN' ? 'border-blue-500 text-blue-500 bg-blue-50' :
@@ -414,8 +441,8 @@ import { usePermissions } from "@/hooks/usePermissions";
                    }>
                      {getRoleLabel(user)}
                    </Badge>
-                 </TableCell>
-                 <TableCell>
+                 </TableCell>}
+                 {isColVisible("status") && <TableCell>
                    <Badge variant={user.ativo ? "default" : "secondary"}>
                      {user.ativo ? "Ativo" : "Inativo"}
                    </Badge>
@@ -423,7 +450,7 @@ import { usePermissions } from "@/hooks/usePermissions";
                      <Circle size={8} className={onlineUsers.has(user.id) ? 'fill-green-500 text-green-500' : 'fill-slate-400 text-slate-400'} />
                      {onlineUsers.has(user.id) ? 'Online' : 'Offline'}
                    </Badge>
-                 </TableCell>
+                 </TableCell>}
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Select 

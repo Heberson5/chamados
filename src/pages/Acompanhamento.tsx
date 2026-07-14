@@ -18,6 +18,9 @@ import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useBranding } from "@/hooks/useBranding";
 import { getPriorityLabel } from "@/lib/utils/priority";
+import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
+import { SortableTableHead } from "@/components/SortableTableHead";
+import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
 
 const STATUS_LABELS: Record<string, string> = {
   ABERTO: "Aberto",
@@ -112,6 +115,32 @@ export default function Acompanhamento() {
       return true;
     });
   }, [tickets, dateFrom, dateTo, usuarioFilter, prioridadeFilter, departamentoFilter, statusFilter, tituloSearch, descricaoSearch]);
+
+  const listColumns: ColumnDef[] = [
+    { key: "os", label: "OS" },
+    { key: "titulo", label: "Título" },
+    { key: "status", label: "Status" },
+    { key: "prioridade", label: "Prioridade" },
+    { key: "departamento", label: "Departamento" },
+    { key: "solicitante", label: "Solicitante" },
+    { key: "tecnico", label: "Técnico" },
+    { key: "aberto_em", label: "Aberto em" },
+  ];
+  const { isVisible: isColVisible, toggle: toggleColumn } = useColumnVisibility(listColumns.map(c => c.key));
+  const getSortValue = (t: any, key: string) => {
+    switch (key) {
+      case "os": return t.os || "";
+      case "titulo": return t.titulo || "";
+      case "status": return STATUS_LABELS[t.status] || t.status || "";
+      case "prioridade": return t.prioridade_obj?.ordem ?? t.prioridade ?? "";
+      case "departamento": return t.departamento?.nome || "";
+      case "solicitante": return t.usuario ? `${t.usuario.nome} ${t.usuario.sobrenome || ""}` : "";
+      case "tecnico": return t.tecnico ? `${t.tecnico.nome} ${t.tecnico.sobrenome || ""}` : "";
+      case "aberto_em": return t.gerado_em ? new Date(t.gerado_em).getTime() : null;
+      default: return "";
+    }
+  };
+  const { sortedData: sortedFiltered, sortKey, sortDirection, requestSort } = useSortableTable(filtered, getSortValue);
 
   const clearFilters = () => {
     setDateFrom(""); setDateTo("");
@@ -349,31 +378,38 @@ export default function Acompanhamento() {
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
+            <>
+            <div className="flex justify-start mb-2">
+              <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+            </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>OS</TableHead>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Prioridade</TableHead>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Solicitante</TableHead>
-                    <TableHead>Técnico</TableHead>
-                    <TableHead>Aberto em</TableHead>
+                    {isColVisible("os") && <SortableTableHead label="OS" sortKey="os" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("titulo") && <SortableTableHead label="Título" sortKey="titulo" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("status") && <SortableTableHead label="Status" sortKey="status" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("prioridade") && <SortableTableHead label="Prioridade" sortKey="prioridade" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("departamento") && <SortableTableHead label="Departamento" sortKey="departamento" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("solicitante") && <SortableTableHead label="Solicitante" sortKey="solicitante" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("tecnico") && <SortableTableHead label="Técnico" sortKey="tecnico" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
+                    {isColVisible("aberto_em") && <SortableTableHead label="Aberto em" sortKey="aberto_em" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map(t => (
+                  {sortedFiltered.map(t => (
                     <TableRow key={t.id}>
-                      <TableCell className="font-mono text-xs">{t.os}</TableCell>
-                      <TableCell className="max-w-[220px] truncate">{t.titulo || "-"}</TableCell>
+                      {isColVisible("os") && <TableCell className="font-mono text-xs">{t.os}</TableCell>}
+                      {isColVisible("titulo") && <TableCell className="max-w-[220px] truncate">{t.titulo || "-"}</TableCell>}
+                      {isColVisible("status") && (
                       <TableCell>
                         <Badge variant="outline" className={`text-[10px] ${statusColor(t.status)}`}>
                           {STATUS_LABELS[t.status] || t.status}
                         </Badge>
                       </TableCell>
+                      )}
+                      {isColVisible("prioridade") && (
                       <TableCell className="text-xs">
                         {t.prioridade_obj ? (
                           <Badge variant="outline" className="border-none text-[10px]" style={{ backgroundColor: `${t.prioridade_obj.cor}20`, color: t.prioridade_obj.cor }}>
@@ -383,12 +419,15 @@ export default function Acompanhamento() {
                           getPriorityLabel(t.prioridade)
                         )}
                       </TableCell>
-                      <TableCell className="text-xs">{t.departamento?.nome || "-"}</TableCell>
-                      <TableCell className="text-xs">{t.usuario ? `${t.usuario.nome} ${t.usuario.sobrenome || ""}` : "-"}</TableCell>
-                      <TableCell className="text-xs">{t.tecnico ? `${t.tecnico.nome} ${t.tecnico.sobrenome || ""}` : "-"}</TableCell>
+                      )}
+                      {isColVisible("departamento") && <TableCell className="text-xs">{t.departamento?.nome || "-"}</TableCell>}
+                      {isColVisible("solicitante") && <TableCell className="text-xs">{t.usuario ? `${t.usuario.nome} ${t.usuario.sobrenome || ""}` : "-"}</TableCell>}
+                      {isColVisible("tecnico") && <TableCell className="text-xs">{t.tecnico ? `${t.tecnico.nome} ${t.tecnico.sobrenome || ""}` : "-"}</TableCell>}
+                      {isColVisible("aberto_em") && (
                       <TableCell className="text-xs whitespace-nowrap">
                         {t.gerado_em ? format(new Date(t.gerado_em), "dd/MM/yy HH:mm", { locale: ptBR }) : "-"}
                       </TableCell>
+                      )}
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/chamados?os=${t.os}`)}>
                           <Eye size={14} />
@@ -396,9 +435,9 @@ export default function Acompanhamento() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filtered.length === 0 && (
+                  {sortedFiltered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-8 text-muted-foreground">
                         Nenhum chamado encontrado com os filtros aplicados.
                       </TableCell>
                     </TableRow>
@@ -406,6 +445,7 @@ export default function Acompanhamento() {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -28,65 +28,85 @@ Deno.serve(async (req) => {
     if (authErr || !user) throw new Error("Sessão expirada");
 
     const { newPassword } = await req.json();
-
-    // 1. Check if new password is the current one
-    const { error: loginError } = await createClient(supabaseUrl, anonKey).auth.signInWithPassword({
-      email: user.email!,
-      password: newPassword,
-    });
-
-    if (!loginError) {
-      return new Response(JSON.stringify({ error: "A nova senha não pode ser igual à senha atual." }), {
+    if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
+      return new Response(JSON.stringify({ error: "Senha inválida." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // 2. Check password history
-    // We use RPC or direct SQL if possible. Since we have service role, we can query public.password_history
-    const { data: history } = await admin
-      .from("password_history")
-      .select("password_hash")
-      .eq("user_id", user.id);
-
-    if (history && history.length > 0) {
-      // We need to check the hash. pgcrypto's crypt(password, hash) == hash
-      // We'll do this in a single SQL query for performance and security
-      const { data: match, error: checkError } = await admin.rpc("check_password_history", {
-        p_user_id: user.id,
-        p_password: newPassword
+    // 1. Check if new password is the current one. Best-effort: se essa
+    // checagem falhar por qualquer motivo (rate limit, RPC ausente, etc.),
+    // não deve travar a troca de senha em si — só pula essa validação extra.
+    try {
+      const { error: loginError } = await createClient(supabaseUrl, anonKey).auth.signInWithPassword({
+        email: user.email!,
+        password: newPassword,
       });
-
-      if (checkError) throw checkError;
-      if (match) {
-        return new Response(JSON.stringify({ error: "A nova senha não pode ser igual a uma das senhas anteriores." }), {
+      if (!loginError) {
+        return new Response(JSON.stringify({ error: "A nova senha não pode ser igual à senha atual." }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+    } catch (e) {
+      console.warn("Same-password check failed, skipping:", e);
     }
 
-    // 3. Update password in Auth
+    // 2. Check password history. Mesma lógica: falha aqui não pode travar a
+    // troca de senha — na pior das hipóteses, pula a checagem de reuso.
+    try {
+      const { data: history } = await admin
+        .from("password_history")
+        .select("password_hash")
+        .eq("user_id", user.id);
+
+      if (history && history.length > 0) {
+        const { data: match, error: checkError } = await admin.rpc("check_password_history", {
+          p_user_id: user.id,
+          p_password: newPassword
+        });
+
+        if (checkError) throw checkError;
+        if (match) {
+          return new Response(JSON.stringify({ error: "A nova senha não pode ser igual a uma das senhas anteriores." }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("Password history check failed, skipping:", e);
+    }
+
+    // 3. Update password in Auth — este é o passo crítico, não pode falhar em silêncio.
     const { error: updateError } = await admin.auth.admin.updateUserById(user.id, {
       password: newPassword,
     });
     if (updateError) throw updateError;
 
-    // 4. Store in history and update profile
-    // We'll use an RPC to handle hashing and storage securely
-    const { error: storeError } = await admin.rpc("store_password_history", {
-      p_user_id: user.id,
-      p_password: newPassword
-    });
-    if (storeError) throw storeError;
+    // 4. Store in history (best-effort — a senha em si já foi trocada no
+    // passo 3, então uma falha aqui não pode deixar o usuário travado).
+    try {
+      const { error: storeError } = await admin.rpc("store_password_history", {
+        p_user_id: user.id,
+        p_password: newPassword
+      });
+      if (storeError) console.warn("store_password_history failed:", storeError);
+    } catch (e) {
+      console.warn("store_password_history threw:", e);
+    }
 
-    await admin
+    // 5. Passo crítico: libera o acesso do usuário. Precisa acontecer mesmo
+    // que os passos acima (best-effort) tenham falhado.
+    const { error: profileError } = await admin
       .from("profiles")
       .update({
         must_change_password: false,
         password_changed_at: new Date().toISOString()
       })
       .eq("id", user.id);
+    if (profileError) throw profileError;
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

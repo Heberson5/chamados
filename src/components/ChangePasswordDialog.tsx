@@ -75,12 +75,7 @@ export default function ChangePasswordDialog({ open, onOpenChange, forced, onSuc
       onOpenChange(false);
       onSuccess?.();
     } catch (e: any) {
-      // If the edge function returns a specific error about history/current password
-      const errorMsg = e.message?.includes("nova senha não pode ser igual") 
-        ? e.message 
-        : "Erro ao atualizar senha. Verifique se ela atende aos requisitos.";
-        
-      toast({ variant: "destructive", title: "Erro na alteração", description: errorMsg });
+      toast({ variant: "destructive", title: "Erro na alteração", description: e.message || "Erro ao atualizar senha." });
     } finally {
       setLoading(false);
     }

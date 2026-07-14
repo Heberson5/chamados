@@ -439,11 +439,12 @@ interface ChamadosKanbanProps {
   const [commentPreviews, setCommentPreviews] = useState<string[]>([]);
    const [userRole, setUserRole] = useState<string | null>(null);
    const [priorities, setPriorities] = useState<any[]>([]);
-   const [kanbanCols, setKanbanCols] = useState<any[]>([
-     { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
-     { id: "EM_ATENDIMENTO", title: "Em Atendimento", color: "bg-amber-500/10 border-amber-500/20" },
-     { id: "ENCERRADO", title: "Encerrados", color: "bg-emerald-500/10 border-emerald-500/20" },
-   ]);
+   // Preenchido a partir de chamado_statuses (fonte real do board) no
+   // useEffect abaixo — fica vazio até lá, para não desenhar um conjunto
+   // de colunas provisório que "pisca" e troca assim que os dados reais
+   // chegam.
+   const [kanbanCols, setKanbanCols] = useState<any[]>([]);
+   const [colsLoaded, setColsLoaded] = useState(false);
 
        const fetchAgents = useCallback(async () => {
         const { data } = await supabase
@@ -502,6 +503,7 @@ interface ChamadosKanbanProps {
               }))
             );
           }
+          setColsLoaded(true);
        };
        loadData();
      }, []);
@@ -765,10 +767,18 @@ interface ChamadosKanbanProps {
        };
      }
    }, [isDetailsOpen, selectedTicket, fetchComments]);
- 
+
+     if (!colsLoaded) {
+       return (
+         <div className="flex justify-center items-center py-24">
+           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+         </div>
+       );
+     }
+
      return (
        <>
-         <DndContext 
+         <DndContext
            sensors={sensors} 
            collisionDetection={closestCorners} 
            onDragEnd={handleDragEnd}

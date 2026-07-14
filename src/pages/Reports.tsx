@@ -24,18 +24,23 @@
      const [tickets, setTickets] = useState<any[]>([]);
      const [loading, setLoading] = useState(true);
       const [transfers, setTransfers] = useState<any[]>([]);
- 
+      const [statuses, setStatuses] = useState<any[]>([]);
+
      const fetchData = async () => {
-      const { data, error } = await supabase
-        .from("chamados")
-        .select(`
-          *,
-          tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome),
-          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome),
-          prioridade_obj:prioridade_id(id, nome, cor, ordem)
-        `);
-       
+      const [{ data, error }, { data: statusesData }] = await Promise.all([
+        supabase
+          .from("chamados")
+          .select(`
+            *,
+            tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome),
+            usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome),
+            prioridade_obj:prioridade_id(id, nome, cor, ordem)
+          `),
+        supabase.from("chamado_statuses").select("*").eq("ativo", true).order("ordem", { ascending: true }),
+      ]);
+
        if (data) setTickets(data);
+       if (statusesData) setStatuses(statusesData);
         const { data: trData } = await supabase
           .from("transferencias_chamado")
           .select("id, chamado_id, motivo, transferido_em, tecnico_anterior_id, tecnico_novo_id")
@@ -84,7 +89,9 @@
  
      const stats = useMemo(() => {
        const statusCounts = tickets.reduce((acc: any, t) => {
-         acc[t.status] = (acc[t.status] || 0) + 1;
+         const statusDef = statuses.find((s: any) => s.legacy_enum === t.status || s.key === t.status);
+         const label = statusDef ? statusDef.label : t.status;
+         acc[label] = (acc[label] || 0) + 1;
          return acc;
        }, {});
        const byStatus = Object.keys(statusCounts).map(s => ({ name: s, value: statusCounts[s] }));
@@ -106,7 +113,7 @@
         const byPriority = Object.keys(priorityCounts).map(name => ({ name, value: priorityCounts[name] }));
  
        return { byStatus, byTechnician, byPriority };
-     }, [tickets]);
+     }, [tickets, statuses]);
 
     // Transfer stats
     const transferStats = useMemo(() => {
@@ -438,10 +445,8 @@
                    <Pie
                      data={stats.byStatus}
                      cx="50%"
-                     cy="50%"
-                     labelLine={false}
-                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                     outerRadius={80}
+                     cy="45%"
+                     outerRadius={70}
                      cornerRadius={6}
                      paddingAngle={3}
                      dataKey="value"
@@ -452,8 +457,13 @@
                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />
                      ))}
                    </Pie>
-                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
-                   <Legend />
+                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} formatter={(value: number, name: string) => [value, name]} />
+                   <Legend
+                     verticalAlign="bottom"
+                     height={56}
+                     wrapperStyle={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis" }}
+                     formatter={(value: string) => (value.length > 18 ? `${value.slice(0, 18)}…` : value)}
+                   />
                  </PieChart>
                </ResponsiveContainer>
              </CardContent>

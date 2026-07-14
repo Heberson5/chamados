@@ -330,14 +330,14 @@ import { format, parseISO } from "date-fns";
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
           <>
-          <div className="flex justify-start mb-2">
-            <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
-          </div>
           <div className="overflow-x-auto -mx-6">
             <div className="min-w-[800px] px-6">
               <Table>
                 <TableHeader>
                   <TableRow>
+                  <TableHead className="w-10 px-2">
+                    <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+                  </TableHead>
                   {isColVisible("id") && <SortableTableHead label="#" sortKey="id" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="w-16" />}
                   {isColVisible("usuario") && <SortableTableHead label="Usuário / E-mail" sortKey="usuario" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                     {isColVisible("acao") && <SortableTableHead label="Ação" sortKey="acao" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
@@ -350,6 +350,7 @@ import { format, parseISO } from "date-fns";
                 <TableBody>
                 {sortedLogs.map((log) => (
                   <TableRow key={log.id}>
+                      <TableCell className="w-10 px-2" />
                       {isColVisible("id") && <TableCell className="text-xs font-mono text-muted-foreground">
                         {log.id}
                       </TableCell>}
@@ -410,7 +411,7 @@ import { format, parseISO } from "date-fns";
                   ))}
                   {sortedLogs.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 2} className="text-center py-8 text-muted-foreground">
                         Nenhum log encontrado.
                       </TableCell>
                     </TableRow>

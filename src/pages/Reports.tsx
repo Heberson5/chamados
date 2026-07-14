@@ -574,13 +574,13 @@
              <CardTitle className="flex items-center gap-2"><ArrowRightLeft size={18}/> Últimas Transferências</CardTitle>
            </CardHeader>
            <CardContent>
-             <div className="flex justify-start mb-2">
-               <ColumnVisibilityMenu columns={transferColumns} isVisible={isTransferColVisible} onToggle={toggleTransferColumn} />
-             </div>
              <div className="overflow-x-auto">
                <Table>
                  <TableHeader>
                    <TableRow>
+                     <TableHead className="w-10 px-2">
+                       <ColumnVisibilityMenu columns={transferColumns} isVisible={isTransferColVisible} onToggle={toggleTransferColumn} />
+                     </TableHead>
                      {isTransferColVisible("os") && <SortableTableHead label="OS" sortKey="os" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
                      {isTransferColVisible("de") && <SortableTableHead label="De" sortKey="de" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
                      {isTransferColVisible("para") && <SortableTableHead label="Para" sortKey="para" currentSortKey={transferSortKey} direction={transferSortDirection} onSort={requestTransferSort} />}
@@ -592,6 +592,7 @@
                  <TableBody>
                    {sortedTransfers.map((t) => (
                      <TableRow key={t.id}>
+                       <TableCell className="w-10 px-2" />
                        {isTransferColVisible("os") && <TableCell className="font-mono text-xs">{t.chamado?.os || "-"}</TableCell>}
                        {isTransferColVisible("de") && <TableCell className="text-xs">{t.tecnico_anterior ? `${t.tecnico_anterior.nome} ${t.tecnico_anterior.sobrenome ?? ""}` : "-"}</TableCell>}
                        {isTransferColVisible("para") && <TableCell className="text-xs">{t.tecnico_novo ? `${t.tecnico_novo.nome} ${t.tecnico_novo.sobrenome ?? ""}` : "-"}</TableCell>}
@@ -601,7 +602,7 @@
                      </TableRow>
                    ))}
                    {sortedTransfers.length === 0 && (
-                     <TableRow><TableCell colSpan={transferColumns.filter(c => isTransferColVisible(c.key)).length} className="text-center py-6 text-muted-foreground text-sm">Nenhuma transferência registrada.</TableCell></TableRow>
+                     <TableRow><TableCell colSpan={transferColumns.filter(c => isTransferColVisible(c.key)).length + 1} className="text-center py-6 text-muted-foreground text-sm">Nenhuma transferência registrada.</TableCell></TableRow>
                    )}
                  </TableBody>
                </Table>

@@ -387,13 +387,13 @@ import { usePermissions } from "@/hooks/usePermissions";
           </Button>
         </div>
  
-       <div className="flex justify-start mb-2">
-         <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
-       </div>
        <div className="bg-card rounded-md border shadow-sm">
          <Table>
            <TableHeader>
               <TableRow>
+                <TableHead className="w-10 px-2">
+                  <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+                </TableHead>
                 {isColVisible("id") && <SortableTableHead label="ID" sortKey="id" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="w-16" />}
                {isColVisible("usuario") && <SortableTableHead label="Usuário" sortKey="usuario" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                {isColVisible("email") && <SortableTableHead label="E-mail" sortKey="email" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
@@ -405,6 +405,7 @@ import { usePermissions } from "@/hooks/usePermissions";
            <TableBody>
               {sortedUsers.map((user) => (
                 <TableRow key={user.id}>
+                  <TableCell className="w-10 px-2" />
                   {isColVisible("id") && <TableCell className="text-xs font-mono text-muted-foreground">
                     {user.id_numerico}
                   </TableCell>}

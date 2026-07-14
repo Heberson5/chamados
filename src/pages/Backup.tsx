@@ -192,12 +192,12 @@ export default function Backup() {
           <Button size="sm" variant="ghost" onClick={fetchLogs}><RefreshCw size={14} /></Button>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-start mb-2">
-            <ColumnVisibilityMenu columns={logColumns} isVisible={isColVisible} onToggle={toggleColumn} />
-          </div>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10 px-2">
+                  <ColumnVisibilityMenu columns={logColumns} isVisible={isColVisible} onToggle={toggleColumn} />
+                </TableHead>
                 {isColVisible("tipo") && <SortableTableHead label="Tipo" sortKey="tipo" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                 {isColVisible("status") && <SortableTableHead label="Status" sortKey="status" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
                 {isColVisible("iniciado") && <SortableTableHead label="Iniciado" sortKey="iniciado" currentSortKey={sortKey} direction={sortDirection} onSort={requestSort} />}
@@ -211,6 +211,7 @@ export default function Backup() {
             <TableBody>
               {sortedLogs.map((l) => (
                 <TableRow key={l.id}>
+                  <TableCell className="w-10 px-2" />
                   {isColVisible("tipo") && <TableCell><Badge variant="outline">{l.tipo}</Badge></TableCell>}
                   {isColVisible("status") && <TableCell>
                     <Badge variant={l.status === "sucesso" ? "default" : l.status === "erro" ? "destructive" : "secondary"}>
@@ -226,7 +227,7 @@ export default function Backup() {
                 </TableRow>
               ))}
               {sortedLogs.length === 0 && (
-                <TableRow><TableCell colSpan={logColumns.filter(c => isColVisible(c.key)).length} className="text-center py-6 text-muted-foreground">Sem registros ainda.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={logColumns.filter(c => isColVisible(c.key)).length + 1} className="text-center py-6 text-muted-foreground">Sem registros ainda.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

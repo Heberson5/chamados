@@ -13,7 +13,8 @@ import {
     Lock,
     Building2,
     HelpCircle,
-    ClipboardList
+     ClipboardList,
+     DatabaseBackup
 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ interface SidebarProps {
          { id: '4', icon: Lock, label: "Permissões", path: "/permissions", permission: "permissoes" },
         { id: '5', icon: History, label: "Auditoria", path: "/audit", permission: "audit" },
         { id: '10', icon: HelpCircle, label: "Ajuda", path: "/ajuda", permission: "ajuda" },
+        { id: '12', icon: DatabaseBackup, label: "Backup", path: "/backup", permission: "backup" },
         { id: '8', icon: Settings, label: "Configurações", path: "/settings", permission: "configuracoes" },
      ];
  

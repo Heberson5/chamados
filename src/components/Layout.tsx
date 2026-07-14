@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { Outlet, useLocation, useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "./Sidebar";
+import MobileBottomNav from "./MobileBottomNav";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 import ChangePasswordDialog from "./ChangePasswordDialog";
@@ -11,6 +12,12 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { Loader2 } from "lucide-react";
 import AccessGuard from "./AccessGuard";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+
+const PageLoader = () => (
+  <div className="flex h-full min-h-[60vh] w-full items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -198,18 +205,22 @@ export default function Layout() {
               {branding.companyName || "Chamados"}
             </span>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setIsSidebarOpen(true)}
           >
             <Menu size={24} />
           </Button>
         </header>
 
-        <main className="flex-1 overflow-y-auto min-w-0">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto min-w-0 pb-16 md:pb-0">
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </main>
+
+        <MobileBottomNav onMoreClick={() => setIsSidebarOpen(true)} />
       </div>
 
       <ChangePasswordDialog

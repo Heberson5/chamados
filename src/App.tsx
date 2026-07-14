@@ -4,8 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { Suspense, lazy } from "react";
-import { Loader2 } from "lucide-react";
+import { lazy } from "react";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -32,12 +31,6 @@ const queryClient = new QueryClient({
   },
 });
 
-const PageLoader = () => (
-  <div className="flex h-full min-h-[60vh] w-full items-center justify-center">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
-);
-
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -45,11 +38,10 @@ const App = () => {
         <PermissionProvider>
           <BrandingProvider>
             <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
             <Routes>
              <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
-            
+
             <Route element={<Layout />}>
                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/chamados" element={<Chamados />} />
@@ -70,7 +62,6 @@ const App = () => {
             {/* Fallback for any other route */}
             <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            </Suspense>
             </BrowserRouter>
           </BrandingProvider>
         </PermissionProvider>

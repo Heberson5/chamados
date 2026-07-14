@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
- import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
+ import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles, MessageSquareText, Send } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { useState, useEffect } from "react";
@@ -27,13 +27,10 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
    const { theme, setTheme } = useTheme();
    const { toast } = useToast();
    const [loading, setLoading] = useState(false);
-    const [kanbanConfig, setKanbanConfig] = useState<any[]>([
-      { id: "ABERTO", title: "Aguardando", color_hex: "#3b82f6" },
-      { id: "EM_ATENDIMENTO", title: "Andamento", color_hex: "#f59e0b" },
-      { id: "PAUSADO", title: "Pausado", color_hex: "#94a3b8" },
-      { id: "AGUARDANDO_USUARIO", title: "Aguardando o Usuário", color_hex: "#6366f1" },
-      { id: "ENCERRADO", title: "Encerrado", color_hex: "#10b981" },
-    ]);
+   const [isInitialLoading, setIsInitialLoading] = useState(true);
+    // Preenchido a partir de chamado_statuses em loadSettings (mesma fonte
+    // de dados que o board real usa) — fica vazio até lá.
+    const [kanbanConfig, setKanbanConfig] = useState<any[]>([]);
       const [reportLayout, setReportLayout] = useState<any>({
          headerText: "Relatório de Chamados",
          headerColor: "#000000",
@@ -54,6 +51,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
       });
      const [sessionTimeout, setSessionTimeout] = useState("300");
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
+     const [smsConfig, setSmsConfig] = useState({ provider: "mobizon", api_key: "", sender_id: "" });
      const [accessWarnings, setAccessWarnings] = useState({ pre_minutes: 30, final_minutes: 5, browser_notify: true });
     const defaultMenuOrder = [
       { id: '1', label: "Painel", path: "/dashboard", visible: true },
@@ -101,9 +99,10 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
  
      useEffect(() => {
        const loadSettings = async () => {
+        try {
          const { data: { user } } = await supabase.auth.getUser();
          if (!user) return;
- 
+
          const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
          if (profile) {
            if (profile.regra === 'ADMIN' || profile.regra === 'MASTER' || profile.is_master) {
@@ -112,16 +111,22 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
             if (profile.regra === 'MASTER' || profile.is_master) {
               setIsMaster(true);
             }
-           if (profile.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config) {
-             setKanbanConfig((profile.settings as any).kanban_config);
-           }
          }
-   
+
+         // As colunas do Kanban vêm de chamado_statuses — é a mesma tabela que
+         // ChamadosKanban.tsx usa para montar o board de verdade.
+         const { data: statuses } = await supabase
+           .from("chamado_statuses")
+           .select("*")
+           .eq("ativo", true)
+           .order("ordem", { ascending: true });
+         if (statuses) setKanbanConfig(statuses);
+
          const { data } = await supabase.from("system_settings").select("*");
           if (data) {
-            const kConfig = data.find(s => s.key === 'kanban_config');
              const rLayout = data.find(s => s.key === 'report_layout');
              const eConfig = data.find(s => s.key === 'email_config');
+             const smsConfigData = data.find(s => s.key === 'sms_config');
               const lConfig = data.find(s => s.key === 'layout_settings');
               const sTimeout = data.find(s => s.key === 'session_timeout');
                const eTemplates = data.find(s => s.key === 'email_templates');
@@ -135,9 +140,6 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
              const { data: prioData } = await supabase.from("chamados_prioridades").select("*").order("ordem");
              if (prioData) setPriorities(prioData);
  
-             if (kConfig && !(profile?.settings && typeof profile.settings === 'object' && (profile.settings as any).kanban_config)) {
-              setKanbanConfig(kConfig.value as any[]);
-            }
              if (rLayout) {
                const val = rLayout.value as any;
                if (!val.columns) {
@@ -159,6 +161,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                  });
              }
              if (eConfig) setEmailSettings(eConfig.value as any);
+             if (smsConfigData) setSmsConfig({ provider: "mobizon", api_key: "", sender_id: "", ...(smsConfigData.value as any) });
              if (lConfig) {
                const val = lConfig.value as any;
                let currentOrder = val.menuOrder || [];
@@ -179,6 +182,9 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
               const aWarn = data.find(s => s.key === 'access_warnings');
               if (aWarn?.value) setAccessWarnings({ ...accessWarnings, ...(aWarn.value as any) });
           }
+        } finally {
+          setIsInitialLoading(false);
+        }
        };
        loadSettings();
      }, []);
@@ -188,17 +194,53 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
-  
-          // Save personal Kanban config
-          const { data: profile } = await supabase.from("profiles").select("settings").eq("id", user.id).single();
-          const updatedSettings = { ...(profile?.settings && typeof profile.settings === 'object' ? profile.settings : {}), kanban_config: kanbanConfig };
-          await supabase.from("profiles").update({ settings: updatedSettings }).eq("id", user.id);
-  
+
+          // As colunas do Kanban são gravadas direto em chamado_statuses —
+          // a mesma tabela que o board real (ChamadosKanban.tsx) usa. Só
+          // Master pode gravar (regra de segurança do banco).
+          if (isMaster) {
+            let ordem = 0;
+            for (const col of kanbanConfig) {
+              ordem++;
+              const payload: any = {
+                label: col.label,
+                cor: col.cor || "#94a3b8",
+                ordem,
+                is_inicial: !!col.is_inicial,
+                is_pausa: !!col.is_pausa,
+                is_encerrado: !!col.is_encerrado,
+                is_cancelado: !!col.is_cancelado,
+                ativo: true,
+              };
+              if (col.id) {
+                const { error } = await supabase.from("chamado_statuses").update(payload).eq("id", col.id);
+                if (error) throw error;
+              } else {
+                payload.key = `${(col.label || "status").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")}_${Date.now()}`;
+                const { error } = await supabase.from("chamado_statuses").insert(payload);
+                if (error) throw error;
+              }
+            }
+            const keptIds = kanbanConfig.filter((c: any) => c.id).map((c: any) => c.id);
+            const { data: existingStatuses } = await supabase.from("chamado_statuses").select("id").eq("ativo", true);
+            const toDeactivate = (existingStatuses || []).filter((e: any) => !keptIds.includes(e.id)).map((e: any) => e.id);
+            if (toDeactivate.length > 0) {
+              const { error } = await supabase.from("chamado_statuses").update({ ativo: false }).in("id", toDeactivate);
+              if (error) throw error;
+            }
+            const { data: refreshed } = await supabase
+              .from("chamado_statuses")
+              .select("*")
+              .eq("ativo", true)
+              .order("ordem", { ascending: true });
+            if (refreshed) setKanbanConfig(refreshed);
+          }
+
           if (isAdmin) {
             const settings = [
-              { key: 'kanban_config', value: kanbanConfig },
                { key: 'report_layout', value: reportLayout },
                { key: 'email_config', value: emailSettings },
+               { key: 'sms_config', value: smsConfig },
                  { key: 'email_templates', value: emailTemplates },
                  { key: 'email_layout', value: emailLayout },
                 { key: 'layout_settings', value: layoutConfig },
@@ -251,6 +293,14 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
         }
       };
 
+   if (isInitialLoading) {
+     return (
+       <div className="flex h-full min-h-[60vh] w-full items-center justify-center">
+         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+       </div>
+     );
+   }
+
    return (
      <div className="p-4 md:p-8 w-full space-y-8 animate-fade-in">
         <div className="flex justify-between items-center">
@@ -272,6 +322,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
             {isAdmin && (
               <>
                 <TabsTrigger value="email" className="flex-1 min-w-[140px]">E-mail & Alertas</TabsTrigger>
+                <TabsTrigger value="sms" className="flex-1 min-w-[110px]">SMS</TabsTrigger>
                 <TabsTrigger value="relatorios" className="flex-1 min-w-[110px]">Relatórios</TabsTrigger>
                 <TabsTrigger value="layout" className="flex-1 min-w-[110px]">Layout</TabsTrigger>
               </>
@@ -593,31 +644,36 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                         <LayoutGrid className="h-5 w-5 text-primary" />
                         <CardTitle>Colunas do Kanban</CardTitle>
                       </div>
-                      <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { id: Math.random().toString(), title: "Novo Status", color_hex: "#94a3b8" }])}>
+                      <Button size="sm" onClick={() => setKanbanConfig([...kanbanConfig, { label: "Novo Status", cor: "#94a3b8" }])}>
                         <Plus size={14} className="mr-1" /> Adicionar Status
                       </Button>
                     </div>
+                    <CardDescription>
+                      Estas são as colunas reais exibidas no board de Chamados. Colunas novas (sem os botões
+                      padrão de Atender/Pausar/Encerrar) recebem apenas os marcadores acima — para ter as mesmas
+                      ações rápidas dos status padrão, fale com quem mantém o sistema.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {kanbanConfig.map((col, idx) => (
-                      <div key={col.id} className="flex items-center gap-4 border p-3 rounded-lg group">
+                      <div key={col.id ?? `new-${idx}`} className="flex items-center gap-4 border p-3 rounded-lg group">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                           <div className="space-y-2">
                             <Label className="text-[10px] uppercase">Nome da Coluna</Label>
-                            <Input value={col.title} onChange={e => { const nc = [...kanbanConfig]; nc[idx].title = e.target.value; setKanbanConfig(nc); }} />
+                            <Input value={col.label} onChange={e => { const nc = [...kanbanConfig]; nc[idx].label = e.target.value; setKanbanConfig(nc); }} />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-[10px] uppercase">Cor</Label>
                             <div className="flex items-center gap-2">
-                               <Input 
-                                 type="color" 
-                                 className="w-10 h-10 p-1" 
-                                 value={col.color_hex || "#94a3b8"} 
-                                 onChange={e => { 
-                                   const nc = [...kanbanConfig]; 
-                                   nc[idx].color_hex = e.target.value; 
-                                   setKanbanConfig(nc); 
-                                 }} 
+                               <Input
+                                 type="color"
+                                 className="w-10 h-10 p-1"
+                                 value={col.cor || "#94a3b8"}
+                                 onChange={e => {
+                                   const nc = [...kanbanConfig];
+                                   nc[idx].cor = e.target.value;
+                                   setKanbanConfig(nc);
+                                 }}
                                />
                             </div>
                           </div>
@@ -782,6 +838,77 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                    </Card>
                  )}
                </TabsContent>
+
+             <TabsContent value="sms" className="space-y-6">
+               <Card>
+                 <CardHeader>
+                   <div className="flex items-center gap-2">
+                     <MessageSquareText className="h-5 w-5 text-primary" />
+                     <CardTitle>Recuperação de Senha por SMS (Mobizon)</CardTitle>
+                   </div>
+                   <CardDescription>
+                     Configure a integração com a Mobizon para permitir que usuários recebam a senha
+                     provisória por SMS, como alternativa ao e-mail. É preciso ter um número de celular
+                     cadastrado no campo Telefone do usuário.
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent className="space-y-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                       <Label>Chave da API (Mobizon)</Label>
+                       <Input
+                         type="password"
+                         placeholder="Sua API Key da Mobizon"
+                         value={smsConfig.api_key}
+                         onChange={e => setSmsConfig({ ...smsConfig, api_key: e.target.value })}
+                       />
+                       <p className="text-[10px] text-muted-foreground">Encontrada no painel da Mobizon, em Configurações da conta.</p>
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Remetente (Sender ID)</Label>
+                       <Input
+                         placeholder="Ex: nome da empresa (opcional)"
+                         value={smsConfig.sender_id}
+                         onChange={e => setSmsConfig({ ...smsConfig, sender_id: e.target.value })}
+                       />
+                       <p className="text-[10px] text-muted-foreground">Deixe em branco para usar o remetente padrão da conta Mobizon.</p>
+                     </div>
+                   </div>
+                   <div className="flex justify-end">
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       className="gap-2"
+                       onClick={async () => {
+                         if (!smsConfig.api_key) {
+                           toast({ variant: "destructive", title: "Configuração incompleta", description: "Informe a chave da API da Mobizon antes de testar." });
+                           return;
+                         }
+                         const numero = prompt("Informe um número de celular para o teste (com DDD, ex: 11999998888):");
+                         if (!numero) return;
+                         toast({ title: "Teste de SMS", description: "Enviando SMS de teste..." });
+                         try {
+                           const { data, error } = await supabase.functions.invoke("send-sms", {
+                             body: {
+                               to: numero,
+                               text: "Teste de configuração do Sistema de Chamados. Se você recebeu esta mensagem, a integração com a Mobizon está funcionando.",
+                               settings: smsConfig,
+                             }
+                           });
+                           if (error) throw error;
+                           if (data?.error) throw new Error(data.error);
+                           toast({ title: "Sucesso", description: "SMS de teste enviado." });
+                         } catch (err: any) {
+                           toast({ variant: "destructive", title: "Erro ao enviar SMS de teste", description: err.message });
+                         }
+                       }}
+                     >
+                       <Send size={14} /> Testar Envio
+                     </Button>
+                   </div>
+                 </CardContent>
+               </Card>
+             </TabsContent>
 
              <TabsContent value="relatorios" className="space-y-6">
                <Card>

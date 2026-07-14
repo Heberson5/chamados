@@ -23,6 +23,7 @@ export default function Chamados() {
    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingTickets, setIsFetchingTickets] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
     const [newTicket, setNewTicket] = useState<{
@@ -84,10 +85,11 @@ export default function Chamados() {
      const { data, error } = await supabase
         .from("chamados")
         .select(`
-          *, 
-          tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome, avatar_url), 
-          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome, avatar_url), 
+          *,
+          tecnico:profiles!chamados_tecnico_id_fkey(nome, sobrenome, avatar_url),
+          usuario:profiles!chamados_usuario_id_fkey(nome, sobrenome, avatar_url),
           chamado_pai:chamado_pai_id(os),
+          prioridade_obj:prioridade_id(id, nome, cor, ordem),
           comentarios_chamado(count),
           interacoes:comentarios_chamado(comentario)
         `)
@@ -95,9 +97,11 @@ export default function Chamados() {
      
      if (error) {
        toast({ variant: "destructive", title: "Erro ao buscar chamados", description: error.message });
+       setIsFetchingTickets(false);
        return;
      }
      if (data) setTickets(data);
+     setIsFetchingTickets(false);
    }, [toast]);
 
     const fetchAgents = useCallback(async () => {
@@ -245,7 +249,7 @@ export default function Chamados() {
        if (insertedTicket) {
           import("@/utils/email").then(({ sendTemplatedEmail }) => {
             sendTemplatedEmail(user.email!, "new_ticket", {
-              user: user.user_metadata?.full_name || user.email!,
+              user: `${userProfile?.nome ?? ""} ${userProfile?.sobrenome ?? ""}`.trim() || user.email!,
               os: insertedTicket.os || "",
               titulo: insertedTicket.titulo,
               descricao: insertedTicket.descricao,
@@ -305,8 +309,8 @@ export default function Chamados() {
     });
 
   return (
-    <div className="p-4 md:p-8 w-full space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="p-4 md:p-8 w-full md:h-full flex flex-col gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Chamados</h1>
           <p className="text-muted-foreground">Visualize, gerencie e vincule atendimentos técnicos.</p>
@@ -458,8 +462,8 @@ export default function Chamados() {
         </div>
       </div>
 
-      <Tabs defaultValue="kanban" className="w-full">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+      <Tabs defaultValue="kanban" className="w-full flex-1 md:min-h-0 flex flex-col">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 shrink-0">
           <div className="relative w-full md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <Input 
@@ -479,7 +483,13 @@ export default function Chamados() {
           </TabsList>
         </div>
 
-        <TabsContent value="list">
+        {isFetchingTickets ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+        <>
+        <TabsContent value="list" className="flex-1 md:min-h-0 flex-col data-[state=active]:flex">
           <div className="bg-card rounded-md border shadow-sm overflow-x-auto">
             <Table>
               <TableHeader>
@@ -550,9 +560,9 @@ export default function Chamados() {
                         </Badge>
                       </TableCell>
                         <TableCell>
-                          {ticket.prioridade && typeof ticket.prioridade === 'object' ? (
-                            <Badge variant="outline" className="border-none" style={{ backgroundColor: `${ticket.prioridade.cor}20`, color: ticket.prioridade.cor }}>
-                              {ticket.prioridade.nome}
+                          {ticket.prioridade_obj ? (
+                            <Badge variant="outline" className="border-none" style={{ backgroundColor: `${ticket.prioridade_obj.cor}20`, color: ticket.prioridade_obj.cor }}>
+                              {ticket.prioridade_obj.nome}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className={
@@ -649,9 +659,11 @@ export default function Chamados() {
           </div>
         </TabsContent>
         
-        <TabsContent value="kanban" className="mt-0">
+        <TabsContent value="kanban" className="mt-0 flex-1 md:min-h-0 flex-col data-[state=active]:flex">
           <ChamadosKanban tickets={filteredTickets} onUpdate={fetchTickets} />
         </TabsContent>
+        </>
+        )}
       </Tabs>
     </div>
   );

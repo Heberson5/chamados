@@ -14,6 +14,17 @@ function generateTempPassword(length = 10) {
   return retVal;
 }
 
+const MOBIZON_ENDPOINT = "https://api.mobizon.com.br/service/message/sendsmsmessage";
+
+function normalizePhone(raw: string): string | null {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("55") && digits.length >= 12) return digits;
+  if (digits.length === 10 || digits.length === 11) return `55${digits}`;
+  if (digits.length >= 12) return digits;
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,7 +35,8 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceKey);
 
-    const { email } = await req.json();
+    const { email, channel } = await req.json();
+    const useSms = channel === "sms";
 
     if (!email) {
       return new Response(JSON.stringify({ error: "E-mail é obrigatório" }), {
@@ -36,7 +48,7 @@ Deno.serve(async (req) => {
     // 1. Check if user exists in profiles
     const { data: profile, error: profError } = await admin
       .from("profiles")
-      .select("id, email, nome")
+      .select("id, email, nome, telefone")
       .eq("email", email)
       .single();
 
@@ -45,6 +57,19 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: "Se o e-mail estiver cadastrado, uma senha provisória foi enviada." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Se o usuário pediu SMS, valida o celular ANTES de girar a senha —
+    // não faz sentido invalidar a senha atual se não há como entregar a nova.
+    let recipientPhone: string | null = null;
+    if (useSms) {
+      recipientPhone = normalizePhone(profile.telefone || "");
+      if (!recipientPhone) {
+        return new Response(JSON.stringify({ error: "Nenhum número de celular cadastrado para este usuário. Escolha a recuperação por e-mail ou atualize o telefone no cadastro." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const tempPassword = generateTempPassword();
@@ -64,7 +89,46 @@ Deno.serve(async (req) => {
       })
       .eq("id", profile.id);
 
-    // 3. Send email (reusing send-email logic)
+    // 3. Deliver the temporary password via the chosen channel.
+    if (useSms && recipientPhone) {
+      const { data: smsSettingsData } = await admin
+        .from("system_settings")
+        .select("value")
+        .eq("key", "sms_config")
+        .maybeSingle();
+
+      const smsConfig = smsSettingsData?.value as { api_key?: string; sender_id?: string } | undefined;
+      if (!smsConfig?.api_key) {
+        return new Response(JSON.stringify({ error: "Recuperação por SMS não está configurada. Peça a um administrador para configurar a Mobizon em Configurações > SMS." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const params = new URLSearchParams({
+        recipient: recipientPhone,
+        text: `Sua senha provisoria do sistema de Chamados e: ${tempPassword}. Troque-a no primeiro login.`,
+        apiKey: smsConfig.api_key,
+        output: "json",
+      });
+      if (smsConfig.sender_id) params.set("from", smsConfig.sender_id);
+
+      const smsRes = await fetch(MOBIZON_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      });
+      const smsResult = await smsRes.json();
+      if (!smsRes.ok || smsResult.code !== 0) {
+        throw new Error(smsResult?.message || "Falha ao enviar SMS.");
+      }
+
+      return new Response(JSON.stringify({ success: true, message: "Senha provisória enviada por SMS." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Canal padrão: e-mail (reusing send-email logic)
     const { data: settingsData } = await admin
       .from("system_settings")
       .select("value")

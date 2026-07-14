@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
-import { Search, History, MousePointer2, User as UserIcon, RefreshCw, Eye } from "lucide-react";
+import { Search, History, MousePointer2, User as UserIcon, RefreshCw, Eye, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -301,6 +301,9 @@ import { format, parseISO } from "date-fns";
            </CardTitle>
          </CardHeader>
          <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+          ) : (
           <div className="overflow-x-auto -mx-6">
             <div className="min-w-[800px] px-6">
               <Table>
@@ -376,7 +379,7 @@ import { format, parseISO } from "date-fns";
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredLogs.length === 0 && !isLoading && (
+                  {filteredLogs.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         Nenhum log encontrado.
@@ -387,6 +390,7 @@ import { format, parseISO } from "date-fns";
               </Table>
             </div>
           </div>
+          )}
          </CardContent>
         </Card>
 

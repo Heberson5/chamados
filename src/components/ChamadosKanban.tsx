@@ -91,10 +91,10 @@ import { Label } from "@/components/ui/label";
    };
  
       const getPriorityStyle = (ticket: any) => {
-        if (ticket.prioridade && typeof ticket.prioridade === 'object') {
+        if (ticket.prioridade_obj) {
           return {
-            backgroundColor: `${ticket.prioridade.cor}20`,
-            color: ticket.prioridade.cor
+            backgroundColor: `${ticket.prioridade_obj.cor}20`,
+            color: ticket.prioridade_obj.cor
           };
         }
         switch (ticket.prioridade) {
@@ -123,7 +123,7 @@ import { Label } from "@/components/ui/label";
                 className="border-none text-[10px] px-1.5 py-0"
                 style={getPriorityStyle(ticket)}
               >
-                {ticket.prioridade?.nome || getPriorityLabel(ticket.prioridade)}
+                {ticket.prioridade_obj?.nome || getPriorityLabel(ticket.prioridade)}
               </Badge>
                <div className="flex items-center gap-1">
                   {isReadOnly && (
@@ -438,6 +438,7 @@ interface ChamadosKanbanProps {
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [commentPreviews, setCommentPreviews] = useState<string[]>([]);
    const [userRole, setUserRole] = useState<string | null>(null);
+   const [priorities, setPriorities] = useState<any[]>([]);
    const [kanbanCols, setKanbanCols] = useState<any[]>([
      { id: "ABERTO", title: "Abertos", color: "bg-blue-500/10 border-blue-500/20" },
      { id: "EM_ATENDIMENTO", title: "Em Atendimento", color: "bg-amber-500/10 border-amber-500/20" },
@@ -457,6 +458,9 @@ interface ChamadosKanbanProps {
       useEffect(() => {
         const loadData = async () => {
          fetchAgents();
+         supabase.from("chamados_prioridades").select("*").order("ordem").then(({ data }) => {
+           if (data) setPriorities(data);
+         });
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setCurrentUserId(user.id);
@@ -612,6 +616,23 @@ interface ChamadosKanbanProps {
     setIsClosureDialogOpen(true);
   };
 
+  const handleChangePriority = async (priorityId: string) => {
+    if (!selectedTicket) return;
+    try {
+      const { error } = await supabase
+        .from("chamados")
+        .update({ prioridade_id: priorityId })
+        .eq("id", selectedTicket.id);
+      if (error) throw error;
+      const newPriority = priorities.find((p) => p.id === priorityId) || null;
+      setSelectedTicket((prev: any) => (prev ? { ...prev, prioridade_id: priorityId, prioridade_obj: newPriority } : prev));
+      toast({ title: "Prioridade atualizada" });
+      onUpdate();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erro ao atualizar prioridade", description: error.message });
+    }
+  };
+
   const openDetails = (ticket: any) => {
     setSelectedTicket(ticket);
     setIsDetailsOpen(true);
@@ -752,17 +773,17 @@ interface ChamadosKanbanProps {
            collisionDetection={closestCorners} 
            onDragEnd={handleDragEnd}
          >
-            <div className="flex flex-col md:flex-row gap-6 items-start min-h-[600px] overflow-x-auto pb-4 custom-scrollbar">
+            <div className="flex flex-col md:flex-row gap-6 items-stretch md:h-full md:min-h-[500px] overflow-x-auto pb-4 custom-scrollbar">
              {kanbanCols.map((column) => (
                 <DroppableColumn
                   key={column.id}
                   id={column.id}
-                  className="flex flex-col rounded-xl border bg-card/50 p-4 min-w-[320px] xl:min-w-[360px] w-full md:w-[360px] xl:w-[400px] flex-shrink-0"
+                  className="flex flex-col rounded-xl border bg-card/50 p-4 min-w-[320px] xl:min-w-[360px] w-full md:w-[360px] xl:w-[400px] flex-shrink-0 md:h-full md:overflow-hidden"
                   style={{
                     borderTop: `4px solid ${column.color_hex || 'hsl(var(--primary))'}`,
                   }}
                 >
-                 <div className="flex items-center justify-between mb-4 px-2">
+                 <div className="flex items-center justify-between mb-4 px-2 shrink-0">
                  <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
                    {column.title}
                    <Badge variant="secondary" className="rounded-full px-2 py-0">
@@ -770,19 +791,19 @@ interface ChamadosKanbanProps {
                    </Badge>
                  </h3>
                </div>
- 
-                <SortableContext 
-                  id={column.id} 
+
+                <SortableContext
+                  id={column.id}
                   items={tickets
                     .filter(t => {
                       const transferred = transferredAwayIds.has(t.id);
                       if (transferred) return column.id === "ENCERRADO";
                       return t.status === column.id;
                     })
-                    .map(t => t.id)} 
+                    .map(t => t.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                   <div className="flex-1 space-y-4 pr-1">
+                   <div className="flex-1 space-y-4 pr-1 md:overflow-y-auto custom-scrollbar">
                     {tickets
                       .filter((t) => {
                         const transferred = transferredAwayIds.has(t.id);
@@ -1000,6 +1021,33 @@ interface ChamadosKanbanProps {
               <p className="text-sm font-medium">
                 {selectedTicket?.gerado_em && format(new Date(selectedTicket.gerado_em), "dd/MM/yyyy HH:mm", { locale: ptBR })}
               </p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Prioridade</Label>
+              {userRole !== 'USUARIO' && selectedTicket?.status !== 'ENCERRADO' && !transferredAwayIds.has(selectedTicket?.id) ? (
+                <Select
+                  value={selectedTicket?.prioridade_id || selectedTicket?.prioridade_obj?.id || ""}
+                  onValueChange={handleChangePriority}
+                >
+                  <SelectTrigger className="h-8 mt-1 text-sm">
+                    <SelectValue placeholder="Selecione a prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorities.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.cor }} />
+                          {p.nome}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm font-medium">
+                  {selectedTicket?.prioridade_obj?.nome || getPriorityLabel(selectedTicket?.prioridade)}
+                </p>
+              )}
             </div>
             {selectedTicket?.encerrado_em && (
               <div>

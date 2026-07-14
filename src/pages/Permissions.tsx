@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
- import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2, Loader2, Save, LayoutDashboard, Ticket, Box, DollarSign, Users, Key, FileText, Settings, History, Search, HelpCircle, Building2 } from "lucide-react";
+ import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2, Loader2, Save, LayoutDashboard, Ticket, Box, DollarSign, Users, Key, FileText, Settings, History, Search, HelpCircle, Building2, DatabaseBackup } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -143,6 +143,7 @@ export default function Permissions() {
         { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar", "Limpar Logs"] },
         { id: "ajuda", label: "Ajuda", icon: HelpCircle, actions: ["Visualizar", "Editar Manuais"] },
         { id: "landing_page", label: "Landing Page (Login)", icon: LayoutDashboard, actions: ["Visualizar", "Editar"] },
+        { id: "backup", label: "Backup", icon: DatabaseBackup, actions: ["Exportar", "Importar"] },
      ];
  
    const getIcon = (iconName: string) => {
@@ -367,9 +368,16 @@ export default function Permissions() {
                            <menu.icon size={16} className="text-muted-foreground" />
                            <Label className="font-semibold">{menu.label}</Label>
                          </div>
-                         <Switch 
-                           checked={(selectedRole.permissions || []).includes(menu.id)} 
-                            disabled={String(selectedRole.name).toLowerCase() === 'master' && menu.id === 'permissoes'}
+                         <Switch
+                           checked={
+                             menu.id === 'backup'
+                               ? String(selectedRole.name).toLowerCase() === 'master'
+                               : (selectedRole.permissions || []).includes(menu.id)
+                           }
+                            disabled={
+                              (String(selectedRole.name).toLowerCase() === 'master' && menu.id === 'permissoes') ||
+                              (menu.id === 'backup' && String(selectedRole.name).toLowerCase() !== 'master')
+                            }
                            onCheckedChange={(checked) => {
                              const currentPerms = selectedRole.permissions || [];
                              let nextPerms = [];

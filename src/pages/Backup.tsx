@@ -143,8 +143,17 @@ export default function Backup() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Database size={18} /> Localização do banco</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm space-y-1 text-muted-foreground">
-          <p>Banco gerenciado pelo Lovable Cloud. Para migrar de host, use o export acima e importe no destino.</p>
+        <CardContent className="text-sm space-y-2 text-muted-foreground">
+          <p>
+            Instância atual: <code className="text-foreground">{import.meta.env.VITE_SUPABASE_URL || "não configurada"}</code>
+          </p>
+          <p>
+            Banco de dados PostgreSQL (Supabase). A troca para outra instância — como uma VPS própria com Supabase
+            self-hosted — não é feita nesta tela: é preciso apontar as variáveis <code>VITE_SUPABASE_URL</code> e{" "}
+            <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> (arquivo <code>.env</code>) para o novo host, aplicar as
+            migrations em <code>supabase/migrations</code> e publicar as edge functions lá. Depois disso, use o
+            Exportar acima na instância atual e Importar nesta mesma tela já apontando para o novo destino.
+          </p>
         </CardContent>
       </Card>
 

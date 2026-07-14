@@ -1,4 +1,4 @@
-  import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+  import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from "react";
  import { supabase } from "@/integrations/supabase/client";
  
  interface PermissionContextValue {
@@ -34,10 +34,13 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     isAdmin: false,
   });
 
+  const currentUserIdRef = useRef<string | null>(null);
+
   const loadPermissions = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
-    
+    currentUserIdRef.current = user?.id ?? null;
+
     if (!user) {
       setState({
         permissions: [],
@@ -102,9 +105,29 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadPermissions();
-    
+
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // supabase-js re-validates the session on every tab/window focus regain
+      // (GoTrueClient#_onVisibilityChanged -> _recoverAndRefresh) and re-fires
+      // this listener with TOKEN_REFRESHED/USER_UPDATED, or even a *repeated*
+      // SIGNED_IN for the exact same user when the token wasn't due to
+      // refresh. Flipping `loading` back to true here was making the whole
+      // app flash a full-screen spinner every single time the user switched
+      // back to this tab (or to this window from another program). Only show
+      // the loading gate for events that actually change who's signed in.
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
+        return;
+      }
+      if (event === "SIGNED_OUT" || !session) {
+        currentUserIdRef.current = null;
+        setState({ permissions: [], roleData: null, loading: false, isMaster: false, isAdmin: false });
+        return;
+      }
+      if (event === "SIGNED_IN" && session.user.id === currentUserIdRef.current) {
+        return;
+      }
+      currentUserIdRef.current = session.user.id;
       setState(prev => ({ ...prev, loading: true }));
       loadPermissions();
     });

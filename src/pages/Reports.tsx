@@ -3,7 +3,7 @@
  import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
-  import { FileSpreadsheet, FileText, ArrowRightLeft, Clock, Users as UsersIcon, Ticket as TicketIcon, AlertOctagon } from "lucide-react";
+  import { FileSpreadsheet, FileText, ArrowRightLeft, Clock, Users as UsersIcon, Ticket as TicketIcon, AlertOctagon, Loader2 } from "lucide-react";
  import jsPDF from 'jspdf';
  import autoTable from 'jspdf-autotable';
   import { exportStyledExcel } from "@/lib/excelReport";
@@ -364,6 +364,12 @@
          </div>
        </div>
 
+       {loading ? (
+         <div className="flex justify-center py-16">
+           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+         </div>
+       ) : (
+       <>
          {/* KPIs */}
          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
            <Card><CardContent className="p-4">
@@ -390,13 +396,18 @@
          </div>
  
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-           <Card>
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle>Status dos Chamados</CardTitle>
              </CardHeader>
              <CardContent className="h-[300px]">
                <ResponsiveContainer width="100%" height="100%">
                  <PieChart>
+                   <defs>
+                     <filter id="reportsPieShadow" x="-20%" y="-20%" width="140%" height="140%">
+                       <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity={0.25} />
+                     </filter>
+                   </defs>
                    <Pie
                      data={stats.byStatus}
                      cx="50%"
@@ -404,10 +415,14 @@
                      labelLine={false}
                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                      outerRadius={80}
+                     cornerRadius={6}
+                     paddingAngle={3}
                      dataKey="value"
+                     style={{ filter: "url(#reportsPieShadow)" }}
+                     animationDuration={600}
                    >
                      {stats.byStatus.map((entry, index) => (
-                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="stroke-background hover:opacity-80 transition-opacity" strokeWidth={2} />
                      ))}
                    </Pie>
                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
@@ -416,36 +431,48 @@
                </ResponsiveContainer>
              </CardContent>
            </Card>
- 
-           <Card>
+
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle>Prioridade dos Chamados</CardTitle>
              </CardHeader>
              <CardContent className="h-[300px]">
                <ResponsiveContainer width="100%" height="100%">
                  <BarChart data={stats.byPriority}>
+                   <defs>
+                     <linearGradient id="colorReportsPrioridade" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.95} />
+                       <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.55} />
+                     </linearGradient>
+                   </defs>
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                    <XAxis dataKey="name" stroke="currentColor" />
                    <YAxis stroke="currentColor" />
                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
-                   <Bar dataKey="value" name="Total" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                   <Bar dataKey="value" name="Total" fill="url(#colorReportsPrioridade)" radius={[8, 8, 0, 0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
                  </BarChart>
                </ResponsiveContainer>
              </CardContent>
            </Card>
- 
-           <Card>
+
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle>Performance de Técnicos</CardTitle>
              </CardHeader>
              <CardContent className="h-[300px]">
                <ResponsiveContainer width="100%" height="100%">
                  <BarChart data={stats.byTechnician}>
+                   <defs>
+                     <linearGradient id="colorReportsTecnicos" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.95} />
+                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
+                     </linearGradient>
+                   </defs>
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                    <XAxis dataKey="name" stroke="currentColor" />
                    <YAxis stroke="currentColor" />
                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
-                   <Bar dataKey="resolvidos" name="Atendimentos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                   <Bar dataKey="resolvidos" name="Atendimentos" fill="url(#colorReportsTecnicos)" radius={[8, 8, 0, 0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
                  </BarChart>
                </ResponsiveContainer>
              </CardContent>
@@ -454,7 +481,7 @@
 
          {/* Transferências */}
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-           <Card>
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle className="flex items-center gap-2"><UsersIcon size={18}/> Transferências por Técnico</CardTitle>
              </CardHeader>
@@ -464,20 +491,30 @@
                ) : (
                  <ResponsiveContainer width="100%" height="100%">
                    <BarChart data={transferStats.byTec}>
+                     <defs>
+                       <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
+                         <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.95} />
+                         <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.55} />
+                       </linearGradient>
+                       <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
+                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.95} />
+                         <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
+                       </linearGradient>
+                     </defs>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                      <XAxis dataKey="nome" stroke="currentColor" tick={{ fontSize: 11 }} />
                      <YAxis stroke="currentColor" />
                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
                      <Legend />
-                     <Bar dataKey="saidas" name="Transferiu" fill="hsl(var(--destructive))" radius={[4,4,0,0]} />
-                     <Bar dataKey="entradas" name="Recebeu" fill="hsl(var(--primary))" radius={[4,4,0,0]} />
+                     <Bar dataKey="saidas" name="Transferiu" fill="url(#colorSaidas)" radius={[8,8,0,0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
+                     <Bar dataKey="entradas" name="Recebeu" fill="url(#colorEntradas)" radius={[8,8,0,0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
                    </BarChart>
                  </ResponsiveContainer>
                )}
              </CardContent>
            </Card>
 
-           <Card>
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle className="flex items-center gap-2"><ArrowRightLeft size={18}/> Transferências por Departamento</CardTitle>
              </CardHeader>
@@ -487,11 +524,17 @@
                ) : (
                  <ResponsiveContainer width="100%" height="100%">
                    <BarChart data={transferStats.byDept}>
+                     <defs>
+                       <linearGradient id="colorDept" x1="0" y1="0" x2="0" y2="1">
+                         <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.95} />
+                         <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.55} />
+                       </linearGradient>
+                     </defs>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                      <XAxis dataKey="dept" stroke="currentColor" tick={{ fontSize: 11 }} />
                      <YAxis stroke="currentColor" />
                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
-                     <Bar dataKey="total" name="Transferências" fill="hsl(var(--accent))" radius={[4,4,0,0]} />
+                     <Bar dataKey="total" name="Transferências" fill="url(#colorDept)" radius={[8,8,0,0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
                    </BarChart>
                  </ResponsiveContainer>
                )}
@@ -535,6 +578,8 @@
              </div>
            </CardContent>
          </Card>
+       </>
+       )}
      </div>
    );
  }

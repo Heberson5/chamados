@@ -82,15 +82,15 @@ import { usePermissions } from "@/hooks/usePermissions";
 
   const fetchData = async () => {
     try {
-      const [ticketsRes, profilesRes, settingsRes] = await Promise.all([
+      const [ticketsRes, profilesRes, statusesRes] = await Promise.all([
         supabase.from("chamados").select("*").order('gerado_em', { ascending: false }),
         supabase.from("profiles").select("*").eq('ativo', true),
-        supabase.from("system_settings").select("*").eq('key', 'kanban_config').single()
+        supabase.from("chamado_statuses").select("*").eq("ativo", true).order("ordem", { ascending: true })
       ]);
 
       if (ticketsRes.data) setTickets(ticketsRes.data);
       if (profilesRes.data) setProfiles(profilesRes.data);
-      if (settingsRes.data) setKanbanConfig(settingsRes.data.value as any[]);
+      if (statusesRes.data) setKanbanConfig(statusesRes.data);
 
       const activeUsersCount = profilesRes.data?.length || 0;
       setStats(prev => ({ ...prev, activeUsers: activeUsersCount }));
@@ -173,8 +173,8 @@ import { usePermissions } from "@/hooks/usePermissions";
   
         // By Status (using titles from config)
         const statusCounts = filteredTickets.reduce((acc: any, t) => {
-          const statusDef = kanbanConfig.find(c => c.id === t.status);
-          const label = statusDef ? statusDef.title : t.status;
+          const statusDef = kanbanConfig.find(c => c.legacy_enum === t.status || c.key === t.status);
+          const label = statusDef ? statusDef.label : t.status;
           acc[label] = (acc[label] || 0) + 1;
           return acc;
         }, {});
@@ -281,6 +281,69 @@ import { usePermissions } from "@/hooks/usePermissions";
       });
     }, [filteredTickets, filters]);
 
+    // Tendência diária dos 3 tempos operacionais: espera (aberto → aceito),
+    // atendimento (tempo líquido trabalhado, sem pausas/espera do usuário) e
+    // conclusão (ciclo completo: aberto → encerrado). Agrupado pela data de
+    // abertura do chamado, para ficar no mesmo eixo dos demais gráficos.
+    const timeSeriesData = useMemo(() => {
+      const avg = (arr: number[]) => (arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0);
+
+      const computeBucketMetrics = (bucketTickets: any[]) => {
+        const espera: number[] = [];
+        const atendimento: number[] = [];
+        const conclusao: number[] = [];
+
+        bucketTickets.forEach((t) => {
+          if (t.atendido_em && t.gerado_em) {
+            const diff = (new Date(t.atendido_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
+            if (diff > 0) espera.push(diff);
+          }
+          if (t.encerrado_em && t.status === 'ENCERRADO') {
+            const start = t.atendido_em ? new Date(t.atendido_em) : new Date(t.gerado_em);
+            const totalElapsed = (new Date(t.encerrado_em).getTime() - start.getTime()) / (1000 * 60);
+            const pauses = ((t.tempo_total_pausado || 0) + (t.tempo_total_aguardando_usuario || 0)) / 60;
+            const net = totalElapsed - pauses;
+            atendimento.push(net > 0 ? net : Math.max(totalElapsed, 0));
+
+            const totalLifecycle = (new Date(t.encerrado_em).getTime() - new Date(t.gerado_em).getTime()) / (1000 * 60);
+            if (totalLifecycle > 0) conclusao.push(totalLifecycle);
+          }
+        });
+
+        return { espera: avg(espera), atendimento: avg(atendimento), conclusao: avg(conclusao) };
+      };
+
+      let startDate = filters.dateRange.from;
+      let endDate = filters.dateRange.to;
+
+      if (filters.period !== "custom") {
+        endDate = new Date();
+        if (filters.period === "1d") startDate = startOfDay(new Date());
+        else if (filters.period === "yesterday") {
+          startDate = startOfDay(subDays(new Date(), 1));
+          endDate = endOfDay(subDays(new Date(), 1));
+        }
+        else if (filters.period === "7d") startDate = subDays(new Date(), 7);
+        else if (filters.period === "30d") startDate = subDays(new Date(), 30);
+        else if (filters.period === "1y") startDate = subDays(new Date(), 365);
+      }
+
+      if (filters.period === "1d" || filters.period === "yesterday") {
+        const baseDate = filters.period === "1d" ? new Date() : subDays(new Date(), 1);
+        const hours = eachHourOfInterval({ start: startOfDay(baseDate), end: endOfDay(baseDate) });
+        return hours.map(hour => {
+          const bucketTickets = filteredTickets.filter(t => isSameHour(new Date(t.gerado_em), hour));
+          return { name: format(hour, "HH:mm"), ...computeBucketMetrics(bucketTickets) };
+        });
+      }
+
+      const days = eachDayOfInterval({ start: startDate, end: endDate });
+      return days.map(day => {
+        const bucketTickets = filteredTickets.filter(t => isSameDay(new Date(t.gerado_em), day));
+        return { name: format(day, "dd/MM"), ...computeBucketMetrics(bucketTickets) };
+      });
+    }, [filteredTickets, filters]);
+
      const cards = [
        { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },
        { title: "Chamados Abertos", value: stats.openTickets, icon: Clock, color: "text-orange-600" },
@@ -290,6 +353,14 @@ import { usePermissions } from "@/hooks/usePermissions";
        { title: "Aguardando Usuário", value: formatMinutes(stats.totalWaitingTime), icon: History, color: "text-indigo-600" },
      ];
 
+   if (loading) {
+     return (
+       <div className="flex h-full min-h-[60vh] w-full items-center justify-center">
+         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+       </div>
+     );
+   }
+
    return (
      <div className="p-4 md:p-8 w-full space-y-8 animate-fade-in">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -297,9 +368,8 @@ import { usePermissions } from "@/hooks/usePermissions";
            <h1 className="text-3xl font-bold tracking-tight">Painel Analítico</h1>
            <p className="text-muted-foreground">Monitoramento em tempo real do suporte e infraestrutura.</p>
          </div>
-         {loading && <Loader2 className="animate-spin text-primary" />}
        </div>
- 
+
        <Card className="p-4 bg-muted/30 border-none shadow-none">
          <div className="flex flex-wrap items-end gap-4">
            <div className="space-y-2">
@@ -414,7 +484,7 @@ import { usePermissions } from "@/hooks/usePermissions";
  
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-           <Card>
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle>Tempos Médios (min)</CardTitle>
                <CardDescription>Eficiência operacional em minutos</CardDescription>
@@ -427,22 +497,29 @@ import { usePermissions } from "@/hooks/usePermissions";
                    { name: 'Pausa', valor: stats.totalPausedTime },
                    { name: 'Espera', valor: stats.totalWaitingTime }
                  ]}>
+                   <defs>
+                     <linearGradient id="colorTempos" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.95} />
+                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
+                     </linearGradient>
+                   </defs>
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                    <XAxis dataKey="name" fontSize={12} stroke="currentColor" />
                    <YAxis fontSize={12} stroke="currentColor" />
                     <Tooltip {...tooltipStyle} />
-                    <Bar 
-                      dataKey="valor" 
-                      fill="hsl(var(--primary))" 
-                      radius={[6, 6, 0, 0]} 
+                    <Bar
+                      dataKey="valor"
+                      fill="url(#colorTempos)"
+                      radius={[8, 8, 0, 0]}
                       className="transition-all duration-300 hover:opacity-80"
+                      animationDuration={600}
                     />
                  </BarChart>
                </ResponsiveContainer>
              </CardContent>
            </Card>
- 
-           <Card>
+
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle>Chamados por Status</CardTitle>
                <CardDescription>Distribuição atual de chamados</CardDescription>
@@ -450,14 +527,22 @@ import { usePermissions } from "@/hooks/usePermissions";
              <CardContent className="h-[300px]">
                <ResponsiveContainer width="100%" height="100%">
                  <PieChart>
+                   <defs>
+                     <filter id="pieShadow" x="-20%" y="-20%" width="140%" height="140%">
+                       <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity={0.25} />
+                     </filter>
+                   </defs>
                    <Pie
                      data={stats.byStatus}
                      cx="50%"
                      cy="50%"
                      innerRadius={60}
-                     outerRadius={80}
+                     outerRadius={82}
                      paddingAngle={5}
+                     cornerRadius={6}
                      dataKey="value"
+                     style={{ filter: "url(#pieShadow)" }}
+                     animationDuration={600}
                    >
                       {stats.byStatus.map((entry, index) => {
                         const colors = [
@@ -476,8 +561,8 @@ import { usePermissions } from "@/hooks/usePermissions";
                </ResponsiveContainer>
              </CardContent>
            </Card>
- 
-           <Card>
+
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle>Volume de Chamados</CardTitle>
                <CardDescription>Quantidade de atendimentos no período</CardDescription>
@@ -506,7 +591,7 @@ import { usePermissions } from "@/hooks/usePermissions";
              </CardContent>
            </Card>
   
-           <Card>
+           <Card className="hover:shadow-lg transition-shadow duration-300">
              <CardHeader>
                <CardTitle>Conformidade de SLA</CardTitle>
                <CardDescription>Chamados atendidos dentro do prazo</CardDescription>
@@ -519,14 +604,14 @@ import { usePermissions } from "@/hooks/usePermissions";
                    <YAxis stroke="currentColor" fontSize={12} />
                     <Tooltip {...tooltipStyle} />
                    <Legend verticalAlign="top" height={36}/>
-                   <Line name="No Prazo" type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
-                   <Line name="Total" type="monotone" dataKey="chamados" stroke="hsl(var(--primary))" strokeWidth={1} strokeDasharray="5 5" dot={false} />
+                   <Line name="No Prazo" type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} animationDuration={600} />
+                   <Line name="Total" type="monotone" dataKey="chamados" stroke="hsl(var(--primary))" strokeWidth={1.5} strokeDasharray="5 5" dot={false} animationDuration={600} />
                  </LineChart>
                </ResponsiveContainer>
              </CardContent>
            </Card>
  
-           <Card>
+           <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
                 <CardTitle>Distribuição por Prioridade</CardTitle>
                 <CardDescription>Volume de chamados por nível crítico</CardDescription>
@@ -534,23 +619,66 @@ import { usePermissions } from "@/hooks/usePermissions";
               <CardContent className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.byPriority} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="colorPrioridade" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.95} />
+                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.55} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                     <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
                     <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
                     <Tooltip {...tooltipStyle} />
-                    <Bar dataKey="value" name="Quantidade" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" name="Quantidade" fill="url(#colorPrioridade)" radius={[8, 8, 0, 0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
            </Card>
 
+           <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
+             <CardHeader>
+               <CardTitle>Tempos Operacionais no Período</CardTitle>
+               <CardDescription>Média diária (minutos) de espera, atendimento e conclusão</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[320px]">
+               <ResponsiveContainer width="100%" height="100%">
+                 <AreaChart data={timeSeriesData}>
+                   <defs>
+                     <linearGradient id="colorEspera" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
+                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                     </linearGradient>
+                     <linearGradient id="colorAtendimento" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                     </linearGradient>
+                     <linearGradient id="colorConclusao" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                     </linearGradient>
+                   </defs>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                   <XAxis dataKey="name" stroke="currentColor" fontSize={12} />
+                   <YAxis stroke="currentColor" fontSize={12} tickFormatter={(v) => formatMinutes(v)} width={70} />
+                   <Tooltip {...tooltipStyle} formatter={(value: number) => formatMinutes(value)} />
+                   <Legend verticalAlign="top" height={36} />
+                   <Area type="monotone" dataKey="espera" name="Espera (aguardando início)" stroke="#f59e0b" fill="url(#colorEspera)" strokeWidth={2.5} />
+                   <Area type="monotone" dataKey="atendimento" name="Em Atendimento" stroke="#10b981" fill="url(#colorAtendimento)" strokeWidth={2.5} />
+                   <Area type="monotone" dataKey="conclusao" name="Conclusão (ciclo total)" stroke="hsl(var(--primary))" fill="url(#colorConclusao)" strokeWidth={2.5} />
+                 </AreaChart>
+               </ResponsiveContainer>
+             </CardContent>
+           </Card>
+
             {hasPermission("dashboard:ver_chamados_por_usuario") && (
-              <Card className="lg:col-span-2">
+              <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle>Chamados por Usuário</CardTitle>
                   <CardDescription>Top 10 usuários com mais chamados abertos no período</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[360px]">
+                <CardContent
+                  style={{ height: Math.max(300, Math.min(420, stats.byUser.length * 38 + 120)) }}
+                >
                   {stats.byUser.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                       Sem chamados no período selecionado.
@@ -558,11 +686,17 @@ import { usePermissions } from "@/hooks/usePermissions";
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={stats.byUser} margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
+                        <defs>
+                          <linearGradient id="colorUsuario" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.95} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                        <XAxis 
-                          dataKey="name" 
-                          stroke="currentColor" 
-                          fontSize={10} 
+                        <XAxis
+                          dataKey="name"
+                          stroke="currentColor"
+                          fontSize={10}
                           interval={0}
                           angle={-45}
                           textAnchor="end"
@@ -570,7 +704,7 @@ import { usePermissions } from "@/hooks/usePermissions";
                         />
                         <YAxis stroke="currentColor" fontSize={12} allowDecimals={false} />
                         <Tooltip {...tooltipStyle} />
-                        <Bar dataKey="value" name="Chamados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="value" name="Chamados" fill="url(#colorUsuario)" radius={[8, 8, 0, 0]} className="transition-all duration-300 hover:opacity-80" animationDuration={600} />
                       </BarChart>
                     </ResponsiveContainer>
                   )}

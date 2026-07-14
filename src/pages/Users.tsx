@@ -449,9 +449,15 @@ import { usePermissions } from "@/hooks/usePermissions";
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                            <DropdownMenuItem onClick={() => {
-                             setEditUser(user);
-                             setEditPassword("");
-                             setIsEditDialogOpen(true);
+                             // O Radix Dialog aberto direto de um item do DropdownMenu pode
+                             // deixar `pointer-events: none` preso no <body> (a animação de
+                             // fechamento do menu corre junto com a abertura do dialog).
+                             // Adiar pro próximo tick evita a corrida entre os dois overlays.
+                             setTimeout(() => {
+                               setEditUser(user);
+                               setEditPassword("");
+                               setIsEditDialogOpen(true);
+                             }, 0);
                            }} className="gap-2">
                              <Pencil size={14} /> Editar
                            </DropdownMenuItem>

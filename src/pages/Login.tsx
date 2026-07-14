@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/ThemeProvider";
-import { Sun, Moon, Monitor, Ticket, CheckCircle2, Mail, Lock, KeyRound, ArrowRight, Loader2 } from "lucide-react";
+import { Sun, Moon, Monitor, Ticket, CheckCircle2, Mail, Lock, KeyRound, ArrowRight, Loader2, MessageSquareText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotChannel, setForgotChannel] = useState<"email" | "sms">("email");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const defaultLanding = {
@@ -80,11 +81,12 @@ export default function Login() {
     setForgotLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("forgot-password", {
-        body: { email: forgotEmail }
+        body: { email: forgotEmail, channel: forgotChannel }
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       toast({
-        title: "E-mail enviado",
+        title: forgotChannel === "sms" ? "SMS enviado" : "E-mail enviado",
         description: data.message || "Se o e-mail estiver cadastrado, uma senha provisória foi enviada.",
       });
       setForgotOpen(false);
@@ -276,10 +278,32 @@ export default function Login() {
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-black">Recuperar Acesso</DialogTitle>
                       <DialogDescription className="font-medium text-slate-500">
-                        Enviaremos uma senha provisória para o seu e-mail cadastrado.
+                        {forgotChannel === "sms"
+                          ? "Enviaremos uma senha provisória por SMS para o celular cadastrado."
+                          : "Enviaremos uma senha provisória para o seu e-mail cadastrado."}
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleForgotPassword} className="space-y-4 py-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setForgotChannel("email")}
+                          className={`h-11 rounded-xl border text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
+                            forgotChannel === "email" ? "bg-primary text-primary-foreground border-primary" : "bg-slate-50 text-slate-500 border-slate-200"
+                          }`}
+                        >
+                          <Mail className="w-4 h-4" /> E-mail
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setForgotChannel("sms")}
+                          className={`h-11 rounded-xl border text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
+                            forgotChannel === "sms" ? "bg-primary text-primary-foreground border-primary" : "bg-slate-50 text-slate-500 border-slate-200"
+                          }`}
+                        >
+                          <MessageSquareText className="w-4 h-4" /> SMS
+                        </button>
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="forgot-email" className="text-xs font-bold uppercase text-slate-500">E-mail cadastrado</Label>
                         <div className="relative">
@@ -294,6 +318,11 @@ export default function Login() {
                             required
                           />
                         </div>
+                        {forgotChannel === "sms" && (
+                          <p className="text-[11px] text-slate-500 pl-1">
+                            Usamos o e-mail só para localizar sua conta — a senha provisória vai por SMS para o celular cadastrado no seu perfil.
+                          </p>
+                        )}
                       </div>
                       <DialogFooter>
                         <Button 

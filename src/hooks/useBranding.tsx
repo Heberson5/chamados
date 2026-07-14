@@ -45,6 +45,8 @@ function hexToHsl(hex: string): string | null {
   return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+const BRANDING_CACHE_KEY = "chamados_branding_cache";
+
 function applyBrandingSideEffects(settings: BrandingSettings) {
   document.title = settings.companyName || "Chamados";
   if (settings.companyFavicon) {
@@ -61,6 +63,18 @@ function applyBrandingSideEffects(settings: BrandingSettings) {
     if (hsl) {
       document.documentElement.style.setProperty("--primary", hsl);
     }
+  }
+  // Cacheia pro próximo carregamento: um script inline no index.html lê isso
+  // e aplica o favicon/título ANTES do React montar, pra não piscar o ícone
+  // padrão a cada refresh enquanto essa busca no Supabase não termina.
+  try {
+    localStorage.setItem(
+      BRANDING_CACHE_KEY,
+      JSON.stringify({ companyName: settings.companyName, companyFavicon: settings.companyFavicon })
+    );
+  } catch (e) {
+    // localStorage indisponível (modo privado, quota etc.) — sem problema,
+    // só significa que o próximo carregamento não tem cache.
   }
 }
 

@@ -2,9 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Aplica a marca (favicon/título) salva em cache ANTES de qualquer outra
+      coisa carregar, para não piscar o ícone padrão a cada recarregamento
+      enquanto o React ainda não buscou os dados de branding no Supabase.
+    -->
+    <script>
+      (function () {
+        try {
+          var cached = JSON.parse(localStorage.getItem("chamados_branding_cache") || "null");
+          if (cached && cached.companyFavicon) {
+            var link = document.createElement("link");
+            link.rel = "icon";
+            link.href = cached.companyFavicon;
+            document.head.appendChild(link);
+          }
+          if (cached && cached.companyName) {
+            document.title = cached.companyName;
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chamados</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <!--
+      Sem <link rel="icon"> estático aqui de propósito: se o cache acima já
+      injetou o favicon customizado, uma segunda tag apontando para o ícone
+      padrão entraria em conflito com ela. Sem nenhuma tag, o navegador cai
+      de volta em /favicon.ico automaticamente (comportamento padrão), que
+      já é o ícone neutro do sistema.
+    -->
     <meta name="description" content="Plataforma de help desk: chamados, SLA, automações e Kanban em uma interface clean." />
     <meta name="author" content="Chamados" />
     <link rel="preconnect" href="https://fonts.googleapis.com">

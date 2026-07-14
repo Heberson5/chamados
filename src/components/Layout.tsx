@@ -193,7 +193,12 @@ export default function Layout() {
         <AccessGuard />
         {/* Mobile Header */}
         <header className="flex items-center justify-between p-4 border-b md:hidden shrink-0">
-          <div className="flex items-center gap-2 overflow-hidden min-w-0">
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-2 overflow-hidden min-w-0 hover:opacity-80 transition-opacity"
+            title="Ir para o Painel"
+          >
             {branding.companyLogo && (
               <img
                 src={branding.companyLogo}
@@ -204,7 +209,7 @@ export default function Layout() {
             <span className="font-bold text-lg truncate bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               {branding.companyName || "Chamados"}
             </span>
-          </div>
+          </button>
           <Button
             variant="ghost"
             size="icon"

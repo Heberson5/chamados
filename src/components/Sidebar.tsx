@@ -22,7 +22,7 @@ interface SidebarProps {
 
    return (
     <aside className={cn(
-      "fixed inset-y-0 left-0 z-50 md:relative flex h-screen md:h-[calc(100vh-1.5rem)] md:my-3 md:ml-3 flex-col bg-sidebar border overflow-hidden md:rounded-2xl transition-all duration-300 shadow-xl md:shadow-lg md:shadow-black/5",
+      "fixed inset-y-0 left-0 z-50 md:relative flex h-screen md:h-[calc(100vh-1.5rem)] md:my-3 md:ml-3 flex-col bg-sidebar border overflow-hidden md:rounded-2xl transition-all duration-300 shadow-xl md:shadow-lg md:shadow-black/10",
       collapsed ? "w-16" : "w-64"
     )}>
         <div className="p-4 flex justify-between items-center border-b shrink-0 bg-sidebar/50 backdrop-blur-sm sticky top-0 z-10">

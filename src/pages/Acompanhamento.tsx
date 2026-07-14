@@ -66,10 +66,11 @@ export default function Acompanhamento() {
     const [{ data: chamados }, { data: depts }, { data: profs }, { data: prios }] = await Promise.all([
       supabase
         .from("chamados")
-        .select(`*, 
+        .select(`*,
           tecnico:profiles!chamados_tecnico_id_fkey(id, nome, sobrenome),
           usuario:profiles!chamados_usuario_id_fkey(id, nome, sobrenome),
-          departamento:departamentos!chamados_department_id_fkey(id, nome)
+          departamento:departamentos!chamados_department_id_fkey(id, nome),
+          prioridade_obj:prioridade_id(id, nome, cor, ordem)
         `)
         .order("gerado_em", { ascending: false }),
       supabase.from("departamentos").select("id, nome").order("nome"),
@@ -125,7 +126,7 @@ export default function Acompanhamento() {
       Título: t.titulo || "-",
       Descrição: t.descricao || "",
       Status: STATUS_LABELS[t.status] || t.status,
-      Prioridade: getPriorityLabel(t.prioridade),
+      Prioridade: t.prioridade_obj?.nome || getPriorityLabel(t.prioridade),
       Departamento: t.departamento?.nome || "-",
       Solicitante: t.usuario ? `${t.usuario.nome} ${t.usuario.sobrenome || ""}`.trim() : "-",
       Técnico: t.tecnico ? `${t.tecnico.nome} ${t.tecnico.sobrenome || ""}`.trim() : "-",
@@ -373,7 +374,15 @@ export default function Acompanhamento() {
                           {STATUS_LABELS[t.status] || t.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs">{getPriorityLabel(t.prioridade)}</TableCell>
+                      <TableCell className="text-xs">
+                        {t.prioridade_obj ? (
+                          <Badge variant="outline" className="border-none text-[10px]" style={{ backgroundColor: `${t.prioridade_obj.cor}20`, color: t.prioridade_obj.cor }}>
+                            {t.prioridade_obj.nome}
+                          </Badge>
+                        ) : (
+                          getPriorityLabel(t.prioridade)
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs">{t.departamento?.nome || "-"}</TableCell>
                       <TableCell className="text-xs">{t.usuario ? `${t.usuario.nome} ${t.usuario.sobrenome || ""}` : "-"}</TableCell>
                       <TableCell className="text-xs">{t.tecnico ? `${t.tecnico.nome} ${t.tecnico.sobrenome || ""}` : "-"}</TableCell>

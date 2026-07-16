@@ -8,15 +8,20 @@ const corsHeaders = {
 
 const MOBIZON_ENDPOINT = "https://api.mobizon.com.br/service/message/sendsmsmessage";
 
-// Normaliza número de celular brasileiro para o formato internacional
-// exigido pela Mobizon (código do país + DDD + número, só dígitos).
-function normalizePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
+// Normaliza número de celular para o formato internacional exigido pela
+// Mobizon (DDI + DDD + número, só dígitos). O DDI é sempre o configurado
+// em Configurações > SMS (fixo em 55/Brasil), nunca adivinhado pelo
+// tamanho do número.
+function normalizePhone(raw: string, ddi: string): string | null {
+  let digits = raw.replace(/\D/g, "");
   if (!digits) return null;
-  if (digits.startsWith("55") && digits.length >= 12) return digits;
-  if (digits.length === 10 || digits.length === 11) return `55${digits}`;
-  if (digits.length >= 12) return digits;
-  return null;
+  // remove DDI duplicado, caso o usuário já tenha digitado com o código do país
+  if (digits.startsWith(ddi) && digits.length > 11) {
+    digits = digits.slice(ddi.length);
+  }
+  digits = digits.replace(/^0+/, ""); // remove zero de discagem local, se houver
+  if (digits.length < 10 || digits.length > 11) return null;
+  return `${ddi}${digits}`;
 }
 
 Deno.serve(async (req) => {
@@ -58,11 +63,6 @@ Deno.serve(async (req) => {
       throw new Error("Parâmetros obrigatórios ausentes (to, text).");
     }
 
-    const recipient = normalizePhone(to);
-    if (!recipient) {
-      throw new Error(`Número de celular inválido: ${to}`);
-    }
-
     let config = providedSettings;
     if (!config) {
       const { data: settingsData } = await supabase
@@ -78,6 +78,12 @@ Deno.serve(async (req) => {
 
     if (!config?.api_key) {
       throw new Error("Chave da API da Mobizon não configurada.");
+    }
+
+    const ddi = (config.ddi || "55").replace(/\D/g, "") || "55";
+    const recipient = normalizePhone(to, ddi);
+    if (!recipient) {
+      throw new Error(`Número de celular inválido: ${to}`);
     }
 
     const params = new URLSearchParams({

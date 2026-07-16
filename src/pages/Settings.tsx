@@ -51,7 +51,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
       });
      const [sessionTimeout, setSessionTimeout] = useState("300");
      const [emailSettings, setEmailSettings] = useState({ sender: "", smtp_host: "", smtp_port: "", smtp_user: "", smtp_pass: "" });
-     const [smsConfig, setSmsConfig] = useState({ provider: "mobizon", api_key: "", sender_id: "" });
+     const [smsConfig, setSmsConfig] = useState({ provider: "mobizon", api_key: "", sender_id: "", ddi: "55" });
      const [accessWarnings, setAccessWarnings] = useState({ pre_minutes: 30, final_minutes: 5, browser_notify: true });
     const defaultMenuOrder = [
       { id: '1', label: "Painel", path: "/dashboard", visible: true },
@@ -161,7 +161,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                  });
              }
              if (eConfig) setEmailSettings(eConfig.value as any);
-             if (smsConfigData) setSmsConfig({ provider: "mobizon", api_key: "", sender_id: "", ...(smsConfigData.value as any) });
+             if (smsConfigData) setSmsConfig({ provider: "mobizon", api_key: "", sender_id: "", ddi: "55", ...(smsConfigData.value as any) });
              if (lConfig) {
                const val = lConfig.value as any;
                let currentOrder = val.menuOrder || [];
@@ -853,7 +853,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                    </CardDescription>
                  </CardHeader>
                  <CardContent className="space-y-4">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                      <div className="space-y-2">
                        <Label>Chave da API (Mobizon)</Label>
                        <Input
@@ -872,6 +872,15 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                          onChange={e => setSmsConfig({ ...smsConfig, sender_id: e.target.value })}
                        />
                        <p className="text-[10px] text-muted-foreground">Deixe em branco para usar o remetente padrão da conta Mobizon.</p>
+                     </div>
+                     <div className="space-y-2">
+                       <Label>DDI (Código do País)</Label>
+                       <Input
+                         placeholder="55"
+                         value={smsConfig.ddi}
+                         onChange={e => setSmsConfig({ ...smsConfig, ddi: e.target.value.replace(/\D/g, "") })}
+                       />
+                       <p className="text-[10px] text-muted-foreground">Fixo em 55 (Brasil) — adicionado automaticamente aos números.</p>
                      </div>
                    </div>
                    <div className="flex justify-end">

@@ -16,13 +16,16 @@ function generateTempPassword(length = 10) {
 
 const MOBIZON_ENDPOINT = "https://api.mobizon.com.br/service/message/sendsmsmessage";
 
-function normalizePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
+function normalizePhone(raw: string, ddi: string): string | null {
+  let digits = raw.replace(/\D/g, "");
   if (!digits) return null;
-  if (digits.startsWith("55") && digits.length >= 12) return digits;
-  if (digits.length === 10 || digits.length === 11) return `55${digits}`;
-  if (digits.length >= 12) return digits;
-  return null;
+  // remove DDI duplicado, caso o número já esteja digitado com o código do país
+  if (digits.startsWith(ddi) && digits.length > 11) {
+    digits = digits.slice(ddi.length);
+  }
+  digits = digits.replace(/^0+/, ""); // remove zero de discagem local, se houver
+  if (digits.length < 10 || digits.length > 11) return null;
+  return `${ddi}${digits}`;
 }
 
 Deno.serve(async (req) => {
@@ -59,11 +62,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Se o usuário pediu SMS, valida o celular ANTES de girar a senha —
-    // não faz sentido invalidar a senha atual se não há como entregar a nova.
+    // Se o usuário pediu SMS, valida a configuração e o celular ANTES de
+    // girar a senha — não faz sentido invalidar a senha atual se não há
+    // como entregar a nova.
     let recipientPhone: string | null = null;
+    let smsConfig: { api_key?: string; sender_id?: string; ddi?: string } | undefined;
     if (useSms) {
-      recipientPhone = normalizePhone(profile.telefone || "");
+      const { data: smsSettingsData } = await admin
+        .from("system_settings")
+        .select("value")
+        .eq("key", "sms_config")
+        .maybeSingle();
+      smsConfig = smsSettingsData?.value as any;
+      if (!smsConfig?.api_key) {
+        return new Response(JSON.stringify({ error: "Recuperação por SMS não está configurada. Peça a um administrador para configurar a Mobizon em Configurações > SMS." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const ddi = (smsConfig.ddi || "55").replace(/\D/g, "") || "55";
+      recipientPhone = normalizePhone(profile.telefone || "", ddi);
       if (!recipientPhone) {
         return new Response(JSON.stringify({ error: "Nenhum número de celular cadastrado para este usuário. Escolha a recuperação por e-mail ou atualize o telefone no cadastro." }), {
           status: 400,
@@ -90,21 +108,7 @@ Deno.serve(async (req) => {
       .eq("id", profile.id);
 
     // 3. Deliver the temporary password via the chosen channel.
-    if (useSms && recipientPhone) {
-      const { data: smsSettingsData } = await admin
-        .from("system_settings")
-        .select("value")
-        .eq("key", "sms_config")
-        .maybeSingle();
-
-      const smsConfig = smsSettingsData?.value as { api_key?: string; sender_id?: string } | undefined;
-      if (!smsConfig?.api_key) {
-        return new Response(JSON.stringify({ error: "Recuperação por SMS não está configurada. Peça a um administrador para configurar a Mobizon em Configurações > SMS." }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
+    if (useSms && recipientPhone && smsConfig?.api_key) {
       const params = new URLSearchParams({
         recipient: recipientPhone,
         text: `Sua senha provisoria do sistema de Chamados e: ${tempPassword}. Troque-a no primeiro login.`,

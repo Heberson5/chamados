@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon, Play, CheckCircle, Pause, RotateCcw, Eye } from "lucide-react";
+import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon, Play, CheckCircle, Pause, RotateCcw } from "lucide-react";
 import ChamadosKanban from "@/components/ChamadosKanban";
+import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -43,6 +44,8 @@ export default function Chamados() {
     const [agents, setAgents] = useState<any[]>([]);
     const [priorities, setPriorities] = useState<any[]>([]);
     const [userProfile, setUserProfile] = useState<any>(null);
+    const [selectedTicket, setSelectedTicket] = useState<any>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
   const { toast } = useToast();
 
    const runAction = async (ticket: any, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar") => {
@@ -544,7 +547,11 @@ export default function Chamados() {
                 {sortedTickets.map((ticket) => {
                   const sla = getSLAStatus(ticket);
                   return (
-                    <TableRow key={ticket.id} className="hover:bg-muted/50 transition-colors">
+                    <TableRow
+                      key={ticket.id}
+                      className="hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => { setSelectedTicket(ticket); setIsDetailOpen(true); }}
+                    >
                       <TableCell className="w-10 px-2" />
                       {isColVisible("chamado") && (
                       <TableCell className="font-medium">
@@ -645,7 +652,7 @@ export default function Chamados() {
                         {ticket.anexos && ticket.anexos.length > 0 ? (
                           <div className="flex gap-1">
                               {ticket.anexos.map((url: string, idx: number) => (
-                                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">
+                                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary hover:underline text-xs">
                                   [{idx + 1}]
                                 </a>
                               ))}
@@ -668,27 +675,27 @@ export default function Chamados() {
                       <TableCell className="text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           {ticket.status === "ABERTO" && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1" onClick={() => runAction(ticket, "atender")}>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1" onClick={(e) => { e.stopPropagation(); runAction(ticket, "atender"); }}>
                               <Play size={12} /> Atender
                             </Button>
                           )}
                           {ticket.status === "EM_ATENDIMENTO" && (
                             <>
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-emerald-600" onClick={() => runAction(ticket, "encerrar")}>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-emerald-600" onClick={(e) => { e.stopPropagation(); runAction(ticket, "encerrar"); }}>
                                 <CheckCircle size={12} /> Encerrar
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-slate-600" onClick={() => runAction(ticket, "pausar")}>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-slate-600" onClick={(e) => { e.stopPropagation(); runAction(ticket, "pausar"); }}>
                                 <Pause size={12} /> Pausar
                               </Button>
                             </>
                           )}
                           {(ticket.status === "PAUSADO" || ticket.status === "AGUARDANDO_USUARIO") && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-amber-600" onClick={() => runAction(ticket, "retomar")}>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-amber-600" onClick={(e) => { e.stopPropagation(); runAction(ticket, "retomar"); }}>
                               <Play size={12} /> Retomar
                             </Button>
                           )}
                           {ticket.status === "ENCERRADO" && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1" onClick={() => runAction(ticket, "reabrir")}>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1" onClick={(e) => { e.stopPropagation(); runAction(ticket, "reabrir"); }}>
                               <RotateCcw size={12} /> Reabrir
                             </Button>
                           )}
@@ -718,6 +725,17 @@ export default function Chamados() {
         </>
         )}
       </Tabs>
+
+      <ChamadoDetailDialog
+        ticket={selectedTicket}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        onUpdate={fetchTickets}
+        userRole={userProfile?.is_master ? "MASTER" : userProfile?.regra ?? null}
+        currentUserId={currentUserId}
+        agents={agents}
+        priorities={priorities}
+      />
     </div>
   );
 }

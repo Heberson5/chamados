@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { getPriorityLabel } from "@/lib/utils/priority";
- import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, Loader2, Plus, Pause, History } from "lucide-react";
+ import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, Loader2, Plus, Pause, History, ChevronDown, ChevronUp } from "lucide-react";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
@@ -95,20 +95,21 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
       };
  
    const [slaInfo, setSlaInfo] = useState({ label: "Calculando...", color: "bg-gray-400" });
- 
+   const [expanded, setExpanded] = useState(false);
+
     useEffect(() => {
       const calc = () => setSlaInfo(getSLAInfo(ticket));
       calc();
       const interval = setInterval(calc, 60000);
       return () => clearInterval(interval);
     }, [ticket]);
- 
+
      return (
        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-4">
           <Card className={`cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
            <CardHeader className="p-4 pb-2">
            <div className="flex justify-between items-start mb-2">
-            <Badge 
+            <Badge
                 className="border-none text-[10px] px-1.5 py-0"
                 style={getPriorityStyle(ticket)}
               >
@@ -126,12 +127,29 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
                    </Badge>
                  )}
                  <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
+                 <button
+                   type="button"
+                   onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+                   className="text-muted-foreground hover:text-foreground p-0.5 -mr-1 rounded transition-colors"
+                   title={expanded ? "Minimizar" : "Expandir"}
+                 >
+                   {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                 </button>
                </div>
            </div>
-           <CardTitle className="text-sm font-bold line-clamp-2 leading-tight">
-             {ticket.titulo || "Sem título"}
-           </CardTitle>
+           <div className="flex items-center justify-between gap-2">
+             <CardTitle className={`text-sm font-bold leading-tight ${expanded ? "line-clamp-2" : "line-clamp-1"}`}>
+               {ticket.titulo || "Sem título"}
+             </CardTitle>
+             {!expanded && (
+               <div className="flex items-center gap-1 shrink-0">
+                 <div className={`w-1.5 h-1.5 rounded-full ${slaInfo.color}`} />
+                 <span className="text-[9px] font-bold">{slaInfo.label}</span>
+               </div>
+             )}
+           </div>
          </CardHeader>
+         {expanded && (
          <CardContent className="p-4 pt-0">
            <p className="text-xs text-muted-foreground line-clamp-3 mb-4">
              {ticket.descricao}
@@ -153,15 +171,18 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
              </div>
            </div>
          </CardContent>
+         )}
           <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
-           <Button 
-             size="sm" 
+           <Button
+             size="sm"
              variant="ghost"
              className="flex-1 gap-2 text-[10px] h-8"
              onClick={(e) => { e.stopPropagation(); onDetails(ticket); }}
            >
              <Eye size={12} /> Detalhes
            </Button>
+           {expanded && (
+           <>
             {!isReadOnly && columnId === "ABERTO" && userRole !== "USUARIO" && (
              <Button 
                size="sm" 
@@ -216,8 +237,8 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
               </>
             )}
            {!isReadOnly && ticket.status === "ENCERRADO" && (
-             <Button 
-               size="sm" 
+             <Button
+               size="sm"
                variant="secondary"
                className="flex-1 gap-2 text-[10px] h-8"
                onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "reabrir"); }}
@@ -225,12 +246,14 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
                <Plus size={12} /> Reabrir
              </Button>
            )}
+           </>
+           )}
          </CardFooter>
        </Card>
      </div>
    );
  }
- 
+
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";

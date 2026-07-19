@@ -43,6 +43,7 @@ export default function Chamados() {
     });
     const [agents, setAgents] = useState<any[]>([]);
     const [priorities, setPriorities] = useState<any[]>([]);
+    const [statuses, setStatuses] = useState<any[]>([]);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [selectedTicket, setSelectedTicket] = useState<any>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -141,6 +142,11 @@ export default function Chamados() {
             setNewTicket(prev => ({ ...prev, prioridade_id: data[0].id }));
           }
         }
+      });
+
+      // Fetch statuses (nomes reais configurados no Kanban)
+      supabase.from("chamado_statuses").select("legacy_enum, label").eq("ativo", true).then(({ data }) => {
+        if (data) setStatuses(data);
       });
      
      const channel = supabase
@@ -278,6 +284,11 @@ export default function Chamados() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getStatusLabel = (status: string | undefined) => {
+    if (!status) return status;
+    return statuses.find((s) => s.legacy_enum === status)?.label || status;
   };
 
   const getSLAStatus = (ticket: any) => {
@@ -605,7 +616,7 @@ export default function Chamados() {
                           ticket.status === 'EM_ATENDIMENTO' ? 'secondary' :
                           ticket.status === 'ENCERRADO' ? 'outline' : 'destructive'
                         }>
-                          {ticket.status}
+                          {getStatusLabel(ticket.status)}
                         </Badge>
                       </TableCell>
                       )}

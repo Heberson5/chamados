@@ -269,7 +269,8 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                  await supabase.from("chamados_prioridades").update({
                    nome: prio.nome,
                    cor: prio.cor,
-                   ordem: prio.ordem
+                   ordem: prio.ordem,
+                   sla_horas: prio.sla_horas ?? 24
                  }).eq("id", prio.id);
                } else {
                  // Create new priority if needed
@@ -279,6 +280,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                    nome: prio.nome,
                    cor: prio.cor,
                    ordem: prio.ordem,
+                   sla_horas: prio.sla_horas ?? 24,
                    organization_id: profile?.organization_id
                  });
                }
@@ -752,7 +754,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                            <LayoutGrid className="h-5 w-5 text-primary" />
                            <CardTitle>Prioridades de Chamado</CardTitle>
                          </div>
-                         <Button size="sm" onClick={() => setPriorities([...priorities, { nome: "Nova Prioridade", cor: "#6e59ff", ordem: priorities.length + 1 }])}>
+                         <Button size="sm" onClick={() => setPriorities([...priorities, { nome: "Nova Prioridade", cor: "#6e59ff", ordem: priorities.length + 1, sla_horas: 24 }])}>
                            <Plus size={14} className="mr-1" /> Adicionar Prioridade
                          </Button>
                        </div>
@@ -760,7 +762,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                      <CardContent className="space-y-4">
                        {priorities.map((prio, idx) => (
                          <div key={prio.id || idx} className="flex items-center gap-4 border p-3 rounded-lg group">
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
                              <div className="space-y-2">
                                <Label className="text-[10px] uppercase">Nome da Prioridade</Label>
                                <Input value={prio.nome} onChange={e => { const np = [...priorities]; np[idx].nome = e.target.value; setPriorities(np); }} />
@@ -768,17 +770,26 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                              <div className="space-y-2">
                                <Label className="text-[10px] uppercase">Cor</Label>
                                <div className="flex items-center gap-2">
-                                 <Input 
-                                   type="color" 
-                                   className="w-10 h-10 p-1" 
-                                   value={prio.cor || "#6e59ff"} 
-                                   onChange={e => { 
-                                     const np = [...priorities]; 
-                                     np[idx].cor = e.target.value; 
-                                     setPriorities(np); 
-                                   }} 
+                                 <Input
+                                   type="color"
+                                   className="w-10 h-10 p-1"
+                                   value={prio.cor || "#6e59ff"}
+                                   onChange={e => {
+                                     const np = [...priorities];
+                                     np[idx].cor = e.target.value;
+                                     setPriorities(np);
+                                   }}
                                  />
                                </div>
+                             </div>
+                             <div className="space-y-2">
+                               <Label className="text-[10px] uppercase">Horas de SLA</Label>
+                               <Input
+                                 type="number"
+                                 min={1}
+                                 value={prio.sla_horas ?? 24}
+                                 onChange={e => { const np = [...priorities]; np[idx].sla_horas = Number(e.target.value); setPriorities(np); }}
+                               />
                              </div>
                            </div>
                            <div className="flex flex-col gap-1 pt-4">

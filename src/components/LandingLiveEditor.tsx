@@ -192,11 +192,17 @@ export default function LandingLiveEditor({ config, setConfig }: Props) {
                 ))}
               </div>
 
-              <div className="pt-4 text-xs text-slate-500 flex items-center gap-2">
+              <div className="pt-4 text-xs text-slate-500 flex items-center gap-2 flex-wrap">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 <Editable
                   value={config.statusText || ""}
                   onChange={(v) => update({ statusText: v })}
+                />
+                <span className="opacity-30">|</span>
+                <span>&copy; {new Date().getFullYear()}</span>
+                <Editable
+                  value={config.copyrightText || branding.companyName || "Chamados"}
+                  onChange={(v) => update({ copyrightText: v })}
                 />
               </div>
             </div>

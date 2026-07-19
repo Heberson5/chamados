@@ -94,6 +94,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
       formTitle: "Acesso",
       formSubtitle: "Bem-vindo. Por favor, identifique-se.",
       statusText: "Sistema Online",
+      copyrightText: "",
     };
     const [landingConfig, setLandingConfig] = useState<any>(defaultLandingConfig);
  

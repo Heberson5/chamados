@@ -260,7 +260,7 @@ export default function Login() {
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
           <span>{landing.statusText}</span>
           <span className="mx-2 opacity-20">|</span>
-          <span>&copy; {new Date().getFullYear()} {branding.companyName || "Chamados"}</span>
+          <span>&copy; {new Date().getFullYear()} {landing.copyrightText || branding.companyName || "Chamados"}</span>
         </div>
       </div>
 

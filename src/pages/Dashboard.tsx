@@ -35,7 +35,7 @@ import type { ChartType } from "@/lib/chartSettings";
   const [profiles, setProfiles] = useState<any[]>([]);
   const [kanbanConfig, setKanbanConfig] = useState<any[]>([]);
   const [filters, setFilters] = useState({
-    period: "7d",
+    period: "todos",
     technician: "all",
     user: "all",
     dateRange: { from: subDays(new Date(), 7), to: new Date() }
@@ -135,10 +135,10 @@ import type { ChartType } from "@/lib/chartSettings";
  
     result = result.filter(t => {
       const date = new Date(t.gerado_em);
-      const withinInterval = isWithinInterval(date, { start: startOfDay(startDate), end: endOfDay(endDate) });
+      const withinInterval = filters.period === "todos" || isWithinInterval(date, { start: startOfDay(startDate), end: endOfDay(endDate) });
       const technicianMatch = filters.technician === "all" || t.tecnico_id === filters.technician;
       const userMatch = filters.user === "all" || t.usuario_id === filters.user;
-      
+
       return withinInterval && technicianMatch && userMatch;
     });
 
@@ -232,13 +232,21 @@ import type { ChartType } from "@/lib/chartSettings";
         }));
     }, [filteredTickets, profiles, kanbanConfig]);
  
+    // Data do chamado mais antigo — usada como início da linha do tempo
+    // quando o período selecionado é "Todos os chamados".
+    const earliestTicketDate = useMemo(() => {
+      if (tickets.length === 0) return subDays(new Date(), 30);
+      return new Date(Math.min(...tickets.map(t => new Date(t.gerado_em).getTime())));
+    }, [tickets]);
+
     const chartData = useMemo(() => {
       let startDate = filters.dateRange.from;
       let endDate = filters.dateRange.to;
-  
+
       if (filters.period !== "custom") {
         endDate = new Date();
-        if (filters.period === "1d") startDate = startOfDay(new Date());
+        if (filters.period === "todos") startDate = earliestTicketDate;
+        else if (filters.period === "1d") startDate = startOfDay(new Date());
         else if (filters.period === "yesterday") {
           startDate = startOfDay(subDays(new Date(), 1));
           endDate = endOfDay(subDays(new Date(), 1));
@@ -270,7 +278,7 @@ import type { ChartType } from "@/lib/chartSettings";
           sla: dayTickets.filter(t => !t.sla_violado).length
         };
       });
-    }, [filteredTickets, filters]);
+    }, [filteredTickets, filters, earliestTicketDate]);
 
     // Tendência diária dos 3 tempos operacionais: espera (aberto → aceito),
     // atendimento (tempo líquido trabalhado, sem pausas/espera do usuário) e
@@ -309,7 +317,8 @@ import type { ChartType } from "@/lib/chartSettings";
 
       if (filters.period !== "custom") {
         endDate = new Date();
-        if (filters.period === "1d") startDate = startOfDay(new Date());
+        if (filters.period === "todos") startDate = earliestTicketDate;
+        else if (filters.period === "1d") startDate = startOfDay(new Date());
         else if (filters.period === "yesterday") {
           startDate = startOfDay(subDays(new Date(), 1));
           endDate = endOfDay(subDays(new Date(), 1));
@@ -333,7 +342,7 @@ import type { ChartType } from "@/lib/chartSettings";
         const bucketTickets = filteredTickets.filter(t => isSameDay(new Date(t.gerado_em), day));
         return { name: format(day, "dd/MM"), ...computeBucketMetrics(bucketTickets) };
       });
-    }, [filteredTickets, filters]);
+    }, [filteredTickets, filters, earliestTicketDate]);
 
      const cards = [
        { title: "Total de Chamados", value: stats.totalTickets, icon: Ticket, color: "text-blue-600" },
@@ -371,6 +380,7 @@ import type { ChartType } from "@/lib/chartSettings";
                  <SelectValue placeholder="Selecione o período" />
                </SelectTrigger>
                <SelectContent>
+                 <SelectItem value="todos">Todos os chamados</SelectItem>
                  <SelectItem value="1d">Hoje</SelectItem>
                 <SelectItem value="yesterday">Ontem</SelectItem>
                  <SelectItem value="7d">Últimos 7 dias</SelectItem>

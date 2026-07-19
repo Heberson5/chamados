@@ -49,6 +49,8 @@ export default function Login() {
     statusText: "Sistema Online",
   };
   const [landing, setLanding] = useState<any>(defaultLanding);
+  // Posição do mouse (-0.5 a 0.5) usada para o efeito de profundidade/tilt 3D do painel de marca
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     (async () => {
@@ -151,50 +153,85 @@ export default function Login() {
     <div className="min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20">
       {/* Left Side: Modern Illustration & Branding */}
       <div
-        className="hidden md:flex flex-1 items-center justify-center p-12 text-white relative overflow-hidden"
+        className="hidden md:flex flex-1 items-center justify-center p-12 text-white relative overflow-hidden [perspective:1600px]"
         style={{ backgroundColor: landing.bgColor || "#020617" }}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setMouse({
+            x: (e.clientX - rect.left) / rect.width - 0.5,
+            y: (e.clientY - rect.top) / rect.height - 0.5,
+          });
+        }}
+        onMouseLeave={() => setMouse({ x: 0, y: 0 })}
       >
-        {/* Modern animated background elements */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] animate-pulse delay-700" />
-          <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] rounded-full bg-indigo-500/10 blur-[80px]" />
-          
-          {/* Grid pattern */}
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]" />
+        {/* Depth layer 1: far background orbs, drift slowly, react least to mouse */}
+        <div
+          className="absolute top-0 left-0 w-full h-full transition-transform duration-300 ease-out"
+          style={{ transform: `translate3d(${mouse.x * 14}px, ${mouse.y * 14}px, 0)` }}
+        >
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] animate-float-slow" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] animate-float-slow" style={{ animationDelay: "2s" }} />
+          <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] rounded-full bg-indigo-500/10 blur-[80px] animate-float" />
         </div>
-        
-        <div className="relative z-10 max-w-lg w-full">
+
+        {/* Depth layer 2: perspective floor grid fading into the distance */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-[55%] opacity-40 [transform-style:preserve-3d]"
+          style={{ transform: `rotateX(62deg) translateZ(${-40 - mouse.y * 10}px)`, transformOrigin: "bottom" }}
+        >
+          <div className="w-full h-full bg-[linear-gradient(to_right,#ffffff12_1px,transparent_1px),linear-gradient(to_bottom,#ffffff12_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:linear-gradient(to_top,black,transparent)]" />
+        </div>
+
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+
+        {/* Main content: tilts subtly toward the cursor, simulating a floating 3D panel */}
+        <div
+          className="relative z-10 max-w-lg w-full transition-transform duration-300 ease-out will-change-transform [transform-style:preserve-3d]"
+          style={{ transform: `rotateY(${mouse.x * 6}deg) rotateX(${-mouse.y * 6}deg)` }}
+        >
           <div className="flex items-center gap-4 mb-12 animate-in fade-in slide-in-from-left duration-700">
-            <div className="p-3.5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
-              {branding.companyLogo ? (
-                <img src={branding.companyLogo} alt="Logo" className="w-12 h-12 object-contain" />
-              ) : (
-                <Ticket size={44} className="text-primary" />
-              )}
+            <div className="relative" style={{ transform: "translateZ(40px)" }}>
+              {/* Floating card stack behind the logo — pure CSS depth illusion */}
+              <div className="absolute inset-0 rounded-2xl border border-white/10 bg-primary/10 rotate-[-10deg] translate-x-1.5 translate-y-2 animate-float-delayed" />
+              <div className="absolute inset-0 rounded-2xl border border-white/10 bg-white/5 rotate-[8deg] -translate-x-1 translate-y-1 animate-float" />
+              <div className="relative p-3.5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
+                {branding.companyLogo ? (
+                  <img src={branding.companyLogo} alt="Logo" className="w-12 h-12 object-contain" />
+                ) : (
+                  <Ticket size={44} className="text-primary" />
+                )}
+              </div>
             </div>
-            <div>
+            <div style={{ transform: "translateZ(30px)" }}>
               <h1 className="text-3xl font-black tracking-tighter uppercase italic">
                 {branding.companyName || "Chamados"}
               </h1>
               <div className="h-1 w-12 bg-primary rounded-full mt-1" />
             </div>
           </div>
-          
-          <h2 className="text-6xl font-black leading-[0.9] mb-8 animate-in fade-in slide-in-from-left duration-1000 delay-150">
+
+          <h2
+            className="text-6xl font-black leading-[0.9] mb-8 animate-in fade-in slide-in-from-left duration-1000 delay-150"
+            style={{ transform: "translateZ(50px)" }}
+          >
             {landing.brandTitle} <br />
-            <span className="text-primary italic">{landing.brandHighlight}</span>
+            <span className="text-primary italic drop-shadow-[0_0_24px_rgba(var(--primary-rgb,99,102,241),0.45)]">{landing.brandHighlight}</span>
           </h2>
 
-          <p className="text-xl text-slate-400 mb-12 leading-relaxed max-w-md animate-in fade-in slide-in-from-left duration-1000 delay-300">
+          <p
+            className="text-xl text-slate-400 mb-12 leading-relaxed max-w-md animate-in fade-in slide-in-from-left duration-1000 delay-300"
+            style={{ transform: "translateZ(25px)" }}
+          >
             {landing.subtitle}
           </p>
 
-          <div className="space-y-5 animate-in fade-in slide-in-from-left duration-1000 delay-500">
+          <div className="space-y-3 animate-in fade-in slide-in-from-left duration-1000 delay-500" style={{ transform: "translateZ(20px)" }}>
             {(landing.features || []).map((feature: any, i: number) => (
-              <div key={feature.id || i} className="flex items-center gap-4 group cursor-default">
-                <div className="h-6 w-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
+              <div
+                key={feature.id || i}
+                className="flex items-center gap-4 group cursor-default rounded-xl px-3 py-2 -mx-3 transition-all duration-300 hover:bg-white/5 hover:shadow-lg hover:shadow-black/20 hover:translate-x-1"
+              >
+                <div className="h-6 w-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300 shrink-0">
                   <CheckCircle2 size={14} className="text-primary group-hover:text-white transition-colors" />
                 </div>
                 <span className="text-slate-300 font-medium group-hover:text-white transition-colors">{feature.text || feature}</span>
@@ -202,7 +239,7 @@ export default function Login() {
             ))}
           </div>
         </div>
-        
+
         <div className="absolute bottom-12 left-12 text-sm text-slate-500 font-medium flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
           <span>{landing.statusText}</span>

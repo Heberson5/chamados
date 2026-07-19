@@ -58,7 +58,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
     return { label: "NO PRAZO", color: "bg-green-500" };
   };
 
- function SortableCard({ ticket, columnId, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender }: any) {
+ function SortableCard({ ticket, columnId, columnMeta, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender }: any) {
    const isReadOnly = !!ticket.__transferredAway;
    const {
      attributes,
@@ -106,7 +106,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
 
      return (
        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-4">
-          <Card className={`cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${ticket.status === "ENCERRADO" || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
+          <Card className={`cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${columnMeta?.is_encerrado || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
            <CardHeader className="p-4 pb-2">
            <div className="flex justify-between items-start mb-2">
             <Badge
@@ -183,38 +183,38 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
            </Button>
            {expanded && (
            <>
-            {!isReadOnly && columnId === "ABERTO" && userRole !== "USUARIO" && (
-             <Button 
-               size="sm" 
+            {!isReadOnly && columnMeta?.is_inicial && userRole !== "USUARIO" && (
+             <Button
+               size="sm"
                className="flex-1 gap-2 text-[10px] h-8"
              onClick={(e) => { e.stopPropagation(); onAtender ? onAtender(ticket) : onAction(ticket.id, "atender"); }}
              >
                <Play size={12} /> Atender
              </Button>
            )}
-             {!isReadOnly && ["EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO"].includes(columnId) && userRole !== "USUARIO" && (
+             {!isReadOnly && columnMeta && !columnMeta.is_inicial && !columnMeta.is_encerrado && !columnMeta.is_cancelado && userRole !== "USUARIO" && (
               <>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="outline"
                   className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                   onClick={(e) => { e.stopPropagation(); onOpenClosure(ticket); }}
                 >
                   <CheckCircle size={12} /> Encerrar
                 </Button>
-                
-                {columnId === "EM_ATENDIMENTO" && (
+
+                {columnMeta.legacy_enum === "EM_ATENDIMENTO" && (
                   <>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="ghost"
                       className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-slate-600"
                       onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "pausar"); }}
                     >
                       <Pause size={12} /> Pausar
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="ghost"
                       className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-indigo-600"
                       onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "aguardar_usuario"); }}
@@ -223,10 +223,10 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
                     </Button>
                   </>
                 )}
-                
-                {(columnId === "PAUSADO" || columnId === "AGUARDANDO_USUARIO") && (
-                  <Button 
-                    size="sm" 
+
+                {(columnMeta.legacy_enum === "PAUSADO" || columnMeta.legacy_enum === "AGUARDANDO_USUARIO") && (
+                  <Button
+                    size="sm"
                     variant="ghost"
                     className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-amber-600"
                     onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "retomar"); }}
@@ -236,7 +236,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
                 )}
               </>
             )}
-           {!isReadOnly && ticket.status === "ENCERRADO" && (
+           {!isReadOnly && columnMeta?.is_encerrado && (
              <Button
                size="sm"
                variant="secondary"
@@ -293,20 +293,22 @@ interface ChamadosKanbanProps {
      if (newStatus === currentStatus) return;
 
       try {
-        const updates: any = { status: newStatus };
+        const targetCol = kanbanCols.find((c) => c.id === newStatus);
+        const updates: any = { status_id: newStatus };
         const now = new Date().toISOString();
-        
-        // Handle timestamps on drag
-        if (newStatus === "EM_ATENDIMENTO") {
-          const ticket = tickets.find(t => t.id === ticketId);
+        const ticket = tickets.find(t => t.id === ticketId);
+
+        // Handle timestamps on drag — mantém exatamente o comportamento dos
+        // 6 status conhecidos (via legacy_enum/flags); colunas novas criadas
+        // em Configurações só movem o chamado, sem efeitos colaterais extras.
+        if (targetCol?.legacy_enum === "EM_ATENDIMENTO") {
           if (ticket && !ticket.atendido_em) {
             updates.atendido_em = now;
             const { data: { user } } = await supabase.auth.getUser();
             if (user) updates.tecnico_id = user.id;
           }
-        } else if (newStatus === "ENCERRADO" || newStatus === "CANCELADO") {
+        } else if (targetCol?.is_encerrado || targetCol?.is_cancelado) {
           updates.encerrado_em = now;
-          const ticket = tickets.find(t => t.id === ticketId);
           if (ticket && !ticket.atendido_em) {
             // If moving to closed without having attended, set attended_em to now too
             updates.atendido_em = now;
@@ -315,7 +317,7 @@ interface ChamadosKanbanProps {
           }
           // Fallback closure note if dragged
           updates.descricao_encerramento = ticket?.descricao_encerramento || "Encerrado via Kanban";
-        } else if (newStatus === "ABERTO") {
+        } else if (targetCol?.is_inicial) {
           // Reset if moved back to open (optional but good for consistency)
           updates.encerrado_em = null;
         }
@@ -326,19 +328,19 @@ interface ChamadosKanbanProps {
          .eq("id", ticketId)
          .select(`*, owner:profiles!chamados_usuario_id_fkey(email, nome, sobrenome)`)
          .single();
- 
+
         if (error) throw error;
-        const colLabel = kanbanCols.find((c) => c.id === newStatus)?.title || newStatus;
+        const colLabel = targetCol?.title || newStatus;
         toast({ title: "Status atualizado", description: `Chamado movido para ${colLabel}` });
        onUpdate();
- 
+
        // Send status change email
        if (updatedTicket && updatedTicket.owner) {
           import("@/utils/email").then(async ({ sendTemplatedEmail }) => {
             const { data: st } = await supabase
               .from("chamado_statuses")
               .select("label")
-              .eq("legacy_enum", updatedTicket.status)
+              .eq("id", updatedTicket.status_id)
               .maybeSingle();
             sendTemplatedEmail(updatedTicket.owner.email, "status_change", {
              user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
@@ -406,7 +408,9 @@ interface ChamadosKanbanProps {
          }
 
           // Load columns from chamado_statuses (source of truth). Column id
-          // maps to the legacy enum value so drag&drop writes valid values.
+          // é o próprio id da linha, permitindo colunas ilimitadas — chamados
+          // são filtrados por status_id, não pelo enum legado (que fica só
+          // como sombra de compatibilidade, sincronizada por gatilho no banco).
           const { data: statuses } = await supabase
             .from("chamado_statuses")
             .select("*")
@@ -415,13 +419,14 @@ interface ChamadosKanbanProps {
           if (statuses && statuses.length > 0) {
             setKanbanCols(
               statuses.map((s: any) => ({
-                id: s.legacy_enum || s.key,
+                id: s.id,
                 title: s.label,
                 color_hex: s.cor,
                 is_inicial: s.is_inicial,
                 is_pausa: s.is_pausa,
                 is_encerrado: s.is_encerrado,
                 is_cancelado: s.is_cancelado,
+                legacy_enum: s.legacy_enum,
               }))
             );
           }
@@ -441,20 +446,27 @@ interface ChamadosKanbanProps {
 
       const updates: any = {};
         const now = new Date().toISOString();
+        // As 6 ações continuam mirando exatamente os mesmos status conhecidos
+        // de sempre (via legacy_enum) — colunas novas criadas em Configurações
+        // não ganham atalho de ação, só recebem chamados por arrastar-e-soltar.
+        const statusIdFor = (legacyEnum: string) => kanbanCols.find((c) => c.legacy_enum === legacyEnum)?.id;
 
       if (action === "atender") {
-        updates.status = "EM_ATENDIMENTO";
+        const targetId = statusIdFor("EM_ATENDIMENTO");
+        if (targetId) updates.status_id = targetId;
         updates.tecnico_id = user.id;
           updates.atendido_em = now;
           if (extra?.previsao) {
             updates.previsao_conclusao = new Date(extra.previsao).toISOString();
           }
        } else if (action === "reabrir") {
-         updates.status = "EM_ATENDIMENTO";
+         const targetId = statusIdFor("EM_ATENDIMENTO");
+         if (targetId) updates.status_id = targetId;
          updates.encerrado_em = null;
          updates.reaberto = true;
        } else if (action === "encerrar") {
-        updates.status = "ENCERRADO";
+        const targetId = statusIdFor("ENCERRADO");
+        if (targetId) updates.status_id = targetId;
           updates.encerrado_em = now;
           if (!ticket.atendido_em) {
             updates.atendido_em = now;
@@ -468,14 +480,17 @@ interface ChamadosKanbanProps {
             comentario: `[ENCERRAMENTO] ${closureNote}`
           });
         } else if (action === "pausar") {
-          updates.status = "PAUSADO";
+          const targetId = statusIdFor("PAUSADO");
+          if (targetId) updates.status_id = targetId;
           updates.pausado_em = now;
         } else if (action === "aguardar_usuario") {
-          updates.status = "AGUARDANDO_USUARIO";
+          const targetId = statusIdFor("AGUARDANDO_USUARIO");
+          if (targetId) updates.status_id = targetId;
           updates.aguardando_usuario_em = now;
         } else if (action === "retomar") {
-          updates.status = "EM_ATENDIMENTO";
-          
+          const targetId = statusIdFor("EM_ATENDIMENTO");
+          if (targetId) updates.status_id = targetId;
+
           if (ticket.status === "PAUSADO" && ticket.pausado_em) {
             const pauseStart = new Date(ticket.pausado_em).getTime();
             const diff = Math.floor((new Date().getTime() - pauseStart) / 1000);
@@ -510,7 +525,7 @@ interface ChamadosKanbanProps {
             const { data: st } = await supabase
               .from("chamado_statuses")
               .select("label")
-              .eq("legacy_enum", updatedTicket.status)
+              .eq("id", updatedTicket.status_id)
               .maybeSingle();
             sendTemplatedEmail(updatedTicket.owner.email, trigger, {
              user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
@@ -545,6 +560,12 @@ interface ChamadosKanbanProps {
     setIsDetailsOpen(true);
   };
 
+  const ticketsInColumn = (column: any) =>
+    tickets.filter((t) => {
+      if (transferredAwayIds.has(t.id)) return column.is_encerrado;
+      return t.status_id === column.id;
+    });
+
      if (!colsLoaded) {
        return (
          <div className="flex justify-center items-center py-24">
@@ -574,35 +595,25 @@ interface ChamadosKanbanProps {
                  <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
                    {column.title}
                    <Badge variant="secondary" className="rounded-full px-2 py-0">
-                     {tickets.filter(t => t.status === column.id).length}
+                     {ticketsInColumn(column).length}
                    </Badge>
                  </h3>
                </div>
 
                 <SortableContext
                   id={column.id}
-                  items={tickets
-                    .filter(t => {
-                      const transferred = transferredAwayIds.has(t.id);
-                      if (transferred) return column.id === "ENCERRADO";
-                      return t.status === column.id;
-                    })
-                    .map(t => t.id)}
+                  items={ticketsInColumn(column).map(t => t.id)}
                   strategy={verticalListSortingStrategy}
                 >
                    <div className="flex-1 space-y-4 pr-1 md:overflow-y-auto custom-scrollbar">
-                    {tickets
-                      .filter((t) => {
-                        const transferred = transferredAwayIds.has(t.id);
-                        if (transferred) return column.id === "ENCERRADO";
-                        return t.status === column.id;
-                      })
+                    {ticketsInColumn(column)
                       .map((ticket) => (
-                        <SortableCard 
-                          key={ticket.id} 
-                          ticket={{ ...ticket, __transferredAway: transferredAwayIds.has(ticket.id) }} 
-                          columnId={column.id} 
-                          userRole={userRole} 
+                        <SortableCard
+                          key={ticket.id}
+                          ticket={{ ...ticket, __transferredAway: transferredAwayIds.has(ticket.id) }}
+                          columnId={column.id}
+                          columnMeta={column}
+                          userRole={userRole}
                           onUpdate={onUpdate}
                           onDetails={openDetails}
                           onAction={handleAction}
@@ -610,12 +621,8 @@ interface ChamadosKanbanProps {
                           onAtender={(t: any) => { setPrevisaoTicket(t); setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}
                         />
                       ))}
-                    
-                    {tickets.filter(t => {
-                      const transferred = transferredAwayIds.has(t.id);
-                      if (transferred) return column.id === "ENCERRADO";
-                      return t.status === column.id;
-                    }).length === 0 && (
+
+                    {ticketsInColumn(column).length === 0 && (
                      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50 border-2 border-dashed rounded-lg">
                        <AlertTriangle size={24} className="mb-2 opacity-20" />
                        <p className="text-xs">Nenhum chamado</p>

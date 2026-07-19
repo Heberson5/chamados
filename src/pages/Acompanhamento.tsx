@@ -21,18 +21,10 @@ import { getPriorityLabel } from "@/lib/utils/priority";
 import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
 import { SortableTableHead } from "@/components/SortableTableHead";
 import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
-
-const STATUS_LABELS: Record<string, string> = {
-  ABERTO: "Aberto",
-  EM_ATENDIMENTO: "Em Atendimento",
-  PAUSADO: "Pausado",
-  AGUARDANDO_USUARIO: "Aguardando Usuário",
-  REABERTO: "Reaberto",
-  ENCERRADO: "Encerrado",
-  CANCELADO: "Cancelado",
-};
+import { useChamadoStatuses } from "@/hooks/useChamadoStatuses";
 
 export default function Acompanhamento() {
+  const { statuses, getLabel } = useChamadoStatuses();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { branding } = useBranding();
@@ -109,7 +101,7 @@ export default function Acompanhamento() {
       if (usuarioFilter !== "todos" && t.usuario_id !== usuarioFilter) return false;
       if (prioridadeFilter !== "todas" && t.prioridade_id !== prioridadeFilter) return false;
       if (departamentoFilter !== "todos" && t.department_id !== departamentoFilter) return false;
-      if (statusFilter !== "todos" && t.status !== statusFilter) return false;
+      if (statusFilter !== "todos" && t.status_id !== statusFilter) return false;
       if (tituloSearch && !(t.titulo || "").toLowerCase().includes(tituloSearch.toLowerCase())) return false;
       if (descricaoSearch && !(t.descricao || "").toLowerCase().includes(descricaoSearch.toLowerCase())) return false;
       return true;
@@ -131,7 +123,7 @@ export default function Acompanhamento() {
     switch (key) {
       case "os": return t.os || "";
       case "titulo": return t.titulo || "";
-      case "status": return STATUS_LABELS[t.status] || t.status || "";
+      case "status": return getLabel(t);
       case "prioridade": return t.prioridade_obj?.ordem ?? t.prioridade ?? "";
       case "departamento": return t.departamento?.nome || "";
       case "solicitante": return t.usuario ? `${t.usuario.nome} ${t.usuario.sobrenome || ""}` : "";
@@ -154,7 +146,7 @@ export default function Acompanhamento() {
       OS: t.os || "",
       Título: t.titulo || "-",
       Descrição: t.descricao || "",
-      Status: STATUS_LABELS[t.status] || t.status,
+      Status: getLabel(t),
       Prioridade: t.prioridade_obj?.nome || getPriorityLabel(t.prioridade),
       Departamento: t.departamento?.nome || "-",
       Solicitante: t.usuario ? `${t.usuario.nome} ${t.usuario.sobrenome || ""}`.trim() : "-",
@@ -342,8 +334,8 @@ export default function Acompanhamento() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
-                {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                {statuses.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -406,7 +398,7 @@ export default function Acompanhamento() {
                       {isColVisible("status") && (
                       <TableCell>
                         <Badge variant="outline" className={`text-[10px] ${statusColor(t.status)}`}>
-                          {STATUS_LABELS[t.status] || t.status}
+                          {getLabel(t)}
                         </Badge>
                       </TableCell>
                       )}

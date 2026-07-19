@@ -93,7 +93,8 @@
  
      const stats = useMemo(() => {
        const statusCounts = tickets.reduce((acc: any, t) => {
-         const statusDef = statuses.find((s: any) => s.legacy_enum === t.status || s.key === t.status);
+         const statusDef = statuses.find((s: any) => s.id === t.status_id) ||
+           statuses.find((s: any) => s.legacy_enum === t.status || s.key === t.status);
          const label = statusDef ? statusDef.label : t.status;
          acc[label] = (acc[label] || 0) + 1;
          return acc;

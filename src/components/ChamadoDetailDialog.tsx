@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getPriorityLabel } from "@/lib/utils/priority";
+import { useChamadoStatuses } from "@/hooks/useChamadoStatuses";
 import {
   Play, CheckCircle, Pause, History, Plus, ArrowRightLeft,
   MessageSquare, FileText, Paperclip, X, Send, Loader2, AlertTriangle,
@@ -67,8 +68,8 @@ export default function ChamadoDetailDialog({
   onTransferred,
 }: ChamadoDetailDialogProps) {
   const { toast } = useToast();
+  const { getLabel, getStatusRow, isEncerrado, isInicial, isCancelado, getStatusIdByLegacyEnum } = useChamadoStatuses();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
-  const [statuses, setStatuses] = useState<any[]>([]);
 
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -103,18 +104,8 @@ export default function ChamadoDetailDialog({
       setNewComment("");
       setCommentFiles([]);
       setCommentPreviews([]);
-      supabase
-        .from("chamado_statuses")
-        .select("legacy_enum, label")
-        .eq("ativo", true)
-        .then(({ data }) => { if (data) setStatuses(data); });
     }
   }, [open, ticket, fetchComments]);
-
-  const getStatusLabel = (status: string | undefined) => {
-    if (!status) return status;
-    return statuses.find((s) => s.legacy_enum === status)?.label || status;
-  };
 
   useEffect(() => {
     if (open && selectedTicket) {
@@ -146,16 +137,19 @@ export default function ChamadoDetailDialog({
       const now = new Date().toISOString();
 
       if (action === "atender") {
-        updates.status = "EM_ATENDIMENTO";
+        const targetId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
+        if (targetId) updates.status_id = targetId;
         updates.tecnico_id = user.id;
         updates.atendido_em = current.atendido_em || now;
         if (extra?.previsao) updates.previsao_conclusao = new Date(extra.previsao).toISOString();
       } else if (action === "reabrir") {
-        updates.status = "EM_ATENDIMENTO";
+        const targetId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
+        if (targetId) updates.status_id = targetId;
         updates.encerrado_em = null;
         updates.reaberto = true;
       } else if (action === "encerrar") {
-        updates.status = "ENCERRADO";
+        const targetId = getStatusIdByLegacyEnum("ENCERRADO");
+        if (targetId) updates.status_id = targetId;
         updates.encerrado_em = now;
         if (!current.atendido_em) updates.atendido_em = now;
         updates.descricao_encerramento = closureNote;
@@ -165,13 +159,16 @@ export default function ChamadoDetailDialog({
           comentario: `[ENCERRAMENTO] ${closureNote}`,
         });
       } else if (action === "pausar") {
-        updates.status = "PAUSADO";
+        const targetId = getStatusIdByLegacyEnum("PAUSADO");
+        if (targetId) updates.status_id = targetId;
         updates.pausado_em = now;
       } else if (action === "aguardar_usuario") {
-        updates.status = "AGUARDANDO_USUARIO";
+        const targetId = getStatusIdByLegacyEnum("AGUARDANDO_USUARIO");
+        if (targetId) updates.status_id = targetId;
         updates.aguardando_usuario_em = now;
       } else if (action === "retomar") {
-        updates.status = "EM_ATENDIMENTO";
+        const targetId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
+        if (targetId) updates.status_id = targetId;
         if (current.status === "PAUSADO" && current.pausado_em) {
           const diff = Math.floor((Date.now() - new Date(current.pausado_em).getTime()) / 1000);
           updates.tempo_total_pausado = (current.tempo_total_pausado || 0) + diff;
@@ -199,7 +196,7 @@ export default function ChamadoDetailDialog({
           const { data: st } = await supabase
             .from("chamado_statuses")
             .select("label")
-            .eq("legacy_enum", updatedTicket.status)
+            .eq("id", updatedTicket.status_id)
             .maybeSingle();
           sendTemplatedEmail(updatedTicket.owner.email, trigger, {
             user: `${updatedTicket.owner.nome} ${updatedTicket.owner.sobrenome || ""}`.trim() || updatedTicket.owner.email,
@@ -337,9 +334,12 @@ export default function ChamadoDetailDialog({
       });
       if (trErr) throw trErr;
 
+      const transferUpdates: any = { tecnico_id: transferToId, atualizado_em: new Date().toISOString() };
+      const emAtendimentoId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
+      if (emAtendimentoId) transferUpdates.status_id = emAtendimentoId;
       const { error } = await supabase
         .from("chamados")
-        .update({ tecnico_id: transferToId, status: "EM_ATENDIMENTO", atualizado_em: new Date().toISOString() })
+        .update(transferUpdates)
         .eq("id", selectedTicket.id);
       if (error) throw error;
 
@@ -388,7 +388,7 @@ export default function ChamadoDetailDialog({
     }
   };
 
-  const canAct = !readOnly && userRole !== "USUARIO" && selectedTicket?.status !== "ENCERRADO";
+  const canAct = !readOnly && userRole !== "USUARIO" && !isEncerrado(selectedTicket);
 
   return (
     <>
@@ -401,17 +401,17 @@ export default function ChamadoDetailDialog({
                 <Badge variant="outline" className="font-mono text-[10px] shrink-0">{selectedTicket?.os}</Badge>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                {canAct && selectedTicket?.status === "ABERTO" && (
+                {canAct && isInicial(selectedTicket) && (
                   <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => { setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}>
                     <Play size={12} /> Atender
                   </Button>
                 )}
-                {canAct && ["EM_ATENDIMENTO", "PAUSADO", "AGUARDANDO_USUARIO"].includes(selectedTicket?.status) && (
+                {canAct && !isInicial(selectedTicket) && !isCancelado(selectedTicket) && (
                   <>
                     <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px] border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" onClick={() => setIsClosureDialogOpen(true)}>
                       <CheckCircle size={12} /> Encerrar
                     </Button>
-                    {selectedTicket?.status === "EM_ATENDIMENTO" && (
+                    {getStatusRow(selectedTicket)?.legacy_enum === "EM_ATENDIMENTO" && (
                       <>
                         <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("pausar")}>
                           <Pause size={12} /> Pausar
@@ -421,14 +421,14 @@ export default function ChamadoDetailDialog({
                         </Button>
                       </>
                     )}
-                    {(selectedTicket?.status === "PAUSADO" || selectedTicket?.status === "AGUARDANDO_USUARIO") && (
+                    {["PAUSADO", "AGUARDANDO_USUARIO"].includes(getStatusRow(selectedTicket)?.legacy_enum) && (
                       <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("retomar")}>
                         <Play size={12} /> Retomar
                       </Button>
                     )}
                   </>
                 )}
-                {!readOnly && userRole !== "USUARIO" && selectedTicket?.status === "ENCERRADO" && (
+                {!readOnly && userRole !== "USUARIO" && isEncerrado(selectedTicket) && (
                   <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("reabrir")}>
                     <Plus size={12} /> Reabrir
                   </Button>
@@ -439,10 +439,10 @@ export default function ChamadoDetailDialog({
                   </Button>
                 )}
                 <Badge variant={
-                  selectedTicket?.status === "ABERTO" ? "default" :
-                  selectedTicket?.status === "EM_ATENDIMENTO" ? "secondary" : "outline"
+                  isInicial(selectedTicket) ? "default" :
+                  getStatusRow(selectedTicket)?.legacy_enum === "EM_ATENDIMENTO" ? "secondary" : "outline"
                 }>
-                  {getStatusLabel(selectedTicket?.status)}
+                  {getLabel(selectedTicket)}
                 </Badge>
               </div>
             </DialogTitle>
@@ -575,7 +575,7 @@ export default function ChamadoDetailDialog({
             </div>
           </div>
 
-          {!readOnly && selectedTicket?.status !== "ENCERRADO" && (
+          {!readOnly && !isEncerrado(selectedTicket) && (
             <div className="p-6 pt-2 border-t bg-muted/20 shrink-0">
               <div className="space-y-3">
                 <div className="flex flex-col gap-2">

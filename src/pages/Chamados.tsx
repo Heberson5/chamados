@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
  import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
  import { SortableTableHead } from "@/components/SortableTableHead";
  import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
+ import { useChamadoStatuses } from "@/hooks/useChamadoStatuses";
 
 export default function Chamados() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -43,11 +44,11 @@ export default function Chamados() {
     });
     const [agents, setAgents] = useState<any[]>([]);
     const [priorities, setPriorities] = useState<any[]>([]);
-    const [statuses, setStatuses] = useState<any[]>([]);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [selectedTicket, setSelectedTicket] = useState<any>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
   const { toast } = useToast();
+  const { getLabel, getStatusIdByLegacyEnum } = useChamadoStatuses();
 
    const runAction = async (ticket: any, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar") => {
      try {
@@ -56,23 +57,28 @@ export default function Chamados() {
        const now = new Date().toISOString();
        const updates: any = {};
        if (action === "atender") {
-         updates.status = "EM_ATENDIMENTO";
+         const targetId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
+         if (targetId) updates.status_id = targetId;
          updates.tecnico_id = user.id;
          if (!ticket.atendido_em) updates.atendido_em = now;
        } else if (action === "encerrar") {
-         updates.status = "ENCERRADO";
+         const targetId = getStatusIdByLegacyEnum("ENCERRADO");
+         if (targetId) updates.status_id = targetId;
          updates.encerrado_em = now;
          if (!ticket.atendido_em) updates.atendido_em = now;
          updates.descricao_encerramento = ticket.descricao_encerramento || "Encerrado via lista";
        } else if (action === "reabrir") {
-         updates.status = "EM_ATENDIMENTO";
+         const targetId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
+         if (targetId) updates.status_id = targetId;
          updates.encerrado_em = null;
          updates.reaberto = true;
        } else if (action === "pausar") {
-         updates.status = "PAUSADO";
+         const targetId = getStatusIdByLegacyEnum("PAUSADO");
+         if (targetId) updates.status_id = targetId;
          updates.pausado_em = now;
        } else if (action === "retomar") {
-         updates.status = "EM_ATENDIMENTO";
+         const targetId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
+         if (targetId) updates.status_id = targetId;
          if (ticket.status === "PAUSADO" && ticket.pausado_em) {
            const diff = Math.floor((Date.now() - new Date(ticket.pausado_em).getTime()) / 1000);
            updates.tempo_total_pausado = (ticket.tempo_total_pausado || 0) + diff;
@@ -144,11 +150,6 @@ export default function Chamados() {
         }
       });
 
-      // Fetch statuses (nomes reais configurados no Kanban)
-      supabase.from("chamado_statuses").select("legacy_enum, label").eq("ativo", true).then(({ data }) => {
-        if (data) setStatuses(data);
-      });
-     
      const channel = supabase
        .channel('schema-db-changes')
        .on(
@@ -225,22 +226,15 @@ export default function Chamados() {
         uploadedUrls.push(publicUrl);
       }
 
-         // Resolve status inicial dinamicamente a partir de chamado_statuses
-         const { data: initialStatus } = await supabase
-           .from("chamado_statuses")
-           .select("legacy_enum")
-           .eq("is_inicial", true)
-           .eq("ativo", true)
-           .maybeSingle();
-         const initialStatusEnum = (initialStatus?.legacy_enum as any) || "ABERTO";
-
+         // status/status_id não precisam ser resolvidos aqui: o gatilho
+         // sync_legacy_status_from_status_id no banco atribui automaticamente
+         // o status configurado como inicial quando nenhum é informado.
          const insertData: any = {
            titulo: newTicket.titulo || "Sem título",
            descricao: newTicket.descricao,
            prioridade_id: newTicket.prioridade_id,
            usuario_id: user.id,
            department_id: userProfile?.department_id,
-           status: initialStatusEnum,
            anexos: uploadedUrls.length > 0 ? uploadedUrls : null,
          };
          if (newTicket.tecnico_id && newTicket.tecnico_id !== "none") {
@@ -284,11 +278,6 @@ export default function Chamados() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const getStatusLabel = (status: string | undefined) => {
-    if (!status) return status;
-    return statuses.find((s) => s.legacy_enum === status)?.label || status;
   };
 
   const getSLAStatus = (ticket: any) => {
@@ -616,7 +605,7 @@ export default function Chamados() {
                           ticket.status === 'EM_ATENDIMENTO' ? 'secondary' :
                           ticket.status === 'ENCERRADO' ? 'outline' : 'destructive'
                         }>
-                          {getStatusLabel(ticket.status)}
+                          {getLabel(ticket)}
                         </Badge>
                       </TableCell>
                       )}

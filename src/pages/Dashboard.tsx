@@ -163,7 +163,8 @@ import type { ChartType } from "@/lib/chartSettings";
   
         // By Status (using titles from config)
         const statusCounts = filteredTickets.reduce((acc: any, t) => {
-          const statusDef = kanbanConfig.find(c => c.legacy_enum === t.status || c.key === t.status);
+          const statusDef = kanbanConfig.find(c => c.id === t.status_id) ||
+            kanbanConfig.find(c => c.legacy_enum === t.status || c.key === t.status);
           const label = statusDef ? statusDef.label : t.status;
           acc[label] = (acc[label] || 0) + 1;
           return acc;

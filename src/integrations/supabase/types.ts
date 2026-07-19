@@ -464,6 +464,7 @@ export type Database = {
           nome: string
           ordem: number
           organization_id: string | null
+          sla_horas: number
           updated_at: string
         }
         Insert: {
@@ -474,6 +475,7 @@ export type Database = {
           nome: string
           ordem?: number
           organization_id?: string | null
+          sla_horas?: number
           updated_at?: string
         }
         Update: {
@@ -484,6 +486,7 @@ export type Database = {
           nome?: string
           ordem?: number
           organization_id?: string | null
+          sla_horas?: number
           updated_at?: string
         }
         Relationships: [

@@ -68,6 +68,7 @@ export default function ChamadoDetailDialog({
 }: ChamadoDetailDialogProps) {
   const { toast } = useToast();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [statuses, setStatuses] = useState<any[]>([]);
 
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -102,8 +103,18 @@ export default function ChamadoDetailDialog({
       setNewComment("");
       setCommentFiles([]);
       setCommentPreviews([]);
+      supabase
+        .from("chamado_statuses")
+        .select("legacy_enum, label")
+        .eq("ativo", true)
+        .then(({ data }) => { if (data) setStatuses(data); });
     }
   }, [open, ticket, fetchComments]);
+
+  const getStatusLabel = (status: string | undefined) => {
+    if (!status) return status;
+    return statuses.find((s) => s.legacy_enum === status)?.label || status;
+  };
 
   useEffect(() => {
     if (open && selectedTicket) {
@@ -431,7 +442,7 @@ export default function ChamadoDetailDialog({
                   selectedTicket?.status === "ABERTO" ? "default" :
                   selectedTicket?.status === "EM_ATENDIMENTO" ? "secondary" : "outline"
                 }>
-                  {selectedTicket?.status}
+                  {getStatusLabel(selectedTicket?.status)}
                 </Badge>
               </div>
             </DialogTitle>

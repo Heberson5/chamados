@@ -52,6 +52,18 @@ export default function Login() {
   // Posição do mouse (-0.5 a 0.5) usada para o efeito de profundidade/tilt 3D do painel de marca
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
+  // O painel esquerdo tem fundo sempre escuro (landing.bgColor), independente
+  // do tema claro/escuro do app — por isso não pode usar a cor --primary do
+  // tema (que fica quase preta no tema claro, ficando invisível ali). Usamos
+  // uma cor de destaque fixa e configurável em vez disso.
+  const accentHex = landing.accentColor || "#818cf8";
+  const accentRgb = (() => {
+    const m = accentHex.replace("#", "").match(/^([\da-f]{6})$/i);
+    if (!m) return "129, 140, 248";
+    const num = parseInt(m[1], 16);
+    return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+  })();
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase
@@ -154,7 +166,11 @@ export default function Login() {
       {/* Left Side: Modern Illustration & Branding */}
       <div
         className="hidden md:flex flex-1 items-center justify-center p-12 text-white relative overflow-hidden [perspective:1600px]"
-        style={{ backgroundColor: landing.bgColor || "#020617" }}
+        style={{
+          backgroundColor: landing.bgColor || "#020617",
+          ["--landing-accent" as string]: accentHex,
+          ["--landing-accent-rgb" as string]: accentRgb,
+        }}
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           setMouse({
@@ -169,7 +185,7 @@ export default function Login() {
           className="absolute top-0 left-0 w-full h-full transition-transform duration-300 ease-out"
           style={{ transform: `translate3d(${mouse.x * 14}px, ${mouse.y * 14}px, 0)` }}
         >
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] animate-float-slow" />
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[rgba(var(--landing-accent-rgb),0.2)] blur-[120px] animate-float-slow" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] animate-float-slow" style={{ animationDelay: "2s" }} />
           <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] rounded-full bg-indigo-500/10 blur-[80px] animate-float" />
         </div>
@@ -192,13 +208,13 @@ export default function Login() {
           <div className="flex items-center gap-4 mb-12 animate-in fade-in slide-in-from-left duration-700">
             <div className="relative" style={{ transform: "translateZ(40px)" }}>
               {/* Floating card stack behind the logo — pure CSS depth illusion */}
-              <div className="absolute inset-0 rounded-2xl border border-white/10 bg-primary/10 rotate-[-10deg] translate-x-1.5 translate-y-2 animate-float-delayed" />
+              <div className="absolute inset-0 rounded-2xl border border-white/10 bg-[rgba(var(--landing-accent-rgb),0.12)] rotate-[-10deg] translate-x-1.5 translate-y-2 animate-float-delayed" />
               <div className="absolute inset-0 rounded-2xl border border-white/10 bg-white/5 rotate-[8deg] -translate-x-1 translate-y-1 animate-float" />
               <div className="relative p-3.5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
                 {branding.companyLogo ? (
                   <img src={branding.companyLogo} alt="Logo" className="w-12 h-12 object-contain" />
                 ) : (
-                  <Ticket size={44} className="text-primary" />
+                  <Ticket size={44} className="text-[var(--landing-accent)]" />
                 )}
               </div>
             </div>
@@ -206,7 +222,7 @@ export default function Login() {
               <h1 className="text-3xl font-black tracking-tighter uppercase italic">
                 {branding.companyName || "Chamados"}
               </h1>
-              <div className="h-1 w-12 bg-primary rounded-full mt-1" />
+              <div className="h-1 w-12 bg-[var(--landing-accent)] rounded-full mt-1" />
             </div>
           </div>
 
@@ -215,7 +231,7 @@ export default function Login() {
             style={{ transform: "translateZ(50px)" }}
           >
             {landing.brandTitle} <br />
-            <span className="text-primary italic drop-shadow-[0_0_24px_rgba(var(--primary-rgb,99,102,241),0.45)]">{landing.brandHighlight}</span>
+            <span className="text-[var(--landing-accent)] italic drop-shadow-[0_0_24px_rgba(var(--landing-accent-rgb),0.45)]">{landing.brandHighlight}</span>
           </h2>
 
           <p
@@ -231,8 +247,8 @@ export default function Login() {
                 key={feature.id || i}
                 className="flex items-center gap-4 group cursor-default rounded-xl px-3 py-2 -mx-3 transition-all duration-300 hover:bg-white/5 hover:shadow-lg hover:shadow-black/20 hover:translate-x-1"
               >
-                <div className="h-6 w-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300 shrink-0">
-                  <CheckCircle2 size={14} className="text-primary group-hover:text-white transition-colors" />
+                <div className="h-6 w-6 rounded-full bg-[rgba(var(--landing-accent-rgb),0.1)] border border-[rgba(var(--landing-accent-rgb),0.25)] flex items-center justify-center group-hover:bg-[var(--landing-accent)] group-hover:scale-110 transition-all duration-300 shrink-0">
+                  <CheckCircle2 size={14} className="text-[var(--landing-accent)] group-hover:text-white transition-colors" />
                 </div>
                 <span className="text-slate-300 font-medium group-hover:text-white transition-colors">{feature.text || feature}</span>
               </div>
@@ -249,8 +265,14 @@ export default function Login() {
       </div>
 
       {/* Right Side: Modern Login Form */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative bg-background/50 backdrop-blur-sm">
-        <div className="absolute top-8 right-8 animate-in fade-in duration-1000">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative bg-background/50 backdrop-blur-sm overflow-hidden">
+        {/* Depth layer: soft floating orbs, theme-aware so they stay subtle in both light and dark */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-15%] right-[-10%] w-[45%] h-[45%] rounded-full bg-primary/[0.06] dark:bg-primary/10 blur-[100px] animate-float-slow" />
+          <div className="absolute bottom-[-15%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/[0.05] dark:bg-blue-500/10 blur-[100px] animate-float-slow" style={{ animationDelay: "3s" }} />
+        </div>
+
+        <div className="absolute top-8 right-8 animate-in fade-in duration-1000 z-10">
           <Button
             variant="outline"
             size="icon"
@@ -265,7 +287,8 @@ export default function Login() {
           </Button>
         </div>
 
-        <div className="w-full max-w-sm space-y-10 animate-in fade-in zoom-in-95 duration-700">
+        {/* Elevated glass card: gives the form the same sense of depth as the branding panel */}
+        <div className="relative z-10 w-full max-w-sm rounded-[2rem] border border-black/5 dark:border-white/10 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl shadow-2xl shadow-slate-900/5 dark:shadow-black/40 p-8 md:p-10 space-y-10 animate-in fade-in zoom-in-95 duration-700 transition-shadow hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]">
           <div className="md:hidden flex flex-col items-center mb-10">
             <div className="p-4 bg-primary/10 rounded-3xl mb-4 shadow-inner">
               {branding.companyLogo ? (

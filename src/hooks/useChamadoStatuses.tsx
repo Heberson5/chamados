@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ChamadoStatus {
@@ -25,6 +25,10 @@ interface TicketLike {
 export function useChamadoStatuses() {
   const [statuses, setStatuses] = useState<ChamadoStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  // Nome de canal único por instância do hook — várias telas usam este hook
+  // ao mesmo tempo (ex: Chamados.tsx e o ChamadoDetailDialog dentro dela), e
+  // o cliente do Supabase reusa/erra ao reabrir um canal com o mesmo nome.
+  const instanceId = useId();
 
   const fetchStatuses = useCallback(async () => {
     const { data } = await supabase
@@ -40,7 +44,7 @@ export function useChamadoStatuses() {
     fetchStatuses();
 
     const channel = supabase
-      .channel("chamado-statuses-realtime")
+      .channel(`chamado-statuses-realtime-${instanceId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "chamado_statuses" },

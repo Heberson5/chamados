@@ -22,9 +22,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getPriorityLabel } from "@/lib/utils/priority";
 import { useChamadoStatuses } from "@/hooks/useChamadoStatuses";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Play, CheckCircle, Pause, History, Plus, ArrowRightLeft,
-  MessageSquare, FileText, Paperclip, X, Send, Loader2, AlertTriangle,
+  MessageSquare, FileText, Paperclip, X, Send, Loader2, AlertTriangle, Trash2,
 } from "lucide-react";
 
 const getSLAInfo = (ticket: any) => {
@@ -69,7 +70,12 @@ export default function ChamadoDetailDialog({
 }: ChamadoDetailDialogProps) {
   const { toast } = useToast();
   const { getLabel, getStatusRow, isEncerrado, isInicial, isCancelado, getStatusIdByLegacyEnum } = useChamadoStatuses();
+  const { hasPermission } = usePermissions();
+  const canExcluir = hasPermission("chamados:excluir");
+  const canRetroativo = hasPermission("chamados:retroativo_de_inicio_pausa_e_conclusao");
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -79,9 +85,14 @@ export default function ChamadoDetailDialog({
 
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [closureNote, setClosureNote] = useState("");
+  const [encerramentoRetroativo, setEncerramentoRetroativo] = useState("");
 
   const [isPrevisaoDialogOpen, setIsPrevisaoDialogOpen] = useState(false);
   const [previsaoValue, setPrevisaoValue] = useState("");
+  const [atendimentoRetroativo, setAtendimentoRetroativo] = useState("");
+
+  const [isPauseDialogOpen, setIsPauseDialogOpen] = useState(false);
+  const [pausaRetroativa, setPausaRetroativa] = useState("");
 
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [isTransferConfirmOpen, setIsTransferConfirmOpen] = useState(false);
@@ -123,7 +134,7 @@ export default function ChamadoDetailDialog({
 
   const handleAction = async (
     action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario",
-    extra?: { previsao?: string | null }
+    extra?: { previsao?: string | null; retroativo?: string | null }
   ) => {
     if (!selectedTicket) return;
     try {
@@ -136,11 +147,25 @@ export default function ChamadoDetailDialog({
       const updates: any = {};
       const now = new Date().toISOString();
 
+      let effectiveTime = now;
+      if (extra?.retroativo) {
+        const retroDate = new Date(extra.retroativo);
+        if (Number.isNaN(retroDate.getTime())) throw new Error("Data retroativa inválida.");
+        if (retroDate.getTime() > Date.now()) {
+          throw new Error("A data retroativa não pode ser posterior ao momento atual.");
+        }
+        const minDate = (action === "atender" ? current.gerado_em : current.atendido_em || current.gerado_em);
+        if (minDate && retroDate.getTime() < new Date(minDate).getTime()) {
+          throw new Error("A data retroativa não pode ser anterior à data do evento que a antecede.");
+        }
+        effectiveTime = retroDate.toISOString();
+      }
+
       if (action === "atender") {
         const targetId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
         if (targetId) updates.status_id = targetId;
         updates.tecnico_id = user.id;
-        updates.atendido_em = current.atendido_em || now;
+        updates.atendido_em = current.atendido_em || effectiveTime;
         if (extra?.previsao) updates.previsao_conclusao = new Date(extra.previsao).toISOString();
       } else if (action === "reabrir") {
         const targetId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
@@ -150,8 +175,8 @@ export default function ChamadoDetailDialog({
       } else if (action === "encerrar") {
         const targetId = getStatusIdByLegacyEnum("ENCERRADO");
         if (targetId) updates.status_id = targetId;
-        updates.encerrado_em = now;
-        if (!current.atendido_em) updates.atendido_em = now;
+        updates.encerrado_em = effectiveTime;
+        if (!current.atendido_em) updates.atendido_em = effectiveTime;
         updates.descricao_encerramento = closureNote;
         await supabase.from("comentarios_chamado").insert({
           chamado_id: selectedTicket.id,
@@ -161,7 +186,7 @@ export default function ChamadoDetailDialog({
       } else if (action === "pausar") {
         const targetId = getStatusIdByLegacyEnum("PAUSADO");
         if (targetId) updates.status_id = targetId;
-        updates.pausado_em = now;
+        updates.pausado_em = effectiveTime;
       } else if (action === "aguardar_usuario") {
         const targetId = getStatusIdByLegacyEnum("AGUARDANDO_USUARIO");
         if (targetId) updates.status_id = targetId;
@@ -213,8 +238,28 @@ export default function ChamadoDetailDialog({
       onUpdate();
       setIsClosureDialogOpen(false);
       setClosureNote("");
+      setEncerramentoRetroativo("");
+      setIsPauseDialogOpen(false);
+      setPausaRetroativa("");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
+    }
+  };
+
+  const handleDeleteTicket = async () => {
+    if (!selectedTicket) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.from("chamados").delete().eq("id", selectedTicket.id);
+      if (error) throw error;
+      toast({ title: "Chamado excluído", description: `O chamado ${selectedTicket.os} foi excluído com sucesso.` });
+      setIsDeleteConfirmOpen(false);
+      onOpenChange(false);
+      onUpdate();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erro ao excluir chamado", description: error.message });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -413,7 +458,9 @@ export default function ChamadoDetailDialog({
                     </Button>
                     {getStatusRow(selectedTicket)?.legacy_enum === "EM_ATENDIMENTO" && (
                       <>
-                        <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("pausar")}>
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => {
+                          if (canRetroativo) { setPausaRetroativa(""); setIsPauseDialogOpen(true); } else { handleAction("pausar"); }
+                        }}>
                           <Pause size={12} /> Pausar
                         </Button>
                         <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("aguardar_usuario")}>
@@ -436,6 +483,11 @@ export default function ChamadoDetailDialog({
                 {canAct && (
                   <Button variant="outline" size="sm" className="h-7 gap-1 text-[10px]" onClick={() => setIsTransferDialogOpen(true)}>
                     <ArrowRightLeft size={12} /> Transferir
+                  </Button>
+                )}
+                {!readOnly && canExcluir && (
+                  <Button variant="outline" size="sm" className="h-7 gap-1 text-[10px] border-destructive text-destructive hover:bg-destructive/10" onClick={() => setIsDeleteConfirmOpen(true)}>
+                    <Trash2 size={12} /> Excluir
                   </Button>
                 )}
                 <Badge variant={
@@ -633,10 +685,22 @@ export default function ChamadoDetailDialog({
                 className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
               />
             </div>
+            {canRetroativo && (
+              <div className="space-y-2">
+                <Label>Data/hora de conclusão (retroativo)</Label>
+                <Input
+                  type="datetime-local"
+                  max={new Date().toISOString().slice(0, 16)}
+                  value={encerramentoRetroativo}
+                  onChange={(e) => setEncerramentoRetroativo(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Informe uma data/hora passada para encerrar retroativamente. Deixe em branco para usar o momento atual.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsClosureDialogOpen(false)}>Cancelar</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleAction("encerrar")} disabled={!closureNote.trim()}>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleAction("encerrar", { retroativo: encerramentoRetroativo || null })} disabled={!closureNote.trim()}>
               Confirmar Encerramento
             </Button>
           </DialogFooter>
@@ -726,14 +790,27 @@ export default function ChamadoDetailDialog({
               <Input type="datetime-local" value={previsaoValue} onChange={(e) => setPrevisaoValue(e.target.value)} />
               <p className="text-xs text-muted-foreground">Informe uma data/hora estimada para a conclusão. Pode deixar em branco.</p>
             </div>
+            {canRetroativo && (
+              <div className="space-y-2">
+                <Label>Data/hora de início do atendimento (retroativo)</Label>
+                <Input
+                  type="datetime-local"
+                  max={new Date().toISOString().slice(0, 16)}
+                  value={atendimentoRetroativo}
+                  onChange={(e) => setAtendimentoRetroativo(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Informe uma data/hora passada para registrar o início do atendimento retroativamente. Deixe em branco para usar o momento atual.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPrevisaoDialogOpen(false)}>Cancelar</Button>
             <Button
               onClick={async () => {
-                await handleAction("atender", { previsao: previsaoValue || null });
+                await handleAction("atender", { previsao: previsaoValue || null, retroativo: atendimentoRetroativo || null });
                 setIsPrevisaoDialogOpen(false);
                 setPrevisaoValue("");
+                setAtendimentoRetroativo("");
               }}
             >
               <Play size={14} className="mr-2" /> Atender
@@ -741,6 +818,51 @@ export default function ChamadoDetailDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isPauseDialogOpen} onOpenChange={setIsPauseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pausar chamado {selectedTicket?.os}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Data/hora de início da pausa (retroativo)</Label>
+              <Input
+                type="datetime-local"
+                max={new Date().toISOString().slice(0, 16)}
+                value={pausaRetroativa}
+                onChange={(e) => setPausaRetroativa(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Informe uma data/hora passada para registrar a pausa retroativamente. Deixe em branco para usar o momento atual.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPauseDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={() => handleAction("pausar", { retroativo: pausaRetroativa || null })}>
+              <Pause size={14} className="mr-2" /> Pausar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir chamado {selectedTicket?.os}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente e não pode ser desfeita. Todas as interações, anexos e o histórico
+              deste chamado serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTicket} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isDeleting ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Trash2 size={14} className="mr-2" />}
+              Excluir definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

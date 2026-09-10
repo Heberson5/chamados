@@ -8,6 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
+import { usePermissions } from "@/hooks/usePermissions";
   import { useState, useEffect, useCallback } from "react";
   import { 
     DndContext, 
@@ -58,7 +59,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
     return { label: "NO PRAZO", color: "bg-green-500" };
   };
 
- function SortableCard({ ticket, columnId, columnMeta, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender }: any) {
+ function SortableCard({ ticket, columnId, columnMeta, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender, onPausar }: any) {
    const isReadOnly = !!ticket.__transferredAway;
    const {
      attributes,
@@ -209,7 +210,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
                       size="sm"
                       variant="ghost"
                       className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-slate-600"
-                      onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "pausar"); }}
+                      onClick={(e) => { e.stopPropagation(); if (onPausar) { onPausar(ticket); } else { onAction(ticket.id, "pausar"); } }}
                     >
                       <Pause size={12} /> Pausar
                     </Button>
@@ -265,6 +266,8 @@ interface ChamadosKanbanProps {
 
  export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProps) {
     const { toast } = useToast();
+    const { hasPermission } = usePermissions();
+    const canRetroativo = hasPermission("chamados:retroativo_de_inicio_pausa_e_conclusao");
     const [agents, setAgents] = useState<any[]>([]);
      const [transferredAwayIds, setTransferredAwayIds] = useState<Set<string>>(new Set());
      const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -361,6 +364,11 @@ interface ChamadosKanbanProps {
   const [isPrevisaoDialogOpen, setIsPrevisaoDialogOpen] = useState(false);
   const [previsaoValue, setPrevisaoValue] = useState<string>("");
   const [previsaoTicket, setPrevisaoTicket] = useState<any>(null);
+  const [atendimentoRetroativo, setAtendimentoRetroativo] = useState("");
+  const [encerramentoRetroativo, setEncerramentoRetroativo] = useState("");
+  const [isPauseDialogOpen, setIsPauseDialogOpen] = useState(false);
+  const [pauseTicket, setPauseTicket] = useState<any>(null);
+  const [pausaRetroativa, setPausaRetroativa] = useState("");
    const [userRole, setUserRole] = useState<string | null>(null);
    const [priorities, setPriorities] = useState<any[]>([]);
    // Preenchido a partir de chamado_statuses (fonte real do board) no
@@ -435,7 +443,7 @@ interface ChamadosKanbanProps {
        loadData();
      }, []);
 
-    const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario", extra?: { previsao?: string | null }) => {
+    const handleAction = async (ticketId: string, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario", extra?: { previsao?: string | null; retroativo?: string | null }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -451,11 +459,25 @@ interface ChamadosKanbanProps {
         // não ganham atalho de ação, só recebem chamados por arrastar-e-soltar.
         const statusIdFor = (legacyEnum: string) => kanbanCols.find((c) => c.legacy_enum === legacyEnum)?.id;
 
+        let effectiveTime = now;
+        if (extra?.retroativo) {
+          const retroDate = new Date(extra.retroativo);
+          if (Number.isNaN(retroDate.getTime())) throw new Error("Data retroativa inválida.");
+          if (retroDate.getTime() > Date.now()) {
+            throw new Error("A data retroativa não pode ser posterior ao momento atual.");
+          }
+          const minDate = action === "atender" ? ticket.gerado_em : ticket.atendido_em || ticket.gerado_em;
+          if (minDate && retroDate.getTime() < new Date(minDate).getTime()) {
+            throw new Error("A data retroativa não pode ser anterior à data do evento que a antecede.");
+          }
+          effectiveTime = retroDate.toISOString();
+        }
+
       if (action === "atender") {
         const targetId = statusIdFor("EM_ATENDIMENTO");
         if (targetId) updates.status_id = targetId;
         updates.tecnico_id = user.id;
-          updates.atendido_em = now;
+          updates.atendido_em = ticket.atendido_em || effectiveTime;
           if (extra?.previsao) {
             updates.previsao_conclusao = new Date(extra.previsao).toISOString();
           }
@@ -467,9 +489,9 @@ interface ChamadosKanbanProps {
        } else if (action === "encerrar") {
         const targetId = statusIdFor("ENCERRADO");
         if (targetId) updates.status_id = targetId;
-          updates.encerrado_em = now;
+          updates.encerrado_em = effectiveTime;
           if (!ticket.atendido_em) {
-            updates.atendido_em = now;
+            updates.atendido_em = effectiveTime;
           }
         updates.descricao_encerramento = closureNote;
 
@@ -482,7 +504,7 @@ interface ChamadosKanbanProps {
         } else if (action === "pausar") {
           const targetId = statusIdFor("PAUSADO");
           if (targetId) updates.status_id = targetId;
-          updates.pausado_em = now;
+          updates.pausado_em = effectiveTime;
         } else if (action === "aguardar_usuario") {
           const targetId = statusIdFor("AGUARDANDO_USUARIO");
           if (targetId) updates.status_id = targetId;
@@ -545,6 +567,10 @@ interface ChamadosKanbanProps {
        onUpdate();
       setIsClosureDialogOpen(false);
       setClosureNote("");
+      setEncerramentoRetroativo("");
+      setIsPauseDialogOpen(false);
+      setPauseTicket(null);
+      setPausaRetroativa("");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
     }
@@ -618,7 +644,8 @@ interface ChamadosKanbanProps {
                           onDetails={openDetails}
                           onAction={handleAction}
                           onOpenClosure={openClosureDialog}
-                          onAtender={(t: any) => { setPrevisaoTicket(t); setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}
+                          onAtender={(t: any) => { setPrevisaoTicket(t); setPrevisaoValue(""); setAtendimentoRetroativo(""); setIsPrevisaoDialogOpen(true); }}
+                          onPausar={canRetroativo ? (t: any) => { setPauseTicket(t); setPausaRetroativa(""); setIsPauseDialogOpen(true); } : undefined}
                         />
                       ))}
 
@@ -650,12 +677,24 @@ interface ChamadosKanbanProps {
               className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
             />
           </div>
+          {canRetroativo && (
+            <div className="space-y-2">
+              <Label>Data/hora de conclusão (retroativo)</Label>
+              <Input
+                type="datetime-local"
+                max={new Date().toISOString().slice(0, 16)}
+                value={encerramentoRetroativo}
+                onChange={(e) => setEncerramentoRetroativo(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Informe uma data/hora passada para encerrar retroativamente. Deixe em branco para usar o momento atual.</p>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsClosureDialogOpen(false)}>Cancelar</Button>
-          <Button 
+          <Button
             className="bg-emerald-600 hover:bg-emerald-700"
-            onClick={() => handleAction(selectedTicket.id, "encerrar")}
+            onClick={() => handleAction(selectedTicket.id, "encerrar", { retroativo: encerramentoRetroativo || null })}
             disabled={!closureNote.trim()}
           >
             Confirmar Encerramento
@@ -694,20 +733,65 @@ interface ChamadosKanbanProps {
               Informe uma data/hora estimada para a conclusão. Pode deixar em branco.
             </p>
           </div>
+          {canRetroativo && (
+            <div className="space-y-2">
+              <Label>Data/hora de início do atendimento (retroativo)</Label>
+              <Input
+                type="datetime-local"
+                max={new Date().toISOString().slice(0, 16)}
+                value={atendimentoRetroativo}
+                onChange={(e) => setAtendimentoRetroativo(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Informe uma data/hora passada para registrar o início do atendimento retroativamente. Deixe em branco para usar o momento atual.</p>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsPrevisaoDialogOpen(false)}>Cancelar</Button>
           <Button
             onClick={async () => {
               if (previsaoTicket) {
-                await handleAction(previsaoTicket.id, "atender", { previsao: previsaoValue || null });
+                await handleAction(previsaoTicket.id, "atender", { previsao: previsaoValue || null, retroativo: atendimentoRetroativo || null });
               }
               setIsPrevisaoDialogOpen(false);
               setPrevisaoTicket(null);
               setPrevisaoValue("");
+              setAtendimentoRetroativo("");
             }}
           >
             <Play size={14} className="mr-2" /> Atender
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={isPauseDialogOpen} onOpenChange={setIsPauseDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Pausar chamado {pauseTicket?.os}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Data/hora de início da pausa (retroativo)</Label>
+            <Input
+              type="datetime-local"
+              max={new Date().toISOString().slice(0, 16)}
+              value={pausaRetroativa}
+              onChange={(e) => setPausaRetroativa(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Informe uma data/hora passada para registrar a pausa retroativamente. Deixe em branco para usar o momento atual.</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsPauseDialogOpen(false)}>Cancelar</Button>
+          <Button
+            onClick={async () => {
+              if (pauseTicket) {
+                await handleAction(pauseTicket.id, "pausar", { retroativo: pausaRetroativa || null });
+              }
+            }}
+          >
+            <Pause size={14} className="mr-2" /> Pausar
           </Button>
         </DialogFooter>
       </DialogContent>

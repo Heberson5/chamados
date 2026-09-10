@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon, Play, CheckCircle, Pause, RotateCcw } from "lucide-react";
+import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon, Play, CheckCircle, Pause, RotateCcw, Trash2 } from "lucide-react";
 import ChamadosKanban from "@/components/ChamadosKanban";
 import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
  import { SortableTableHead } from "@/components/SortableTableHead";
  import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
  import { useChamadoStatuses } from "@/hooks/useChamadoStatuses";
+ import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Chamados() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -47,8 +48,12 @@ export default function Chamados() {
     const [userProfile, setUserProfile] = useState<any>(null);
     const [selectedTicket, setSelectedTicket] = useState<any>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [dataAberturaRetroativa, setDataAberturaRetroativa] = useState("");
   const { toast } = useToast();
   const { getLabel, getStatusIdByLegacyEnum } = useChamadoStatuses();
+  const { hasPermission } = usePermissions();
+  const canCadastrarRetroativo = hasPermission("chamados:cadastrar_retroativo");
+  const canExcluirChamado = hasPermission("chamados:excluir");
 
    const runAction = async (ticket: any, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar") => {
      try {
@@ -240,6 +245,15 @@ export default function Chamados() {
          if (newTicket.tecnico_id && newTicket.tecnico_id !== "none") {
            insertData.tecnico_id = newTicket.tecnico_id;
          }
+         if (canCadastrarRetroativo && dataAberturaRetroativa) {
+           const dataRetroativa = new Date(dataAberturaRetroativa);
+           if (dataRetroativa.getTime() > Date.now()) {
+             toast({ variant: "destructive", title: "Data inválida", description: "A data de abertura retroativa não pode ser no futuro." });
+             setIsLoading(false);
+             return;
+           }
+           insertData.gerado_em = dataRetroativa.toISOString();
+         }
 
         const { data: insertedTicket, error: insertError } = await supabase
           .from("chamados")
@@ -265,18 +279,35 @@ export default function Chamados() {
        }
       await fetchTickets();
       setIsDialogOpen(false);
-      setNewTicket({ 
-        titulo: "", 
-        descricao: "", 
-        prioridade_id: priorities[0]?.id || "", 
-        tecnico_id: "none" 
+      setNewTicket({
+        titulo: "",
+        descricao: "",
+        prioridade_id: priorities[0]?.id || "",
+        tecnico_id: "none"
       });
       setFiles([]);
       setPreviews([]);
+      setDataAberturaRetroativa("");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro ao criar chamado", description: error.message });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteTicket = async (ticket: any) => {
+    if (!confirm(`Deseja realmente excluir o chamado ${ticket.os}? Esta ação não pode ser desfeita.`)) return;
+    try {
+      const { error } = await supabase.from("chamados").delete().eq("id", ticket.id);
+      if (error) throw error;
+      toast({ title: "Chamado excluído", description: `O chamado ${ticket.os} foi excluído com sucesso.` });
+      if (selectedTicket?.id === ticket.id) {
+        setIsDetailOpen(false);
+        setSelectedTicket(null);
+      }
+      await fetchTickets();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Erro ao excluir chamado", description: error.message });
     }
   };
 
@@ -428,6 +459,19 @@ export default function Chamados() {
                      </SelectContent>
                     </Select>
                   </div>
+                 {canCadastrarRetroativo && (
+                   <div className="space-y-2">
+                     <Label htmlFor="dataAberturaRetroativa">Data de abertura (retroativo)</Label>
+                     <Input
+                       id="dataAberturaRetroativa"
+                       type="datetime-local"
+                       max={new Date().toISOString().slice(0, 16)}
+                       value={dataAberturaRetroativa}
+                       onChange={e => setDataAberturaRetroativa(e.target.value)}
+                     />
+                     <p className="text-[10px] text-muted-foreground">Informe uma data/hora passada para cadastrar este chamado retroativamente. Deixe em branco para usar o momento atual.</p>
+                   </div>
+                 )}
                  <div className="space-y-2">
                    <Label htmlFor="tecnico">Designar para (Obrigatório)</Label>
                    {agents.length > 0 ? (
@@ -697,6 +741,11 @@ export default function Chamados() {
                           {ticket.status === "ENCERRADO" && (
                             <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1" onClick={(e) => { e.stopPropagation(); runAction(ticket, "reabrir"); }}>
                               <RotateCcw size={12} /> Reabrir
+                            </Button>
+                          )}
+                          {canExcluirChamado && (
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-destructive" onClick={(e) => { e.stopPropagation(); handleDeleteTicket(ticket); }}>
+                              <Trash2 size={12} /> Excluir
                             </Button>
                           )}
                         </div>

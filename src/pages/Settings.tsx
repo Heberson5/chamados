@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
- import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles, MessageSquareText, Send } from "lucide-react";
+ import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles, MessageSquareText, Send, Smartphone } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { useState, useEffect } from "react";
@@ -66,13 +66,15 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
        { id: '8', label: "Configurações", path: "/settings", visible: true },
     ];
 
-     const [layoutConfig, setLayoutConfig] = useState({ 
-       companyLogo: "", 
+     const [layoutConfig, setLayoutConfig] = useState({
+       companyLogo: "",
        companyFavicon: "",
-       companyName: "Chamados", 
-       sidebarColor: "bg-slate-900", 
-       accentColor: "#3b82f6", 
-       menuOrder: defaultMenuOrder
+       companyName: "Chamados",
+       sidebarColor: "bg-slate-900",
+       accentColor: "#3b82f6",
+       menuOrder: defaultMenuOrder,
+       appName: "",
+       appIcon: "",
      });
       const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
       const [emailLayout, setEmailLayout] = useState("");
@@ -175,7 +177,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                });
                
                val.menuOrder = currentOrder;
-               setLayoutConfig(val);
+               setLayoutConfig(prev => ({ ...prev, ...val }));
              }
             if (sTimeout) setSessionTimeout(sTimeout.value as string);
              if (eTemplates) setEmailTemplates(eTemplates.value as any[]);
@@ -1284,14 +1286,67 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                         <h3 className="text-sm font-bold flex items-center gap-2"><Type size={16} /> Identificação</h3>
                         <div className="space-y-2">
                           <Label>Nome da Empresa (Top Sidebar & Browser)</Label>
-                          <Input 
-                            value={layoutConfig.companyName} 
-                            onChange={e => setLayoutConfig({...layoutConfig, companyName: e.target.value})} 
+                          <Input
+                            value={layoutConfig.companyName}
+                            onChange={e => setLayoutConfig({...layoutConfig, companyName: e.target.value})}
                           />
                         </div>
                       </div>
                     </div>
- 
+
+                    <div className="space-y-4 border-t pt-6">
+                      <h3 className="text-sm font-bold flex items-center gap-2"><Smartphone size={16} /> Aplicativo Móvel (PWA)</h3>
+                      <p className="text-xs text-muted-foreground">Personalize como o sistema aparece quando instalado na tela inicial do celular (Android e iOS).</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                          <Label className="text-[10px] uppercase">Ícone do Aplicativo</Label>
+                          <div className="flex items-center gap-4 border p-4 rounded-lg bg-muted/30 h-[100px]">
+                            <div className="w-12 h-12 rounded border bg-background flex items-center justify-center overflow-hidden shrink-0">
+                              {layoutConfig.appIcon ? (
+                                <img src={layoutConfig.appIcon} alt="Ícone do aplicativo" className="max-w-full max-h-full object-contain" />
+                              ) : (
+                                <Smartphone size={24} className="text-muted-foreground opacity-20" />
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="app-icon-upload" className="cursor-pointer">
+                                <div className="flex items-center gap-2 text-[10px] bg-primary text-primary-foreground px-2 py-1.5 rounded-md hover:bg-primary/90 transition-colors w-fit">
+                                  <Upload size={12} /> Selecionar Ícone
+                                </div>
+                              </Label>
+                              <Input
+                                id="app-icon-upload"
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = (re) => {
+                                      setLayoutConfig({...layoutConfig, appIcon: re.target?.result as string});
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                              <p className="text-[9px] text-muted-foreground">Imagem quadrada, mínimo 512x512px.</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase">Nome do Aplicativo</Label>
+                          <Input
+                            value={layoutConfig.appName}
+                            onChange={e => setLayoutConfig({...layoutConfig, appName: e.target.value})}
+                            placeholder={layoutConfig.companyName || "Chamados"}
+                            maxLength={30}
+                          />
+                          <p className="text-[9px] text-muted-foreground">Nome exibido abaixo do ícone na tela inicial. Se vazio, usa o nome da empresa.</p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-4 border-t pt-6">
                       <h3 className="text-sm font-bold flex items-center gap-2"><Palette size={16} /> Cores e Tema</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

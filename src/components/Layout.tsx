@@ -6,6 +6,7 @@ import MobileBottomNav from "./MobileBottomNav";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 import ChangePasswordDialog from "./ChangePasswordDialog";
+import InstallAppButton from "./InstallAppButton";
 import { useBranding } from "@/hooks/useBranding";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
@@ -210,13 +211,16 @@ export default function Layout() {
               {branding.companyName || "Chamados"}
             </span>
           </button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu size={24} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <InstallAppButton />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </Button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto min-w-0 pb-16 md:pb-0">

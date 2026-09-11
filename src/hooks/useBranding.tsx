@@ -8,6 +8,8 @@ export interface BrandingSettings {
   accentColor?: string;
   sidebarColor?: string;
   menuOrder?: any[];
+  appName?: string;
+  appIcon?: string;
 }
 
 interface BrandingContextValue {
@@ -47,6 +49,64 @@ function hexToHsl(hex: string): string | null {
 
 const BRANDING_CACHE_KEY = "chamados_branding_cache";
 
+let lastManifestBlobUrl: string | null = null;
+
+// Gera um manifest.json dinâmico com o ícone/nome configurados em
+// Configurações > Layout e troca o <link rel="manifest">, para que o
+// "Instalar aplicativo" do Android/Chrome use a marca do cliente em vez do
+// manifest estático padrão. No iOS não existe manifest — lá quem manda são
+// os metatags apple-* atualizados logo abaixo.
+function applyPwaManifest(settings: BrandingSettings) {
+  const name = settings.appName || settings.companyName || "Chamados";
+  const icon = settings.appIcon || settings.companyFavicon;
+
+  let link = document.querySelector("link[rel='manifest']") as HTMLLinkElement | null;
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "manifest";
+    document.head.appendChild(link);
+  }
+
+  if (!icon) {
+    // Sem ícone customizado: mantém o manifest estático padrão
+    // (public/manifest.json), que já tem ícones de fallback.
+    if (lastManifestBlobUrl) {
+      link.href = "/manifest.json";
+      URL.revokeObjectURL(lastManifestBlobUrl);
+      lastManifestBlobUrl = null;
+    }
+    return;
+  }
+
+  const manifest = {
+    name,
+    short_name: name.slice(0, 12),
+    start_url: "/",
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: settings.accentColor || "#3b82f6",
+    icons: [
+      { src: icon, sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: icon, sizes: "512x512", type: "image/png", purpose: "any" },
+    ],
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  if (lastManifestBlobUrl) URL.revokeObjectURL(lastManifestBlobUrl);
+  lastManifestBlobUrl = url;
+}
+
+function setMetaContent(name: string, content: string) {
+  let meta = document.querySelector(`meta[name='${name}']`) as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = name;
+    document.head.appendChild(meta);
+  }
+  meta.content = content;
+}
+
 function applyBrandingSideEffects(settings: BrandingSettings) {
   document.title = settings.companyName || "Chamados";
   if (settings.companyFavicon) {
@@ -64,6 +124,20 @@ function applyBrandingSideEffects(settings: BrandingSettings) {
       document.documentElement.style.setProperty("--primary", hsl);
     }
   }
+
+  // PWA: nome/ícone exibidos quando o app é instalado na tela inicial.
+  const appIcon = settings.appIcon || settings.companyFavicon;
+  if (appIcon) {
+    let appleIcon = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null;
+    if (!appleIcon) {
+      appleIcon = document.createElement("link");
+      appleIcon.rel = "apple-touch-icon";
+      document.head.appendChild(appleIcon);
+    }
+    appleIcon.href = appIcon;
+  }
+  setMetaContent("apple-mobile-web-app-title", settings.appName || settings.companyName || "Chamados");
+  applyPwaManifest(settings);
   // Cacheia pro próximo carregamento: um script inline no index.html lê isso
   // e aplica o favicon/título ANTES do React montar, pra não piscar o ícone
   // padrão a cada refresh enquanto essa busca no Supabase não termina.

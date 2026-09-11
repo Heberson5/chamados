@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useBranding } from "@/hooks/useBranding";
+import InstallAppButton from "@/components/InstallAppButton";
 import { useToast } from "@/hooks/use-toast";
 import { evaluateSchedule, loadEffectiveSchedule } from "@/lib/accessSchedule";
 
@@ -272,7 +273,8 @@ export default function Login() {
           <div className="absolute bottom-[-15%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/[0.05] dark:bg-blue-500/10 blur-[100px] animate-float-slow" style={{ animationDelay: "3s" }} />
         </div>
 
-        <div className="absolute top-8 right-8 animate-in fade-in duration-1000 z-10">
+        <div className="absolute top-8 right-8 animate-in fade-in duration-1000 z-10 flex items-center gap-2">
+          <InstallAppButton className="md:hidden rounded-xl h-12 w-12 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all" />
           <Button
             variant="outline"
             size="icon"

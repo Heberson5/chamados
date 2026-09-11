@@ -8,3 +8,13 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </ErrorBoundary>
 );
+
+// Registra o service worker mínimo que habilita "Instalar aplicativo" no
+// Android/Chrome (exigência da plataforma, sem cache de dados).
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Instalação como PWA fica indisponível, mas o app funciona normal.
+    });
+  });
+}

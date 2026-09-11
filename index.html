@@ -25,6 +25,17 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chamados</title>
+
+    <!-- PWA: instalação como app no Android (via manifest) e no iOS (via
+         metatags apple-*, já que o Safari não usa manifest.json para isso).
+         Nome/ícone aqui são o fallback padrão; useBranding.tsx troca pelos
+         valores configurados em Configurações > Layout assim que carregam. -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#3b82f6" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Chamados" />
     <!--
       Sem <link rel="icon"> estático aqui de propósito: se o cache acima já
       injetou o favicon customizado, uma segunda tag apontando para o ícone

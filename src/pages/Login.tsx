@@ -274,7 +274,7 @@ export default function Login() {
         </div>
 
         <div className="absolute top-8 right-8 animate-in fade-in duration-1000 z-10 flex items-center gap-2">
-          <InstallAppButton className="md:hidden rounded-xl h-12 w-12 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all" />
+          <InstallAppButton className="rounded-xl h-12 w-12 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all" />
           <Button
             variant="outline"
             size="icon"

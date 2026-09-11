@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
  import UserMenu from "./UserMenu";
  import { useBranding } from "@/hooks/useBranding";
  import { useMenuItems } from "@/hooks/useMenuItems";
+ import InstallAppButton from "./InstallAppButton";
 
 interface SidebarProps {
   onMobileClose?: () => void;
@@ -42,9 +43,10 @@ interface SidebarProps {
            </button>
          )}
         <div className="flex items-center ml-auto">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <InstallAppButton className="hidden md:flex" />
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setCollapsed(!collapsed)}
             className="hidden md:flex"
           >

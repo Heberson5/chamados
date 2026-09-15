@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Input } from "@/components/ui/input";
  import { useToast } from "@/hooks/use-toast";
 import LandingLiveEditor from "@/components/LandingLiveEditor";
+import { cn } from "@/lib/utils";
 
   export default function Settings() {
     const navigate = useNavigate();
@@ -66,12 +67,13 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
        { id: '8', label: "Configurações", path: "/settings", visible: true },
     ];
 
-     const [layoutConfig, setLayoutConfig] = useState({ 
-       companyLogo: "", 
+     const [layoutConfig, setLayoutConfig] = useState({
+       companyLogo: "",
        companyFavicon: "",
-       companyName: "Chamados", 
-       sidebarColor: "bg-slate-900", 
-       accentColor: "#3b82f6", 
+       appIcon: "",
+       companyName: "Chamados",
+       sidebarColor: "bg-slate-900",
+       accentColor: "#3b82f6",
        menuOrder: defaultMenuOrder
      });
       const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
@@ -1205,7 +1207,7 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                        <div className="space-y-4">
                          <h3 className="text-sm font-bold flex items-center gap-2"><ImageIcon size={16} /> Identidade Visual</h3>
-                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                         <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4", isMaster && "lg:grid-cols-3")}>
                            <div className="flex flex-col gap-2">
                              <Label className="text-[10px] uppercase">Logo da Empresa</Label>
                              <div className="flex items-center gap-4 border p-4 rounded-lg bg-muted/30 h-[100px]">
@@ -1258,11 +1260,11 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                                      <Upload size={12} /> Selecionar Ícone
                                    </div>
                                  </Label>
-                                 <Input 
-                                   id="favicon-upload" 
-                                   type="file" 
-                                   className="hidden" 
-                                   accept="image/*" 
+                                 <Input
+                                   id="favicon-upload"
+                                   type="file"
+                                   className="hidden"
+                                   accept="image/*"
                                    onChange={async (e) => {
                                      const file = e.target.files?.[0];
                                      if (file) {
@@ -1277,6 +1279,47 @@ import LandingLiveEditor from "@/components/LandingLiveEditor";
                                </div>
                              </div>
                            </div>
+
+                           {isMaster && (
+                             <div className="flex flex-col gap-2">
+                               <Label className="text-[10px] uppercase">Ícone do App (Instalação)</Label>
+                               <div className="flex items-center gap-4 border p-4 rounded-lg bg-muted/30 h-[100px]">
+                                 <div className="w-12 h-12 rounded-xl border bg-background flex items-center justify-center overflow-hidden shrink-0">
+                                   <img
+                                     src={layoutConfig.appIcon || "/icons/icon-192.png"}
+                                     alt="Ícone do App"
+                                     className="w-full h-full object-contain"
+                                   />
+                                 </div>
+                                 <div className="flex-1 space-y-2">
+                                   <Label htmlFor="app-icon-upload" className="cursor-pointer">
+                                     <div className="flex items-center gap-2 text-[10px] bg-primary text-primary-foreground px-2 py-1.5 rounded-md hover:bg-primary/90 transition-colors w-fit">
+                                       <Upload size={12} /> Selecionar Ícone
+                                     </div>
+                                   </Label>
+                                   <Input
+                                     id="app-icon-upload"
+                                     type="file"
+                                     className="hidden"
+                                     accept="image/png"
+                                     onChange={async (e) => {
+                                       const file = e.target.files?.[0];
+                                       if (file) {
+                                         const reader = new FileReader();
+                                         reader.onload = (re) => {
+                                           setLayoutConfig({ ...layoutConfig, appIcon: re.target?.result as string });
+                                         };
+                                         reader.readAsDataURL(file);
+                                       }
+                                     }}
+                                   />
+                                   <p className="text-[9px] text-muted-foreground leading-tight">
+                                     Usado quando o usuário instala o app (Android/computador). Ícone provisório já aplicado — envie um PNG quadrado (512×512) para personalizar.
+                                   </p>
+                                 </div>
+                               </div>
+                             </div>
+                           )}
                          </div>
                        </div>
  

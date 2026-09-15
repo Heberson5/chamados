@@ -5,6 +5,7 @@ export interface BrandingSettings {
   companyName?: string;
   companyLogo?: string;
   companyFavicon?: string;
+  appIcon?: string;
   accentColor?: string;
   sidebarColor?: string;
   menuOrder?: any[];
@@ -47,6 +48,52 @@ function hexToHsl(hex: string): string | null {
 
 const BRANDING_CACHE_KEY = "chamados_branding_cache";
 
+// URL do manifest gerado dinamicamente (quando a empresa define um ícone de
+// app próprio) — guardado pra poder revogar o blob anterior e não vazar
+// memória a cada atualização de branding.
+let generatedManifestUrl: string | null = null;
+
+function applyAppIcon(appIcon: string | undefined, companyName: string | undefined) {
+  const appleTouchIcon = document.getElementById("apple-touch-icon") as HTMLLinkElement | null;
+  if (appleTouchIcon) {
+    appleTouchIcon.href = appIcon || "/icons/apple-touch-icon.png";
+  }
+
+  const manifestLink = document.getElementById("app-manifest") as HTMLLinkElement | null;
+  if (!manifestLink) return;
+
+  if (!appIcon) {
+    if (generatedManifestUrl) {
+      URL.revokeObjectURL(generatedManifestUrl);
+      generatedManifestUrl = null;
+    }
+    manifestLink.href = "/manifest.webmanifest";
+    return;
+  }
+
+  const manifest = {
+    name: companyName || "Chamados",
+    short_name: companyName || "Chamados",
+    description: "Plataforma de help desk: chamados, SLA, automações e Kanban.",
+    start_url: "/",
+    scope: "/",
+    display: "standalone",
+    background_color: "#0f172a",
+    theme_color: "#5643f0",
+    icons: [
+      { src: appIcon, sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: appIcon, sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: appIcon, sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+  };
+
+  const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+  const url = URL.createObjectURL(blob);
+  manifestLink.href = url;
+  if (generatedManifestUrl) URL.revokeObjectURL(generatedManifestUrl);
+  generatedManifestUrl = url;
+}
+
 function applyBrandingSideEffects(settings: BrandingSettings) {
   document.title = settings.companyName || "Chamados";
   if (settings.companyFavicon) {
@@ -58,6 +105,7 @@ function applyBrandingSideEffects(settings: BrandingSettings) {
     }
     link.href = settings.companyFavicon;
   }
+  applyAppIcon(settings.appIcon, settings.companyName);
   if (settings.accentColor) {
     const hsl = hexToHsl(settings.accentColor);
     if (hsl) {

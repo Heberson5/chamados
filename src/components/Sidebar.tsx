@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
  import { Button } from "@/components/ui/button";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import UserMenu from "./UserMenu";
+ import InstallAppButton from "./InstallAppButton";
  import { useBranding } from "@/hooks/useBranding";
  import { useMenuItems } from "@/hooks/useMenuItems";
 
@@ -93,6 +94,7 @@ interface SidebarProps {
        </nav>
  
        <div className="p-2 border-t space-y-2">
+          <InstallAppButton collapsed={collapsed} />
           {/* Atalho do perfil */}
           <UserMenu collapsed={collapsed} />
        </div>

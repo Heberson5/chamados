@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { useBranding } from "@/hooks/useBranding";
 import { useToast } from "@/hooks/use-toast";
+import InstallAppButton from "@/components/InstallAppButton";
 import { evaluateSchedule, loadEffectiveSchedule } from "@/lib/accessSchedule";
 
 export default function Login() {
@@ -306,6 +307,8 @@ export default function Login() {
             <h3 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{landing.formTitle}</h3>
             <p className="text-slate-500 font-medium">{landing.formSubtitle}</p>
           </div>
+
+          <InstallAppButton variant="banner" className="w-full justify-center" />
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">

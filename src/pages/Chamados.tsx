@@ -3,15 +3,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon, Play, CheckCircle, Pause, RotateCcw } from "lucide-react";
+import { Plus, Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, User as UserIcon, Play, CheckCircle, Pause, RotateCcw, Trash2 } from "lucide-react";
 import ChamadosKanban from "@/components/ChamadosKanban";
 import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { getPriorityLabel } from "@/lib/utils/priority";
@@ -47,8 +59,20 @@ export default function Chamados() {
     const [userProfile, setUserProfile] = useState<any>(null);
     const [selectedTicket, setSelectedTicket] = useState<any>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [retroativo, setRetroativo] = useState({
+      ativarAbertura: false,
+      dataAbertura: "",
+      ativarInicio: false,
+      dataInicio: "",
+      ativarSuspensao: false,
+      dataSuspensao: "",
+    });
   const { toast } = useToast();
-  const { getLabel, getStatusIdByLegacyEnum } = useChamadoStatuses();
+  const { isMaster } = usePermissions();
+  const { getLabel, getStatusIdByLegacyEnum, getStatusIdByFlag } = useChamadoStatuses();
 
    const runAction = async (ticket: any, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar") => {
      try {
@@ -91,6 +115,31 @@ export default function Chamados() {
        await fetchTickets();
      } catch (e: any) {
        toast({ variant: "destructive", title: "Erro", description: e.message });
+     }
+   };
+
+   const toggleSelectOne = (id: string) => {
+     setSelectedIds(prev => {
+       const next = new Set(prev);
+       if (next.has(id)) next.delete(id); else next.add(id);
+       return next;
+     });
+   };
+
+   const handleDeleteSelected = async () => {
+     if (selectedIds.size === 0) return;
+     setIsDeleting(true);
+     try {
+       const { error } = await supabase.from("chamados").delete().in("id", Array.from(selectedIds));
+       if (error) throw error;
+       toast({ title: "Chamados excluídos", description: `${selectedIds.size} chamado(s) removido(s) permanentemente.` });
+       setSelectedIds(new Set());
+       setIsDeleteDialogOpen(false);
+       await fetchTickets();
+     } catch (e) {
+       toast({ variant: "destructive", title: "Erro ao excluir chamados", description: e instanceof Error ? e.message : String(e) });
+     } finally {
+       setIsDeleting(false);
      }
    };
 
@@ -241,6 +290,31 @@ export default function Chamados() {
            insertData.tecnico_id = newTicket.tecnico_id;
          }
 
+         if (isMaster) {
+           if (retroativo.ativarSuspensao && !retroativo.ativarInicio) {
+             throw new Error("Para registrar uma suspensão retroativa, informe também o início de atendimento retroativo.");
+           }
+           if (retroativo.ativarAbertura && retroativo.dataAbertura) {
+             insertData.gerado_em = new Date(retroativo.dataAbertura).toISOString();
+           }
+           if (retroativo.ativarInicio && retroativo.dataInicio) {
+             if (retroativo.ativarAbertura && retroativo.dataAbertura && retroativo.dataInicio < retroativo.dataAbertura) {
+               throw new Error("O início do atendimento retroativo não pode ser anterior à data de abertura.");
+             }
+             insertData.atendido_em = new Date(retroativo.dataInicio).toISOString();
+             const emAtendimentoId = getStatusIdByLegacyEnum("EM_ATENDIMENTO");
+             if (emAtendimentoId) insertData.status_id = emAtendimentoId;
+           }
+           if (retroativo.ativarSuspensao && retroativo.dataSuspensao) {
+             if (retroativo.dataSuspensao < retroativo.dataInicio) {
+               throw new Error("A suspensão retroativa não pode ser anterior ao início do atendimento.");
+             }
+             insertData.pausado_em = new Date(retroativo.dataSuspensao).toISOString();
+             const pausaId = getStatusIdByFlag("is_pausa");
+             if (pausaId) insertData.status_id = pausaId;
+           }
+         }
+
         const { data: insertedTicket, error: insertError } = await supabase
           .from("chamados")
           .insert(insertData)
@@ -265,14 +339,22 @@ export default function Chamados() {
        }
       await fetchTickets();
       setIsDialogOpen(false);
-      setNewTicket({ 
-        titulo: "", 
-        descricao: "", 
-        prioridade_id: priorities[0]?.id || "", 
-        tecnico_id: "none" 
+      setNewTicket({
+        titulo: "",
+        descricao: "",
+        prioridade_id: priorities[0]?.id || "",
+        tecnico_id: "none"
       });
       setFiles([]);
       setPreviews([]);
+      setRetroativo({
+        ativarAbertura: false,
+        dataAbertura: "",
+        ativarInicio: false,
+        dataInicio: "",
+        ativarSuspensao: false,
+        dataSuspensao: "",
+      });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro ao criar chamado", description: error.message });
     } finally {
@@ -342,6 +424,14 @@ export default function Chamados() {
     };
     const { sortedData: sortedTickets, sortKey: listSortKey, sortDirection: listSortDirection, requestSort: requestListSort } = useSortableTable(filteredTickets, getListSortValue);
 
+    const toggleSelectAll = () => {
+      if (selectedIds.size === sortedTickets.length && sortedTickets.length > 0) {
+        setSelectedIds(new Set());
+      } else {
+        setSelectedIds(new Set(sortedTickets.map((t) => t.id)));
+      }
+    };
+
   return (
     <div className="p-4 md:p-8 w-full md:h-full flex flex-col gap-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
@@ -373,6 +463,18 @@ export default function Chamados() {
                <SelectItem value="CANCELADO">Cancelado</SelectItem>
              </SelectContent>
            </Select>
+
+          {isMaster && (
+            <Button
+              variant="destructive"
+              className="flex items-center gap-2"
+              disabled={selectedIds.size === 0}
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash2 size={18} />
+              Excluir Selecionados{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+            </Button>
+          )}
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -481,9 +583,68 @@ export default function Chamados() {
                     </div>
                   )}
                 </div>
+                {isMaster && (
+                  <div className="space-y-3 border rounded-md p-3 bg-muted/30">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Registro retroativo (Master)</p>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="retro-abertura" className="text-sm font-normal">Definir data de abertura retroativa</Label>
+                      <Switch
+                        id="retro-abertura"
+                        checked={retroativo.ativarAbertura}
+                        onCheckedChange={(v) => setRetroativo(prev => ({ ...prev, ativarAbertura: v }))}
+                      />
+                    </div>
+                    {retroativo.ativarAbertura && (
+                      <Input
+                        type="datetime-local"
+                        value={retroativo.dataAbertura}
+                        onChange={(e) => setRetroativo(prev => ({ ...prev, dataAbertura: e.target.value }))}
+                      />
+                    )}
+
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="retro-inicio" className="text-sm font-normal">Registrar início de atendimento retroativo</Label>
+                      <Switch
+                        id="retro-inicio"
+                        checked={retroativo.ativarInicio}
+                        onCheckedChange={(v) => setRetroativo(prev => ({ ...prev, ativarInicio: v, ativarSuspensao: v ? prev.ativarSuspensao : false }))}
+                      />
+                    </div>
+                    {retroativo.ativarInicio && (
+                      <Input
+                        type="datetime-local"
+                        value={retroativo.dataInicio}
+                        onChange={(e) => setRetroativo(prev => ({ ...prev, dataInicio: e.target.value }))}
+                      />
+                    )}
+
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="retro-suspensao" className={`text-sm font-normal ${!retroativo.ativarInicio ? "text-muted-foreground" : ""}`}>
+                        Registrar suspensão retroativa
+                      </Label>
+                      <Switch
+                        id="retro-suspensao"
+                        disabled={!retroativo.ativarInicio}
+                        checked={retroativo.ativarSuspensao}
+                        onCheckedChange={(v) => setRetroativo(prev => ({ ...prev, ativarSuspensao: v }))}
+                      />
+                    </div>
+                    {retroativo.ativarSuspensao && (
+                      <Input
+                        type="datetime-local"
+                        value={retroativo.dataSuspensao}
+                        onChange={(e) => setRetroativo(prev => ({ ...prev, dataSuspensao: e.target.value }))}
+                      />
+                    )}
+                    <p className="text-[10px] text-muted-foreground">
+                      Use estes campos apenas para cadastrar chamados de períodos anteriores (ex: migração de histórico).
+                    </p>
+                  </div>
+                )}
                  <DialogFooter>
-                   <Button 
-                    type="submit" 
+                   <Button
+                    type="submit"
                     disabled={isLoading || agents.length === 0 || !newTicket.tecnico_id || newTicket.tecnico_id === "none"}
                   >
                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -528,6 +689,17 @@ export default function Chamados() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {isMaster && (
+                    <TableHead className="w-10 px-2">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                        checked={sortedTickets.length > 0 && selectedIds.size === sortedTickets.length}
+                        onChange={toggleSelectAll}
+                        aria-label="Selecionar todos os chamados"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="w-10 px-2">
                     <ColumnVisibilityMenu columns={listColumns} isVisible={isColVisible} onToggle={toggleColumn} />
                   </TableHead>
@@ -552,6 +724,17 @@ export default function Chamados() {
                       className="hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => { setSelectedTicket(ticket); setIsDetailOpen(true); }}
                     >
+                      {isMaster && (
+                        <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                            checked={selectedIds.has(ticket.id)}
+                            onChange={() => toggleSelectOne(ticket.id)}
+                            aria-label={`Selecionar chamado ${ticket.os}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="w-10 px-2" />
                       {isColVisible("chamado") && (
                       <TableCell className="font-medium">
@@ -706,7 +889,7 @@ export default function Chamados() {
                 })}
                 {sortedTickets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 2} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 2 + (isMaster ? 1 : 0)} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                          <AlertTriangle size={32} className="text-warning" />
                         <p>Nenhum chamado encontrado para os filtros atuais.</p>
@@ -736,6 +919,31 @@ export default function Chamados() {
         agents={agents}
         priorities={priorities}
       />
+
+      {isMaster && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir chamados selecionados?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação é irreversível. {selectedIds.size} chamado(s) e todo o histórico de interações, ordens
+                de serviço e transferências vinculados serão excluídos permanentemente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isDeleting}
+                onClick={(e) => { e.preventDefault(); handleDeleteSelected(); }}
+              >
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Excluir definitivamente
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

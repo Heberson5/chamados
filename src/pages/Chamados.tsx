@@ -903,7 +903,13 @@ export default function Chamados() {
         </TabsContent>
         
         <TabsContent value="kanban" className="mt-0 flex-1 md:min-h-0 flex-col data-[state=active]:flex">
-          <ChamadosKanban tickets={filteredTickets} onUpdate={fetchTickets} />
+          <ChamadosKanban
+            tickets={filteredTickets}
+            onUpdate={fetchTickets}
+            isMaster={isMaster}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelectOne}
+          />
         </TabsContent>
         </>
         )}

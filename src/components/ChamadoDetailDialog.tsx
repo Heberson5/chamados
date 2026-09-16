@@ -68,7 +68,7 @@ export default function ChamadoDetailDialog({
   onTransferred,
 }: ChamadoDetailDialogProps) {
   const { toast } = useToast();
-  const { getLabel, getStatusRow, isEncerrado, isInicial, isCancelado, getStatusIdByLegacyEnum } = useChamadoStatuses();
+  const { getLabel, getStatusRow, isEncerrado, isInicial, isCancelado, getStatusIdByLegacyEnum, getStatusIdByFlag } = useChamadoStatuses();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
 
   const [comments, setComments] = useState<any[]>([]);
@@ -79,6 +79,9 @@ export default function ChamadoDetailDialog({
 
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [closureNote, setClosureNote] = useState("");
+
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [cancelNote, setCancelNote] = useState("");
 
   const [isPrevisaoDialogOpen, setIsPrevisaoDialogOpen] = useState(false);
   const [previsaoValue, setPrevisaoValue] = useState("");
@@ -122,7 +125,7 @@ export default function ChamadoDetailDialog({
   }, [open, selectedTicket, fetchComments]);
 
   const handleAction = async (
-    action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario",
+    action: "atender" | "encerrar" | "cancelar" | "reabrir" | "pausar" | "retomar" | "aguardar_usuario",
     extra?: { previsao?: string | null }
   ) => {
     if (!selectedTicket) return;
@@ -157,6 +160,16 @@ export default function ChamadoDetailDialog({
           chamado_id: selectedTicket.id,
           autor_id: user.id,
           comentario: `[ENCERRAMENTO] ${closureNote}`,
+        });
+      } else if (action === "cancelar") {
+        const targetId = getStatusIdByFlag("is_cancelado");
+        if (targetId) updates.status_id = targetId;
+        updates.encerrado_em = now;
+        updates.descricao_encerramento = cancelNote || "Cancelado";
+        await supabase.from("comentarios_chamado").insert({
+          chamado_id: selectedTicket.id,
+          autor_id: user.id,
+          comentario: `[CANCELAMENTO] ${cancelNote || "Sem motivo informado"}`,
         });
       } else if (action === "pausar") {
         const targetId = getStatusIdByLegacyEnum("PAUSADO");
@@ -209,10 +222,13 @@ export default function ChamadoDetailDialog({
       }
 
       setSelectedTicket((prev: any) => (prev ? { ...prev, ...updates } : prev));
-      toast({ title: "Status atualizado", description: `Chamado ${action === "encerrar" ? "encerrado" : "atualizado"} com sucesso.` });
+      const actionLabel = action === "encerrar" ? "encerrado" : action === "cancelar" ? "cancelado" : "atualizado";
+      toast({ title: "Status atualizado", description: `Chamado ${actionLabel} com sucesso.` });
       onUpdate();
       setIsClosureDialogOpen(false);
       setClosureNote("");
+      setIsCancelDialogOpen(false);
+      setCancelNote("");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
     }
@@ -404,6 +420,16 @@ export default function ChamadoDetailDialog({
                 {canAct && isInicial(selectedTicket) && (
                   <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => { setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}>
                     <Play size={12} /> Atender
+                  </Button>
+                )}
+                {canAct && !isCancelado(selectedTicket) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 text-[10px] border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    onClick={() => { setCancelNote(""); setIsCancelDialogOpen(true); }}
+                  >
+                    <X size={12} /> Cancelar
                   </Button>
                 )}
                 {canAct && !isInicial(selectedTicket) && !isCancelado(selectedTicket) && (
@@ -638,6 +664,31 @@ export default function ChamadoDetailDialog({
             <Button variant="outline" onClick={() => setIsClosureDialogOpen(false)}>Cancelar</Button>
             <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleAction("encerrar")} disabled={!closureNote.trim()}>
               Confirmar Encerramento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar Chamado: {selectedTicket?.os}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Motivo do Cancelamento</Label>
+              <textarea
+                placeholder="Explique por que este chamado está sendo cancelado..."
+                value={cancelNote}
+                onChange={(e) => setCancelNote(e.target.value)}
+                className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCancelDialogOpen(false)}>Voltar</Button>
+            <Button variant="destructive" onClick={() => handleAction("cancelar")} disabled={!cancelNote.trim()}>
+              Confirmar Cancelamento
             </Button>
           </DialogFooter>
         </DialogContent>

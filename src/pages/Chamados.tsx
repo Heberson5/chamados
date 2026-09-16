@@ -71,7 +71,12 @@ export default function Chamados() {
       dataSuspensao: "",
     });
   const { toast } = useToast();
-  const { isMaster } = usePermissions();
+  const { isMaster, hasPermission } = usePermissions();
+  // Regra fixa: essas duas são só para Master, como pedido — a permissão
+  // granular (Permissões > Chamados) só pode restringir ainda mais (AND),
+  // nunca liberar para técnico/admin/usuário.
+  const canBulkDelete = isMaster && hasPermission("chamados:excluir_em_massa");
+  const canRetroactive = isMaster && hasPermission("chamados:cadastro_retroativo");
   const { getLabel, getStatusIdByLegacyEnum, getStatusIdByFlag } = useChamadoStatuses();
 
    const runAction = async (ticket: any, action: "atender" | "encerrar" | "reabrir" | "pausar" | "retomar") => {
@@ -290,7 +295,7 @@ export default function Chamados() {
            insertData.tecnico_id = newTicket.tecnico_id;
          }
 
-         if (isMaster) {
+         if (canRetroactive) {
            if (retroativo.ativarSuspensao && !retroativo.ativarInicio) {
              throw new Error("Para registrar uma suspensão retroativa, informe também o início de atendimento retroativo.");
            }
@@ -464,7 +469,7 @@ export default function Chamados() {
              </SelectContent>
            </Select>
 
-          {isMaster && (
+          {canBulkDelete && (
             <Button
               variant="destructive"
               className="flex items-center gap-2"
@@ -583,7 +588,7 @@ export default function Chamados() {
                     </div>
                   )}
                 </div>
-                {isMaster && (
+                {canRetroactive && (
                   <div className="space-y-3 border rounded-md p-3 bg-muted/30">
                     <p className="text-xs font-semibold uppercase text-muted-foreground">Registro retroativo (Master)</p>
 
@@ -689,7 +694,7 @@ export default function Chamados() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {isMaster && (
+                  {canBulkDelete && (
                     <TableHead className="w-10 px-2">
                       <input
                         type="checkbox"
@@ -724,7 +729,7 @@ export default function Chamados() {
                       className="hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => { setSelectedTicket(ticket); setIsDetailOpen(true); }}
                     >
-                      {isMaster && (
+                      {canBulkDelete && (
                         <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
@@ -889,7 +894,7 @@ export default function Chamados() {
                 })}
                 {sortedTickets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 2 + (isMaster ? 1 : 0)} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={listColumns.filter(c => isColVisible(c.key)).length + 2 + (canBulkDelete ? 1 : 0)} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                          <AlertTriangle size={32} className="text-warning" />
                         <p>Nenhum chamado encontrado para os filtros atuais.</p>
@@ -906,7 +911,7 @@ export default function Chamados() {
           <ChamadosKanban
             tickets={filteredTickets}
             onUpdate={fetchTickets}
-            isMaster={isMaster}
+            isMaster={canBulkDelete}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelectOne}
           />
@@ -926,7 +931,7 @@ export default function Chamados() {
         priorities={priorities}
       />
 
-      {isMaster && (
+      {canBulkDelete && (
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>

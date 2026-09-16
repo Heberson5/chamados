@@ -8,6 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
+import { usePermissions } from "@/hooks/usePermissions";
   import { useState, useEffect, useCallback } from "react";
   import { 
     DndContext, 
@@ -60,6 +61,13 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
 
  function SortableCard({ ticket, columnId, columnMeta, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender, isMaster, selected, onToggleSelect }: any) {
    const isReadOnly = !!ticket.__transferredAway;
+   const { hasPermission } = usePermissions();
+   // Mesmo piso histórico do detalhe do chamado (técnico/admin/master sempre
+   // puderam), combinado com OR à permissão granular — só amplia, nunca tira.
+   const isTecnicoOuAcima = userRole !== "USUARIO";
+   const canAtender = isTecnicoOuAcima || hasPermission("chamados:assumir_chamado");
+   const canEncerrarKanban = isTecnicoOuAcima || hasPermission("chamados:encerrar");
+   const canReabrirKanban = isTecnicoOuAcima || hasPermission("chamados:reabrir");
    const {
      attributes,
      listeners,
@@ -196,7 +204,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
            </Button>
            {expanded && (
            <>
-            {!isReadOnly && columnMeta?.is_inicial && userRole !== "USUARIO" && (
+            {!isReadOnly && columnMeta?.is_inicial && canAtender && (
              <Button
                size="sm"
                className="flex-1 gap-2 text-[10px] h-8"
@@ -205,7 +213,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
                <Play size={12} /> Atender
              </Button>
            )}
-             {!isReadOnly && columnMeta && !columnMeta.is_inicial && !columnMeta.is_encerrado && !columnMeta.is_cancelado && userRole !== "USUARIO" && (
+             {!isReadOnly && columnMeta && !columnMeta.is_inicial && !columnMeta.is_encerrado && !columnMeta.is_cancelado && canEncerrarKanban && (
               <>
                 <Button
                   size="sm"
@@ -249,7 +257,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
                 )}
               </>
             )}
-           {!isReadOnly && columnMeta?.is_encerrado && (
+           {!isReadOnly && columnMeta?.is_encerrado && canReabrirKanban && (
              <Button
                size="sm"
                variant="secondary"

@@ -133,7 +133,7 @@ export default function Permissions() {
  
      const availableMenus = [
         { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["Visualizar", "Exportar", "Ver Chamados por Usuário", "Ver Conformidade SLA"] },
-        { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Cancelar", "Reabrir", "Excluir", "Excluir em Massa", "Cadastro Retroativo", "Ver Interações", "Assumir Chamado", "Transferir"] },
+        { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Cancelar", "Reabrir", "Excluir em Massa", "Cadastro Retroativo", "Ver Interações", "Assumir Chamado", "Transferir"] },
         { id: "acompanhamento", label: "Acompanhamento", icon: FileText, actions: ["Visualizar", "Exportar Excel", "Exportar PDF"] },
         { id: "usuarios", label: "Usuários", icon: Users, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Alterar Senha", "Gerenciar Roles"] },
         { id: "permissoes", label: "Permissões", icon: Key, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Visualizar Roles"] },

@@ -405,6 +405,9 @@ export default function ChamadoDetailDialog({
   };
 
   const canAct = !readOnly && userRole !== "USUARIO" && !isEncerrado(selectedTicket);
+  // Cancelar é restrito a Admin/Master — diferente das demais ações, que
+  // também estão disponíveis para técnico.
+  const canCancel = !readOnly && (userRole === "ADMIN" || userRole === "MASTER") && !isEncerrado(selectedTicket) && !isCancelado(selectedTicket);
 
   return (
     <>
@@ -422,7 +425,7 @@ export default function ChamadoDetailDialog({
                     <Play size={12} /> Atender
                   </Button>
                 )}
-                {canAct && !isCancelado(selectedTicket) && (
+                {canCancel && (
                   <Button
                     size="sm"
                     variant="outline"

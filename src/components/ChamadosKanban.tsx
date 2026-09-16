@@ -58,7 +58,7 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
     return { label: "NO PRAZO", color: "bg-green-500" };
   };
 
- function SortableCard({ ticket, columnId, columnMeta, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender }: any) {
+ function SortableCard({ ticket, columnId, columnMeta, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender, isMaster, selected, onToggleSelect }: any) {
    const isReadOnly = !!ticket.__transferredAway;
    const {
      attributes,
@@ -109,12 +109,25 @@ import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
           <Card className={`cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${columnMeta?.is_encerrado || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
            <CardHeader className="p-4 pb-2">
            <div className="flex justify-between items-start mb-2">
-            <Badge
-                className="border-none text-[10px] px-1.5 py-0"
-                style={getPriorityStyle(ticket)}
-              >
-                {ticket.prioridade_obj?.nome || getPriorityLabel(ticket.prioridade)}
-              </Badge>
+            <div className="flex items-center gap-2">
+              {isMaster && (
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 cursor-pointer shrink-0"
+                  checked={!!selected}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={() => onToggleSelect?.(ticket.id)}
+                  aria-label={`Selecionar chamado ${ticket.os}`}
+                />
+              )}
+              <Badge
+                  className="border-none text-[10px] px-1.5 py-0"
+                  style={getPriorityStyle(ticket)}
+                >
+                  {ticket.prioridade_obj?.nome || getPriorityLabel(ticket.prioridade)}
+                </Badge>
+            </div>
                <div className="flex items-center gap-1">
                   {isReadOnly && (
                     <Badge variant="outline" className="text-[9px] bg-purple-100 text-purple-700 border-purple-200 px-1 py-0">
@@ -261,9 +274,12 @@ import { useToast } from "@/hooks/use-toast";
 interface ChamadosKanbanProps {
   tickets: any[];
   onUpdate: () => void;
+  isMaster?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
- export default function ChamadosKanban({ tickets, onUpdate }: ChamadosKanbanProps) {
+ export default function ChamadosKanban({ tickets, onUpdate, isMaster, selectedIds, onToggleSelect }: ChamadosKanbanProps) {
     const { toast } = useToast();
     const [agents, setAgents] = useState<any[]>([]);
      const [transferredAwayIds, setTransferredAwayIds] = useState<Set<string>>(new Set());
@@ -619,6 +635,9 @@ interface ChamadosKanbanProps {
                           onAction={handleAction}
                           onOpenClosure={openClosureDialog}
                           onAtender={(t: any) => { setPrevisaoTicket(t); setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}
+                          isMaster={isMaster}
+                          selected={selectedIds?.has(ticket.id)}
+                          onToggleSelect={onToggleSelect}
                         />
                       ))}
 

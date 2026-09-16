@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getPriorityLabel } from "@/lib/utils/priority";
 import { useChamadoStatuses } from "@/hooks/useChamadoStatuses";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Play, CheckCircle, Pause, History, Plus, ArrowRightLeft,
   MessageSquare, FileText, Paperclip, X, Send, Loader2, AlertTriangle,
@@ -69,6 +70,7 @@ export default function ChamadoDetailDialog({
 }: ChamadoDetailDialogProps) {
   const { toast } = useToast();
   const { getLabel, getStatusRow, isEncerrado, isInicial, isCancelado, getStatusIdByLegacyEnum, getStatusIdByFlag } = useChamadoStatuses();
+  const { hasPermission } = usePermissions();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
 
   const [comments, setComments] = useState<any[]>([]);
@@ -404,10 +406,25 @@ export default function ChamadoDetailDialog({
     }
   };
 
-  const canAct = !readOnly && userRole !== "USUARIO" && !isEncerrado(selectedTicket);
-  // Cancelar é restrito a Admin/Master — diferente das demais ações, que
-  // também estão disponíveis para técnico.
-  const canCancel = !readOnly && (userRole === "ADMIN" || userRole === "MASTER") && !isEncerrado(selectedTicket) && !isCancelado(selectedTicket);
+  // Piso histórico: técnico/admin/master sempre puderam fazer essas ações.
+  // Combinado com OR à permissão granular (Permissões > Chamados), então dar
+  // um toggle a mais nunca tira o que já funcionava, só pode ampliar (ex:
+  // liberar "Transferir" também para um Usuário, se o admin quiser).
+  const isTecnicoOuAcima = userRole !== "USUARIO";
+  const notClosed = !readOnly && !isEncerrado(selectedTicket);
+  const canAtender = notClosed && (isTecnicoOuAcima || hasPermission("chamados:assumir_chamado"));
+  const canEditarPrioridade = notClosed && (isTecnicoOuAcima || hasPermission("chamados:editar"));
+  const canEncerrar = notClosed && (isTecnicoOuAcima || hasPermission("chamados:encerrar"));
+  const canReabrir = !readOnly && isEncerrado(selectedTicket) && (isTecnicoOuAcima || hasPermission("chamados:reabrir"));
+  const canTransferir = notClosed && (isTecnicoOuAcima || hasPermission("chamados:transferir"));
+  // Mantido como regra fixa: Cancelar só para Admin/Master, como pedido —
+  // a permissão granular aqui só pode restringir ainda mais (AND), nunca
+  // liberar para técnico/usuário.
+  const canCancel = !readOnly && (userRole === "ADMIN" || userRole === "MASTER") && hasPermission("chamados:cancelar") && !isEncerrado(selectedTicket) && !isCancelado(selectedTicket);
+  // Alias mantido para não quebrar os blocos de Encerrar/Pausar/Retomar
+  // abaixo, que continuam agrupados pela mesma condição de "chamado em
+  // andamento, não cancelado".
+  const canAct = canEncerrar;
 
   return (
     <>
@@ -420,7 +437,7 @@ export default function ChamadoDetailDialog({
                 <Badge variant="outline" className="font-mono text-[10px] shrink-0">{selectedTicket?.os}</Badge>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                {canAct && isInicial(selectedTicket) && (
+                {canAtender && isInicial(selectedTicket) && (
                   <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => { setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}>
                     <Play size={12} /> Atender
                   </Button>
@@ -457,12 +474,12 @@ export default function ChamadoDetailDialog({
                     )}
                   </>
                 )}
-                {!readOnly && userRole !== "USUARIO" && isEncerrado(selectedTicket) && (
+                {canReabrir && (
                   <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("reabrir")}>
                     <Plus size={12} /> Reabrir
                   </Button>
                 )}
-                {canAct && (
+                {canTransferir && (
                   <Button variant="outline" size="sm" className="h-7 gap-1 text-[10px]" onClick={() => setIsTransferDialogOpen(true)}>
                     <ArrowRightLeft size={12} /> Transferir
                   </Button>
@@ -523,7 +540,7 @@ export default function ChamadoDetailDialog({
               </div>
               <div>
                 <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Prioridade</Label>
-                {canAct ? (
+                {canEditarPrioridade ? (
                   <Select value={selectedTicket?.prioridade_id || selectedTicket?.prioridade_obj?.id || ""} onValueChange={handleChangePriority}>
                     <SelectTrigger className="h-8 mt-1 text-sm"><SelectValue placeholder="Selecione a prioridade" /></SelectTrigger>
                     <SelectContent>

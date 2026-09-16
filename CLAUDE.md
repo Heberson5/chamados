@@ -9,25 +9,53 @@ refletir isso — incluir a ação nova ou remover a que deixou de existir.
 Não é necessário que o usuário peça a cada vez; isso deve ser feito por
 padrão, como parte da própria alteração.
 
-**Importante — natureza dessa lista**: as ações dentro de cada item de
-`availableMenus` (ex: "Excluir", "Encerrar", "Cancelar" dentro de
-"Chamados") são hoje apenas **documentação/inventário visual** na tela de
-Permissões — nenhuma delas é lida por `hasPermission()` em nenhum lugar do
-app (confirmado por busca no código: nenhuma string `"chamados:..."` é
-consultada fora do próprio `Permissions.tsx`). O controle de acesso real
-das ações dentro de Chamados é feito por checagem direta de papel
-(`isMaster`, `regra === 'ADMIN'`, `is_tecnico()`, etc.) espalhada nos
-componentes e nas RLS/triggers do Postgres — não pelo array de permissões
-granulares. Isso é assim porque várias dessas regras (exclusão em massa,
-cadastro retroativo, cancelamento) foram pedidas explicitamente como
-"somente Master" ou "somente Admin/Master", ou seja, regras fixas, não
-configuráveis por perfil customizado.
+**Importante — natureza dessa lista, menu "Chamados"**: desde 2026-09-16 as
+ações de Chamados (`chamados:*`) são checadas de verdade via
+`hasPermission()` em `Chamados.tsx`, `ChamadoDetailDialog.tsx` e
+`ChamadosKanban.tsx` — não são mais só documentação. O padrão usado é:
 
-Ao manter essa lista sincronizada, portanto: adicione/remova o *rótulo* da
-ação para a lista continuar correta como inventário, mas não assuma que
-ligar/desligar o toggle na tela de Permissões muda o comportamento real do
-app — a menos que isso seja explicitamente pedido (nesse caso, é um
-trabalho à parte: ligar `hasPermission()` de fato nos componentes/RLS).
+- **Atender, Editar (prioridade), Encerrar, Reabrir, Transferir**: piso
+  histórico (`userRole !== "USUARIO"`) **OU** `hasPermission('chamados:x')`.
+  Ou seja, o toggle só pode *ampliar* acesso (ex: liberar "Transferir" para
+  um Usuário específico) — nunca tira o que técnico/admin/master já tinham,
+  mesmo que o array de permissões do papel esteja desatualizado ou vazio.
+- **Cancelar** (`chamados:cancelar`): regra fixa `ADMIN`/`MASTER` **E**
+  `hasPermission(...)` — o toggle só pode *restringir* mais (ex: tirar de
+  Admin, deixando só Master), nunca liberar para técnico/usuário.
+- **Excluir em Massa** (`chamados:excluir_em_massa`) e **Cadastro
+  Retroativo** (`chamados:cadastro_retroativo`): mesma lógica, só que a
+  regra fixa é `MASTER` sozinho (não Admin).
+- **Visualizar, Criar, Ver Interações**: permanecem sem gate (sempre
+  liberados) — são ações básicas de autoatendimento do próprio usuário
+  (abrir chamado, ver/comentar o que é seu); nunca as restrinja sem pedido
+  explícito, é alto risco de travar o fluxo principal do app.
+
+Migração `20260916120000_sync_chamados_granular_permissions.sql` faz o
+array de permissões de "Técnico" e "Usuário" bater com o piso de código
+acima (só ADICIONA/REMOVE as chaves de `chamados:*` estritamente
+necessárias, sem tocar no resto do array — testada localmente, é
+idempotente). "Master" e "Administrador" não precisaram de migração
+porque hoje carregam `"Acesso Total"` (bypassa `hasPermission` inteiro) —
+se isso um dia mudar, reveja se as regras fixas acima (que usam `userRole`
+diretamente, não dependem desse array) ainda cobrem os dois.
+
+**Outros menus** (Dashboard, Usuários, Relatórios, etc.): continuam
+**apenas documentação/inventário** — nenhuma ação granular deles é lida em
+lugar nenhum do app. Ao mexer neles, mantenha a lista sincronizada (regra
+geral acima), mas não assuma que o toggle funciona de verdade a menos que
+você mesmo tenha acabado de ligar (seguindo o padrão OR/AND descrito
+acima) — isso é trabalho à parte, um menu por vez, quando pedido.
+
+## Sobre o MCP do Supabase nesta conta
+
+O projeto Supabase chamado "chamados" (id `qtoettpydnhznkorndzs`) visível
+via `mcp__Supabase__list_projects` **não é o backend real deste app** —
+foi conferido em 2026-09-16 e está totalmente vazio (0 tabelas, 0
+usuários), apesar do nome. O backend de produção real fica em outra conta/
+projeto Supabase não acessível a partir deste MCP. Não assuma que dá pra
+inspecionar ou aplicar migração ao vivo nesta conta — trate mudanças de
+banco como arquivos de migração em `supabase/migrations/`, para o usuário
+aplicar (painel do Supabase, CLI, ou pedindo pra conectar o projeto certo).
 
 ## Padrão de branch/deploy deste repositório
 

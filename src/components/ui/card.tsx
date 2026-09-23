@@ -9,7 +9,13 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-md transition-shadow duration-200 hover:shadow-xl",
+      // Frosted glass instead of a flat filled panel, and a cyan-tinted
+      // glow on hover instead of just a bigger neutral shadow — the same
+      // depth/glass language the login page already uses for its hero
+      // card, extended to every card in the app (dashboard, lists,
+      // settings, ...) since this is the one shared primitive they all
+      // render through.
+      "rounded-xl border bg-card/80 backdrop-blur-xl text-card-foreground shadow-soft transition-all duration-300 hover:shadow-glow hover:border-accent/30",
       className
     )}
     {...props}

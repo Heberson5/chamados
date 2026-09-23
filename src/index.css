@@ -2,9 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
+
+/* Self-hosted (public/fonts/, OFL licensed) instead of linked from Google
+   Fonts — see the comment in index.html. Each is one variable file
+   covering its whole weight range. tailwind.config.ts's fontFamily.sans
+   and fontFamily.mono already point at these family names, so nothing
+   else needs to change for every existing font-sans/font-mono class in
+   the app to pick this up. */
+@layer base {
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/fonts/inter-variable.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/fonts/jetbrains-mono-variable.woff2') format('woff2');
+  }
+}
 
 @layer base {
   :root {
@@ -27,8 +50,12 @@ All colors MUST be HSL.
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 240 80% 60%;
+    /* Electric cyan, not the indigo/violet every other shadcn app ships
+       with — a hue no status/priority color below already uses, chosen
+       to read as "ops/terminal" rather than "generic AI SaaS". */
+    --accent: 195 92% 44%;
     --accent-foreground: 0 0% 100%;
+    --glow-accent: 195 92% 50%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -39,7 +66,7 @@ All colors MUST be HSL.
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 240 80% 60%;
+    --ring: 195 92% 44%;
 
     --radius: 0.625rem;
 
@@ -65,6 +92,10 @@ All colors MUST be HSL.
     --shadow-sm: 0 1px 3px 0 hsl(220 13% 13% / 0.06), 0 1px 2px -1px hsl(220 13% 13% / 0.04);
     --shadow-md: 0 4px 6px -1px hsl(220 13% 13% / 0.06), 0 2px 4px -2px hsl(220 13% 13% / 0.04);
     --shadow-lg: 0 10px 15px -3px hsl(220 13% 13% / 0.08), 0 4px 6px -4px hsl(220 13% 13% / 0.04);
+    /* A cyan-tinted glow, not another neutral drop-shadow — used for the
+       one or two elements per screen that should read as "active/live"
+       (see Card's hover state), instead of on every surface. */
+    --shadow-glow: 0 0 0 1px hsl(var(--glow-accent) / 0.12), 0 8px 30px -8px hsl(var(--glow-accent) / 0.35);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 220 13% 26%;
@@ -73,7 +104,7 @@ All colors MUST be HSL.
     --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 220 13% 13%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 240 80% 60%;
+    --sidebar-ring: 195 92% 44%;
   }
 
   .dark {
@@ -89,23 +120,24 @@ All colors MUST be HSL.
     --secondary-foreground: 220 14% 96%;
     --muted: 220 13% 16%;
     --muted-foreground: 220 9% 60%;
-    --accent: 240 80% 65%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 195 92% 52%;
+    --accent-foreground: 220 13% 9%;
+    --glow-accent: 195 92% 55%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 13% 18%;
     --input: 220 13% 18%;
-    --ring: 240 80% 65%;
+    --ring: 195 92% 52%;
     --surface-1: 220 13% 11%;
     --surface-2: 220 13% 14%;
     --sidebar-background: 220 13% 8%;
     --sidebar-foreground: 220 14% 90%;
-    --sidebar-primary: 240 80% 65%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary: 195 92% 52%;
+    --sidebar-primary-foreground: 220 13% 9%;
     --sidebar-accent: 220 13% 14%;
     --sidebar-accent-foreground: 220 14% 96%;
     --sidebar-border: 220 13% 16%;
-    --sidebar-ring: 240 80% 65%;
+    --sidebar-ring: 195 92% 52%;
   }
 }
 

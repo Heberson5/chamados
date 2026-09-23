@@ -41,9 +41,13 @@
     -->
     <meta name="description" content="Plataforma de help desk: chamados, SLA, automações e Kanban em uma interface clean." />
     <meta name="author" content="Chamados" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!--
+      Inter and JetBrains Mono are self-hosted (public/fonts/, @font-face
+      in src/index.css) instead of linked from Google Fonts: one request
+      per font from the app's own origin rather than a CDN round trip on
+      every load, and no external dependency for a page whose service
+      worker (public/sw.js) already promises an offline shell.
+    -->
 
     <meta property="og:title" content="Helpdesk SaaS — Gestão de chamados multiempresa" />
     <meta property="og:description" content="Plataforma de help desk multiempresa: chamados, SLA, automações e Kanban." />

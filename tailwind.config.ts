@@ -83,9 +83,11 @@ export default {
         soft: "var(--shadow-sm)",
         elevated: "var(--shadow-md)",
         floating: "var(--shadow-lg)",
+        glow: "var(--shadow-glow)",
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       borderRadius: {
         lg: "var(--radius)",

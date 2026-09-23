@@ -65,13 +65,20 @@ interface SidebarProps {
        <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
          <TooltipProvider delayDuration={150}>
            {menuItems.map((item) => {
+             const isActive = location.pathname === item.path;
              const button = (
                <Button
                  key={item.path}
-                 variant={location.pathname === item.path ? "secondary" : "ghost"}
+                 variant={isActive ? "secondary" : "ghost"}
                  className={cn(
-                   "w-full justify-start",
-                   collapsed ? "px-2" : "px-4"
+                   "w-full justify-start relative overflow-hidden",
+                   collapsed ? "px-2" : "px-4",
+                   // A tinted accent fill + left rail instead of the plain
+                   // neutral "secondary" gray every other button in the
+                   // app already uses — this is the one element that
+                   // should read as "you are here" in a tech control
+                   // panel, not just another button.
+                   isActive && "bg-accent/10 text-accent hover:bg-accent/15 hover:text-accent before:absolute before:inset-y-1 before:left-0 before:w-[3px] before:rounded-full before:bg-accent"
                  )}
                  onClick={() => {
                    navigate(item.path);

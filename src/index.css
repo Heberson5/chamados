@@ -156,3 +156,16 @@ All colors MUST be HSL.
     @apply tracking-tight;
   }
 }
+
+/* The new depth work (card lift, button press shadow, the login page's
+   blobs/tilt, and the 3D tilt on Dashboard's summary cards) is all
+   decorative on top of state already conveyed without it, so it's safe
+   to collapse for anyone who has asked the OS for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

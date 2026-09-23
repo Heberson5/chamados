@@ -469,7 +469,7 @@
  
          <div id="pdf-charts-section" className="space-y-8">
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle>Status dos Chamados</CardTitle>
                <ChartSettingsButton
@@ -488,7 +488,7 @@
              </CardContent>
            </Card>
 
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle>Prioridade dos Chamados</CardTitle>
                <ChartSettingsButton
@@ -507,7 +507,7 @@
              </CardContent>
            </Card>
 
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle>Performance de Técnicos</CardTitle>
                <ChartSettingsButton
@@ -529,7 +529,7 @@
 
          {/* Transferências */}
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle className="flex items-center gap-2"><UsersIcon size={18}/> Transferências por Técnico</CardTitle>
                <ChartSettingsButton
@@ -552,7 +552,7 @@
              </CardContent>
            </Card>
 
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0">
                <CardTitle className="flex items-center gap-2"><ArrowRightLeft size={18}/> Transferências por Departamento</CardTitle>
                <ChartSettingsButton

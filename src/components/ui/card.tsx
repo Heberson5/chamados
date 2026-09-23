@@ -10,12 +10,14 @@ const Card = React.forwardRef<
     ref={ref}
     className={cn(
       // Frosted glass instead of a flat filled panel, and a cyan-tinted
-      // glow on hover instead of just a bigger neutral shadow — the same
-      // depth/glass language the login page already uses for its hero
-      // card, extended to every card in the app (dashboard, lists,
-      // settings, ...) since this is the one shared primitive they all
-      // render through.
-      "rounded-xl border bg-card/80 backdrop-blur-xl text-card-foreground shadow-soft transition-all duration-300 hover:shadow-glow hover:border-accent/30",
+      // glow + a small lift on hover instead of just a bigger neutral
+      // shadow — the same depth/glass language the login page already
+      // uses for its hero card, extended to every card in the app
+      // (dashboard, lists, settings, ...) since this is the one shared
+      // primitive they all render through. The lift is a real transform
+      // (not just a bigger shadow), so it reads as the card actually
+      // rising off the page.
+      "rounded-xl border bg-card/80 backdrop-blur-xl text-card-foreground shadow-soft transition-all duration-300 hover:shadow-glow hover:border-accent/30 hover:-translate-y-0.5",
       className
     )}
     {...props}

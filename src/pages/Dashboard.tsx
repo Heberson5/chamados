@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
  import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import Tilt3D from "@/components/Tilt3D";
 import { Ticket, CheckCircle2, Clock, Users, Filter, Loader2, User as UserIcon, Play, Pause, History } from "lucide-react";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { format, subDays, startOfDay, endOfDay, isWithinInterval, subWeeks, subMonths, subYears, eachDayOfInterval, isSameDay, eachHourOfInterval, isSameHour } from "date-fns";
@@ -470,23 +471,25 @@ import type { ChartType } from "@/lib/chartSettings";
        
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-6">
          {cards.map((card) => (
-           <Card key={card.title} className="hover:shadow-md transition-shadow">
-             <CardHeader className="flex flex-row items-center justify-between pb-2">
-               <CardTitle className="text-xs font-medium text-muted-foreground">
-                 {card.title}
-               </CardTitle>
-               <card.icon className={`h-4 w-4 ${card.color}`} />
-             </CardHeader>
-             <CardContent>
-               <div className="text-2xl font-bold">{card.value}</div>
-             </CardContent>
-           </Card>
+           <Tilt3D key={card.title} maxDeg={6}>
+             <Card>
+               <CardHeader className="flex flex-row items-center justify-between pb-2">
+                 <CardTitle className="text-xs font-medium text-muted-foreground">
+                   {card.title}
+                 </CardTitle>
+                 <card.icon className={`h-4 w-4 ${card.color}`} />
+               </CardHeader>
+               <CardContent>
+                 <div className="text-2xl font-bold font-mono">{card.value}</div>
+               </CardContent>
+             </Card>
+           </Tilt3D>
          ))}
        </div>
  
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-start justify-between space-y-0">
                <div>
                  <CardTitle>Tempos Médios (min)</CardTitle>
@@ -514,7 +517,7 @@ import type { ChartType } from "@/lib/chartSettings";
              </CardContent>
            </Card>
 
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-start justify-between space-y-0">
                <div>
                  <CardTitle>Chamados por Status</CardTitle>
@@ -536,7 +539,7 @@ import type { ChartType } from "@/lib/chartSettings";
              </CardContent>
            </Card>
 
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-start justify-between space-y-0">
                <div>
                  <CardTitle>Volume de Chamados</CardTitle>
@@ -558,7 +561,7 @@ import type { ChartType } from "@/lib/chartSettings";
              </CardContent>
            </Card>
   
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
              <CardHeader className="flex flex-row items-start justify-between space-y-0">
                <div>
                  <CardTitle>Conformidade de SLA</CardTitle>
@@ -580,7 +583,7 @@ import type { ChartType } from "@/lib/chartSettings";
              </CardContent>
            </Card>
  
-           <Card className="hover:shadow-lg transition-shadow duration-300">
+           <Card>
               <CardHeader className="flex flex-row items-start justify-between space-y-0">
                 <div>
                   <CardTitle>Distribuição por Prioridade</CardTitle>
@@ -602,7 +605,7 @@ import type { ChartType } from "@/lib/chartSettings";
               </CardContent>
            </Card>
 
-           <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
+           <Card className="lg:col-span-2">
              <CardHeader className="flex flex-row items-start justify-between space-y-0">
                <div>
                  <CardTitle>Tempos Operacionais no Período</CardTitle>
@@ -630,7 +633,7 @@ import type { ChartType } from "@/lib/chartSettings";
            </Card>
 
             {hasPermission("dashboard:ver_chamados_por_usuario") && (
-              <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
+              <Card className="lg:col-span-2">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div>
                     <CardTitle>Chamados por Usuário</CardTitle>

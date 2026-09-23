@@ -9,9 +9,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // shadow-soft → shadow-xs on press: the filled variants read as
+        // physically raised, and pressing one visibly flattens it back
+        // toward the page instead of just scaling down in place.
+        default: "bg-primary text-primary-foreground shadow-soft hover:bg-primary/90 hover:shadow-elevated active:shadow-xs",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground shadow-soft hover:bg-destructive/90 hover:shadow-elevated active:shadow-xs",
         outline:
           "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:

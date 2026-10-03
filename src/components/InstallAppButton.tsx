@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { Download, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
@@ -7,13 +7,42 @@ import { cn } from "@/lib/utils";
 interface InstallAppButtonProps {
   collapsed?: boolean;
   className?: string;
-  variant?: "sidebar" | "banner";
+  variant?: "sidebar" | "banner" | "card" | "login";
 }
 
 export default function InstallAppButton({ collapsed, className, variant = "sidebar" }: InstallAppButtonProps) {
   const { canInstall, promptInstall } = useInstallPrompt();
 
   if (!canInstall) return null;
+
+  if (variant === "card") {
+    return (
+      <div className={cn("rounded-xl border p-3 bg-gradient-to-b from-accent to-card", className)}>
+        <p className="text-[12.5px] font-semibold">Instale o app</p>
+        <p className="text-[11.5px] text-muted-foreground mt-0.5 mb-2">Acesse mais rápido, direto da área de trabalho ou do celular.</p>
+        <Button size="sm" onClick={promptInstall} className="h-7 text-xs">
+          <Download size={13} /> Instalar
+        </Button>
+      </div>
+    );
+  }
+
+  if (variant === "login") {
+    return (
+      <div className={cn("flex items-center gap-3 rounded-xl border bg-card p-3 shadow-xs", className)}>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-accent text-primary">
+          <Smartphone size={18} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">Instale o aplicativo</p>
+          <p className="text-xs text-muted-foreground">Android e computador, sem loja.</p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={promptInstall}>
+          <Download size={14} /> Instalar
+        </Button>
+      </div>
+    );
+  }
 
   if (variant === "banner") {
     return (

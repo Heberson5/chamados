@@ -1,10 +1,7 @@
- import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
- import { format } from "date-fns";
- import { ptBR } from "date-fns/locale";
- import { getPriorityLabel } from "@/lib/utils/priority";
- import { Play, CheckCircle, Clock, AlertTriangle, User, Eye, Loader2, Plus, Pause, History, ChevronDown, ChevronUp } from "lucide-react";
+import { Play, CheckCircle, Loader2, Pause, History, RotateCcw, MessageSquare, Paperclip, UserPlus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { PriorityIndicator, SlaChip, UserAvatar } from "@/components/tickets/TicketBits";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
@@ -43,22 +40,6 @@ import { usePermissions } from "@/hooks/usePermissions";
     );
   }
 
-  const getSLAInfo = (ticket: any) => {
-    if (ticket.status === "ENCERRADO") {
-      return { label: "FINALIZADO", color: "bg-blue-500" };
-    }
-    if (!ticket.sla_deadline) {
-      return { label: "N/A", color: "bg-gray-400" };
-    }
-    const deadline = new Date(ticket.sla_deadline);
-    const now = new Date();
-    const diffMinutes = (deadline.getTime() - now.getTime()) / (1000 * 60);
-    
-    if (diffMinutes < 0) return { label: "VENCIDO", color: "bg-red-500" };
-    if (diffMinutes < 30) return { label: "VENCENDO", color: "bg-yellow-500 animate-pulse" };
-    return { label: "NO PRAZO", color: "bg-green-500" };
-  };
-
  function SortableCard({ ticket, columnId, columnMeta, userRole, onUpdate, onDetails, onAction, onOpenClosure, onAtender, isMaster, selected, onToggleSelect }: any) {
    const isReadOnly = !!ticket.__transferredAway;
    const { hasPermission } = usePermissions();
@@ -87,190 +68,115 @@ import { usePermissions } from "@/hooks/usePermissions";
      opacity: isDragging ? 0.5 : 1,
    };
  
-      const getPriorityStyle = (ticket: any) => {
-        if (ticket.prioridade_obj) {
-          return {
-            backgroundColor: `${ticket.prioridade_obj.cor}20`,
-            color: ticket.prioridade_obj.cor
-          };
-        }
-        switch (ticket.prioridade) {
-          case "P1": return { color: "var(--destructive)", backgroundColor: "var(--destructive-foreground)" };
-          case "P2": return { color: "#ea580c", backgroundColor: "#fff7ed" };
-          case "P3": return { color: "#d97706", backgroundColor: "#fffbeb" };
-          default: return {};
-        }
-      };
- 
-   const [slaInfo, setSlaInfo] = useState({ label: "Calculando...", color: "bg-gray-400" });
-   const [expanded, setExpanded] = useState(false);
+   // Re-renderiza a cada minuto para o tempo restante do SLA ficar atualizado.
+   const [, setTick] = useState(0);
+   useEffect(() => {
+     const i = setInterval(() => setTick((x) => x + 1), 60000);
+     return () => clearInterval(i);
+   }, []);
 
-    useEffect(() => {
-      const calc = () => setSlaInfo(getSLAInfo(ticket));
-      calc();
-      const interval = setInterval(calc, 60000);
-      return () => clearInterval(interval);
-    }, [ticket]);
+   const statusRow = columnMeta
+     ? { cor: columnMeta.color_hex, is_pausa: columnMeta.is_pausa, is_encerrado: columnMeta.is_encerrado, is_cancelado: columnMeta.is_cancelado }
+     : undefined;
+   const comments = ticket.comentarios_chamado?.[0]?.count || 0;
+   const closed = columnMeta?.is_encerrado || columnMeta?.is_cancelado;
+   const inProgress = columnMeta && !columnMeta.is_inicial && !columnMeta.is_encerrado && !columnMeta.is_cancelado;
 
-     return (
-       <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-4">
-          <Card className={`cursor-grab active:cursor-grabbing border-border bg-card text-card-foreground ${columnMeta?.is_encerrado || isReadOnly ? "cursor-default grayscale-[0.3]" : ""}`}>
-           <CardHeader className="p-4 pb-2">
-           <div className="flex justify-between items-start mb-2">
-            <div className="flex items-center gap-2">
-              {isMaster && (
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 cursor-pointer shrink-0"
-                  checked={!!selected}
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onChange={() => onToggleSelect?.(ticket.id)}
-                  aria-label={`Selecionar chamado ${ticket.os}`}
-                />
-              )}
-              <Badge
-                  className="border-none text-[10px] px-1.5 py-0"
-                  style={getPriorityStyle(ticket)}
-                >
-                  {ticket.prioridade_obj?.nome || getPriorityLabel(ticket.prioridade)}
-                </Badge>
-            </div>
-               <div className="flex items-center gap-1">
-                  {isReadOnly && (
-                    <Badge variant="outline" className="text-[9px] bg-purple-100 text-purple-700 border-purple-200 px-1 py-0">
-                      Transferido
-                    </Badge>
-                  )}
-                 {ticket.reaberto && (
-                   <Badge variant="outline" className="text-[9px] bg-yellow-100 text-yellow-700 border-yellow-200 px-1 py-0">
-                     Reaberto
-                   </Badge>
-                 )}
-                 <span className="text-[10px] font-mono text-muted-foreground">{ticket.os}</span>
-                 <button
-                   type="button"
-                   onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
-                   className="text-muted-foreground hover:text-foreground p-0.5 -mr-1 rounded transition-colors"
-                   title={expanded ? "Minimizar" : "Expandir"}
-                 >
-                   {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                 </button>
-               </div>
-           </div>
-           <div className="flex items-center justify-between gap-2">
-             <CardTitle className={`text-sm font-bold leading-tight ${expanded ? "line-clamp-2" : "line-clamp-1"}`}>
-               {ticket.titulo || "Sem título"}
-             </CardTitle>
-             {!expanded && (
-               <div className="flex items-center gap-1 shrink-0">
-                 <div className={`w-1.5 h-1.5 rounded-full ${slaInfo.color}`} />
-                 <span className="text-[9px] font-bold">{slaInfo.label}</span>
-               </div>
-             )}
-           </div>
-         </CardHeader>
-         {expanded && (
-         <CardContent className="p-4 pt-0">
-           <p className="text-xs text-muted-foreground line-clamp-3 mb-4">
-             {ticket.descricao}
-           </p>
-           <div className="space-y-2">
-             <div className="flex items-center justify-between">
-               <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                 <User size={12} />
-                 <span className="truncate">{ticket.usuario?.nome} {ticket.usuario?.sobrenome}</span>
-               </div>
-               <div className="flex items-center gap-1">
-                 <div className={`w-1.5 h-1.5 rounded-full ${slaInfo.color}`} />
-                 <span className="text-[9px] font-bold">{slaInfo.label}</span>
-               </div>
-             </div>
-             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-               <Clock size={12} />
-               <span>{format(new Date(ticket.gerado_em), "dd/MM HH:mm", { locale: ptBR })}</span>
-             </div>
-           </div>
-         </CardContent>
+   const actions: { key: string; label: string; icon: typeof Play; onClick: () => void; className?: string }[] = [];
+   if (!isReadOnly) {
+     if (columnMeta?.is_inicial && canAtender) {
+       actions.push({ key: "atender", label: "Atender", icon: Play, className: "text-primary", onClick: () => (onAtender ? onAtender(ticket) : onAction(ticket.id, "atender")) });
+     }
+     if (inProgress && canEncerrarKanban) {
+       actions.push({ key: "encerrar", label: "Encerrar", icon: CheckCircle, className: "text-emerald-600", onClick: () => onOpenClosure(ticket) });
+       if (columnMeta.legacy_enum === "EM_ATENDIMENTO") {
+         actions.push({ key: "pausar", label: "Pausar", icon: Pause, onClick: () => onAction(ticket.id, "pausar") });
+         actions.push({ key: "aguardar", label: "Aguardar usuário", icon: History, onClick: () => onAction(ticket.id, "aguardar_usuario") });
+       }
+       if (columnMeta.legacy_enum === "PAUSADO" || columnMeta.legacy_enum === "AGUARDANDO_USUARIO") {
+         actions.push({ key: "retomar", label: "Retomar", icon: Play, className: "text-amber-600", onClick: () => onAction(ticket.id, "retomar") });
+       }
+     }
+     if (columnMeta?.is_encerrado && canReabrirKanban) {
+       actions.push({ key: "reabrir", label: "Reabrir", icon: RotateCcw, onClick: () => onAction(ticket.id, "reabrir") });
+     }
+   }
+
+   return (
+     <div
+       ref={setNodeRef}
+       style={style}
+       {...attributes}
+       {...listeners}
+       onClick={() => onDetails(ticket)}
+       className={cn(
+         "group relative rounded-xl border bg-card p-3 shadow-xs transition-all select-none",
+         isReadOnly || userRole === "USUARIO" ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
+         "hover:shadow-elevated hover:border-input",
+         selected && "border-primary ring-2 ring-primary/20",
+         closed && "opacity-75 hover:opacity-100",
+         isDragging && "shadow-floating"
+       )}
+     >
+       <div className="flex items-center gap-2 mb-1.5">
+         {isMaster && (
+           <input
+             type="checkbox"
+             className="h-4 w-4 rounded border-input accent-[hsl(var(--primary))] cursor-pointer shrink-0"
+             checked={!!selected}
+             onClick={(e) => e.stopPropagation()}
+             onPointerDown={(e) => e.stopPropagation()}
+             onChange={() => onToggleSelect?.(ticket.id)}
+             aria-label={`Selecionar chamado ${ticket.os}`}
+           />
          )}
-          <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
-           <Button
-             size="sm"
-             variant="ghost"
-             className="flex-1 gap-2 text-[10px] h-8"
-             onClick={(e) => { e.stopPropagation(); onDetails(ticket); }}
-           >
-             <Eye size={12} /> Detalhes
-           </Button>
-           {expanded && (
-           <>
-            {!isReadOnly && columnMeta?.is_inicial && canAtender && (
-             <Button
-               size="sm"
-               className="flex-1 gap-2 text-[10px] h-8"
-             onClick={(e) => { e.stopPropagation(); onAtender ? onAtender(ticket) : onAction(ticket.id, "atender"); }}
+         <span className="text-[11.5px] font-semibold font-mono text-muted-foreground">#{ticket.os}</span>
+         {isReadOnly && (
+           <span className="text-[10.5px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 dark:bg-purple-950/40 dark:border-purple-900 dark:text-purple-300">Transferido</span>
+         )}
+         {ticket.reaberto && (
+           <span className="text-[10.5px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">Reaberto</span>
+         )}
+         <PriorityIndicator priority={ticket.prioridade_obj} legacy={ticket.prioridade} className="ml-auto" />
+       </div>
+       <p className="text-[13.5px] font-semibold leading-snug line-clamp-2 mb-2.5">{ticket.titulo || "Sem título"}</p>
+       <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+         <SlaChip ticket={ticket} status={statusRow} />
+         {comments > 0 && (
+           <span className="inline-flex items-center gap-1"><MessageSquare size={13} />{comments}</span>
+         )}
+         {ticket.anexos?.length > 0 && (
+           <span className="inline-flex items-center gap-1"><Paperclip size={13} />{ticket.anexos.length}</span>
+         )}
+         <span className="ml-auto">
+           {ticket.tecnico ? (
+             <UserAvatar person={ticket.tecnico} size={24} />
+           ) : (
+             <span className="h-6 w-6 rounded-full border border-dashed border-input grid place-items-center" title="Sem responsável">
+               <UserPlus size={11} />
+             </span>
+           )}
+         </span>
+       </div>
+       {actions.length > 0 && (
+         <div
+           className="absolute right-2 bottom-2 hidden md:group-hover:flex items-center gap-0.5 rounded-lg border bg-card p-0.5 shadow-elevated"
+           onPointerDown={(e) => e.stopPropagation()}
+         >
+           {actions.map((a) => (
+             <button
+               key={a.key}
+               type="button"
+               title={a.label}
+               aria-label={a.label}
+               onClick={(e) => { e.stopPropagation(); a.onClick(); }}
+               className={cn("h-7 w-7 grid place-items-center rounded-md hover:bg-muted text-muted-foreground", a.className)}
              >
-               <Play size={12} /> Atender
-             </Button>
-           )}
-             {!isReadOnly && columnMeta && !columnMeta.is_inicial && !columnMeta.is_encerrado && !columnMeta.is_cancelado && canEncerrarKanban && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                  onClick={(e) => { e.stopPropagation(); onOpenClosure(ticket); }}
-                >
-                  <CheckCircle size={12} /> Encerrar
-                </Button>
-
-                {columnMeta.legacy_enum === "EM_ATENDIMENTO" && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-slate-600"
-                      onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "pausar"); }}
-                    >
-                      <Pause size={12} /> Pausar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-indigo-600"
-                      onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "aguardar_usuario"); }}
-                    >
-                      <History size={12} /> Aguardar Usuário
-                    </Button>
-                  </>
-                )}
-
-                {(columnMeta.legacy_enum === "PAUSADO" || columnMeta.legacy_enum === "AGUARDANDO_USUARIO") && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="flex-1 min-w-[80px] gap-2 text-[10px] h-8 text-amber-600"
-                    onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "retomar"); }}
-                  >
-                    <Play size={12} /> Retomar
-                  </Button>
-                )}
-              </>
-            )}
-           {!isReadOnly && columnMeta?.is_encerrado && canReabrirKanban && (
-             <Button
-               size="sm"
-               variant="secondary"
-               className="flex-1 gap-2 text-[10px] h-8"
-               onClick={(e) => { e.stopPropagation(); onAction(ticket.id, "reabrir"); }}
-             >
-               <Plus size={12} /> Reabrir
-             </Button>
-           )}
-           </>
-           )}
-         </CardFooter>
-       </Card>
+               <a.icon size={15} />
+             </button>
+           ))}
+         </div>
+       )}
      </div>
    );
  }
@@ -605,33 +511,28 @@ interface ChamadosKanbanProps {
            collisionDetection={closestCorners} 
            onDragEnd={handleDragEnd}
          >
-            <div className="flex flex-col md:flex-row gap-6 items-stretch md:h-full md:min-h-[500px] overflow-x-auto pb-4 custom-scrollbar">
-             {kanbanCols.map((column) => (
+            <div className="flex flex-col md:flex-row gap-3 items-stretch md:h-full md:min-h-[480px] overflow-x-auto pb-3 custom-scrollbar">
+             {kanbanCols.map((column) => {
+               const colTickets = ticketsInColumn(column);
+               return (
                 <DroppableColumn
                   key={column.id}
                   id={column.id}
-                  className="flex flex-col rounded-xl border bg-card/50 p-4 min-w-[320px] xl:min-w-[360px] w-full md:w-[360px] xl:w-[400px] flex-shrink-0 md:h-full md:overflow-hidden"
-                  style={{
-                    borderTop: `4px solid ${column.color_hex || 'hsl(var(--primary))'}`,
-                  }}
+                  className="flex flex-col rounded-2xl border bg-muted/50 p-2.5 w-full md:w-[290px] xl:w-[310px] flex-shrink-0 md:h-full md:overflow-hidden transition-shadow"
                 >
-                 <div className="flex items-center justify-between mb-4 px-2 shrink-0">
-                 <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
-                   {column.title}
-                   <Badge variant="secondary" className="rounded-full px-2 py-0">
-                     {ticketsInColumn(column).length}
-                   </Badge>
-                 </h3>
-               </div>
+                 <div className="flex items-center gap-2 px-1.5 pt-0.5 pb-2.5 shrink-0">
+                   <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: column.color_hex || "hsl(var(--primary))" }} />
+                   <h3 className="font-semibold text-[13.5px] truncate">{column.title}</h3>
+                   <span className="text-xs font-semibold text-muted-foreground">{colTickets.length}</span>
+                 </div>
 
                 <SortableContext
                   id={column.id}
-                  items={ticketsInColumn(column).map(t => t.id)}
+                  items={colTickets.map(t => t.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                   <div className="flex-1 space-y-4 pr-1 md:overflow-y-auto custom-scrollbar">
-                    {ticketsInColumn(column)
-                      .map((ticket) => (
+                   <div className="flex-1 space-y-2 md:overflow-y-auto custom-scrollbar min-h-[60px]">
+                    {colTickets.map((ticket) => (
                         <SortableCard
                           key={ticket.id}
                           ticket={{ ...ticket, __transferredAway: transferredAwayIds.has(ticket.id) }}
@@ -649,16 +550,16 @@ interface ChamadosKanbanProps {
                         />
                       ))}
 
-                    {ticketsInColumn(column).length === 0 && (
-                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50 border-2 border-dashed rounded-lg">
-                       <AlertTriangle size={24} className="mb-2 opacity-20" />
-                       <p className="text-xs">Nenhum chamado</p>
+                    {colTickets.length === 0 && (
+                     <div className="flex items-center justify-center py-8 text-xs text-muted-foreground border border-dashed rounded-xl">
+                       Nenhum chamado
                      </div>
                    )}
                  </div>
                </SortableContext>
               </DroppableColumn>
-           ))}
+               );
+             })}
          </div>
        </DndContext>
  
@@ -674,7 +575,7 @@ interface ChamadosKanbanProps {
               placeholder="Descreva o que foi feito para resolver este chamado..."
               value={closureNote}
               onChange={(e) => setClosureNote(e.target.value)}
-              className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+              className="flex min-h-[120px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
             />
           </div>
         </div>

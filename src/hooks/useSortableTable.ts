@@ -39,9 +39,9 @@ export function useSortableTable<T>(data: T[], getValue: (item: T, key: string) 
   return { sortedData, sortKey, sortDirection, requestSort };
 }
 
-export function useColumnVisibility(defaultKeys: string[]) {
+export function useColumnVisibility(defaultKeys: string[], hiddenByDefault: string[] = []) {
   const [visible, setVisible] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(defaultKeys.map((k) => [k, true]))
+    Object.fromEntries(defaultKeys.map((k) => [k, !hiddenByDefault.includes(k)]))
   );
   const toggle = (key: string) => setVisible((prev) => ({ ...prev, [key]: prev[key] === false }));
   const isVisible = (key: string) => visible[key] !== false;

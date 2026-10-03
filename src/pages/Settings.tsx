@@ -2,10 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
- import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles, MessageSquareText, Send } from "lucide-react";
+ import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles, MessageSquareText, Send, SlidersHorizontal, Columns3, MessageSquare, FileBarChart, LogIn } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
- import { useState, useEffect } from "react";
+ import { useState, useEffect, type ElementType, type ReactNode } from "react";
  import { useNavigate } from "react-router-dom";
  import { usePermissions } from "@/hooks/usePermissions";
  import { supabase } from "@/integrations/supabase/client";
@@ -73,7 +73,7 @@ import { cn } from "@/lib/utils";
        appIcon: "",
        companyName: "Chamados",
        sidebarColor: "bg-slate-900",
-       accentColor: "#3b82f6",
+       accentColor: "#5643f0",
        menuOrder: defaultMenuOrder
      });
       const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
@@ -82,19 +82,19 @@ import { cn } from "@/lib/utils";
     const [isAdmin, setIsAdmin] = useState(false);
     const [isMaster, setIsMaster] = useState(false);
     const defaultLandingConfig = {
-      bgColor: "#020617",
+      bgColor: "#110f24",
       accentColor: "",
-      brandTitle: "GESTÃO QUE",
-      brandHighlight: "TRANSFORMA.",
-      subtitle: "A plataforma definitiva para controle de atendimento, inventário e produtividade da sua operação.",
+      brandTitle: "Suporte organizado,",
+      brandHighlight: "equipe no controle.",
+      subtitle: "Abra, acompanhe e resolva chamados com prazos de SLA automáticos, Kanban e relatórios — tudo em um só lugar.",
       features: [
-        { id: "1", text: "SLA Inteligente & Automático" },
-        { id: "2", text: "Inventário em Tempo Real" },
-        { id: "3", text: "Workflows Customizáveis" },
-        { id: "4", text: "Analytics Avançado" },
+        { id: "1", text: "SLA automático" },
+        { id: "2", text: "Kanban" },
+        { id: "3", text: "Relatórios" },
+        { id: "4", text: "App no celular" },
       ],
-      formTitle: "Acesso",
-      formSubtitle: "Bem-vindo. Por favor, identifique-se.",
+      formTitle: "Entrar",
+      formSubtitle: "Bem-vindo de volta. Use seu e-mail corporativo.",
       statusText: "Sistema Online",
       copyrightText: "",
     };
@@ -177,6 +177,10 @@ import { cn } from "@/lib/utils";
                });
                
                val.menuOrder = currentOrder;
+               // Valor antigo gravado como padrão antes do redesign: mostra a cor nova.
+               if (!val.themeVersion && String(val.accentColor || "").toLowerCase() === "#3b82f6") {
+                 val.accentColor = "#5643f0";
+               }
                setLayoutConfig(val);
              }
             if (sTimeout) setSessionTimeout(sTimeout.value as string);
@@ -246,7 +250,7 @@ import { cn } from "@/lib/utils";
                { key: 'sms_config', value: smsConfig },
                  { key: 'email_templates', value: emailTemplates },
                  { key: 'email_layout', value: emailLayout },
-                { key: 'layout_settings', value: layoutConfig },
+                { key: 'layout_settings', value: { ...layoutConfig, themeVersion: 2 } },
                 { key: 'session_timeout', value: sessionTimeout },
                 { key: 'access_warnings', value: accessWarnings }
             ];
@@ -264,7 +268,7 @@ import { cn } from "@/lib/utils";
               if (error) throw error;
             }
              // Notify BrandingProvider immediately for instant in-tab updates
-             window.dispatchEvent(new CustomEvent("branding:updated", { detail: layoutConfig }));
+             window.dispatchEvent(new CustomEvent("branding:updated", { detail: { ...layoutConfig, themeVersion: 2 } }));
  
              // Save Priorities
              for (const prio of priorities) {
@@ -307,35 +311,43 @@ import { cn } from "@/lib/utils";
    }
 
    return (
-     <div className="p-4 md:p-8 w-full space-y-8 animate-fade-in">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-            <p className="text-muted-foreground">Ajuste as preferências do sistema e sua experiência.</p>
+     <div className="p-4 md:p-8 w-full max-w-[1400px] mx-auto space-y-6 animate-fade-in">
+        <div className="flex justify-between items-start gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-[26px] font-bold tracking-tight">Configurações</h1>
+            <p className="text-sm text-muted-foreground mt-1">Ajuste as preferências do sistema e sua experiência.</p>
           </div>
-          <Button onClick={saveSettings} disabled={loading} className="gap-2">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
-            Salvar Alterações
+          <Button onClick={saveSettings} disabled={loading} className="gap-2 shrink-0">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={16} />}
+            <span className="hidden sm:inline">Salvar alterações</span>
+            <span className="sm:hidden">Salvar</span>
           </Button>
         </div>
  
-        <Tabs defaultValue="geral" className="w-full">
-          <TabsList className="flex flex-wrap h-auto w-full justify-start gap-1 mb-8 p-1">
-            <TabsTrigger value="geral" className="flex-1 min-w-[110px]">Geral</TabsTrigger>
-            <TabsTrigger value="notificacoes" className="flex-1 min-w-[110px]">Notificações</TabsTrigger>
-            <TabsTrigger value="kanban" className="flex-1 min-w-[110px]">Kanban</TabsTrigger>
+        <Tabs defaultValue="geral" orientation="vertical" className="w-full md:grid md:grid-cols-[210px_minmax(0,1fr)] md:gap-8 md:items-start">
+          <TabsList className="mb-6 md:mb-0 md:sticky md:top-4 flex h-auto w-full justify-start gap-1 overflow-x-auto custom-scrollbar rounded-xl border bg-card p-1.5 shadow-xs md:flex-col md:items-stretch md:overflow-visible">
+            <SettingsNavGroup label="Preferências" />
+            <SettingsNavItem value="geral" icon={SlidersHorizontal}>Geral</SettingsNavItem>
+            <SettingsNavItem value="notificacoes" icon={Bell}>Notificações</SettingsNavItem>
+            <SettingsNavItem value="kanban" icon={Columns3}>Kanban</SettingsNavItem>
             {isAdmin && (
               <>
-                <TabsTrigger value="email" className="flex-1 min-w-[140px]">E-mail & Alertas</TabsTrigger>
-                <TabsTrigger value="sms" className="flex-1 min-w-[110px]">SMS</TabsTrigger>
-                <TabsTrigger value="relatorios" className="flex-1 min-w-[110px]">Relatórios</TabsTrigger>
-                <TabsTrigger value="layout" className="flex-1 min-w-[110px]">Layout</TabsTrigger>
+                <SettingsNavGroup label="Comunicação" />
+                <SettingsNavItem value="email" icon={Mail}>E-mail & Alertas</SettingsNavItem>
+                <SettingsNavItem value="sms" icon={MessageSquare}>SMS</SettingsNavItem>
+                <SettingsNavGroup label="Sistema" />
+                <SettingsNavItem value="relatorios" icon={FileBarChart}>Relatórios</SettingsNavItem>
+                <SettingsNavItem value="layout" icon={Palette}>Layout</SettingsNavItem>
               </>
             )}
             {isMaster && (
-              <TabsTrigger value="landing" className="flex-1 min-w-[120px]">Landing Page</TabsTrigger>
+              <>
+                <SettingsNavGroup label="Master" />
+                <SettingsNavItem value="landing" icon={LogIn}>Página de login</SettingsNavItem>
+              </>
             )}
           </TabsList>
+          <div className="min-w-0">
 
          <TabsContent value="geral" className="space-y-6">
            <Card>
@@ -560,7 +572,7 @@ import { cn } from "@/lib/utils";
                              Use <code className="bg-muted px-1 rounded">{"{corpo}"}</code> para indicar onde o texto do modelo será inserido. Você pode usar tags HTML e CSS inline.
                            </div>
                            <textarea 
-                             className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+                             className="flex min-h-[200px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm font-mono"
                              placeholder="<html><body><div style='...'> {corpo} </div></body></html>"
                              value={emailLayout} 
                              onChange={e => setEmailLayout(e.target.value)}
@@ -623,7 +635,7 @@ import { cn } from "@/lib/utils";
                                <div className="space-y-2">
                                  <Label>Corpo do Texto</Label>
                                  <textarea 
-                                   className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                   className="flex min-h-[100px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
                                    value={template.body} 
                                    onChange={e => {
                                      const nt = [...emailTemplates];
@@ -1341,7 +1353,7 @@ import { cn } from "@/lib/utils";
                         <div className="space-y-4">
                           <Label>Paleta de Cores Padrão</Label>
                           <div className="grid grid-cols-4 gap-2">
-                            {["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#22c55e"].map(color => (
+                            {["#5643f0", "#2563eb", "#0d9488", "#16a34a", "#ea580c", "#e11d48", "#db2777", "#11131f"].map(color => (
                               <button 
                                 key={color}
                                 onClick={() => setLayoutConfig({...layoutConfig, accentColor: color})}
@@ -1464,7 +1476,28 @@ import { cn } from "@/lib/utils";
              </Card>
            </TabsContent>
          )}
+          </div>
        </Tabs>
      </div>
    );
+}
+
+function SettingsNavGroup({ label }: { label: string }) {
+  return (
+    <span className="hidden md:block px-2.5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 first:pt-1">
+      {label}
+    </span>
+  );
+}
+
+function SettingsNavItem({ value, icon: Icon, children }: { value: string; icon: ElementType; children: ReactNode }) {
+  return (
+    <TabsTrigger
+      value={value}
+      className="shrink-0 justify-start gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-none"
+    >
+      <Icon size={16} className="shrink-0" />
+      {children}
+    </TabsTrigger>
+  );
 }

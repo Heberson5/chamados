@@ -12,7 +12,9 @@ padrão, como parte da própria alteração.
 **Importante — natureza dessa lista, menu "Chamados"**: desde 2026-09-16 as
 ações de Chamados (`chamados:*`) são checadas de verdade via
 `hasPermission()` em `Chamados.tsx`, `ChamadoDetailDialog.tsx` e
-`ChamadosKanban.tsx` — não são mais só documentação. O padrão usado é:
+`ChamadosKanban.tsx` — não são mais só documentação. (Inclui os botões de ação
+rápida nas linhas da Lista em `Chamados.tsx`, que antes não tinham gate e
+desde 2026-10-03 seguem o mesmo piso OR abaixo.) O padrão usado é:
 
 - **Atender, Editar (prioridade), Encerrar, Reabrir, Transferir**: piso
   histórico (`userRole !== "USUARIO"`) **OU** `hasPermission('chamados:x')`.

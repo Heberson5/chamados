@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DrawerContent } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,28 +26,15 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { getPriorityLabel } from "@/lib/utils/priority";
+import { cn } from "@/lib/utils";
+import { StatusPill, PriorityIndicator, SlaChip, UserAvatar } from "@/components/tickets/TicketBits";
+import { getSlaInfo, formatDuration, timeAgo } from "@/lib/tickets";
 import { useChamadoStatuses } from "@/hooks/useChamadoStatuses";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
-  Play, CheckCircle, Pause, History, Plus, ArrowRightLeft,
-  MessageSquare, FileText, Paperclip, X, Send, Loader2, AlertTriangle,
+  Play, CheckCircle, Pause, History, ArrowRightLeft, RotateCcw, MoreHorizontal, UserPlus,
+  MessageSquare, FileText, Paperclip, X, Send, Loader2, AlertTriangle, Ticket as TicketIcon,
 } from "lucide-react";
-
-const getSLAInfo = (ticket: any) => {
-  if (ticket.status === "ENCERRADO") {
-    return { label: "FINALIZADO", color: "bg-blue-500" };
-  }
-  if (!ticket.sla_deadline) {
-    return { label: "N/A", color: "bg-gray-400" };
-  }
-  const deadline = new Date(ticket.sla_deadline);
-  const now = new Date();
-  const diffMinutes = (deadline.getTime() - now.getTime()) / (1000 * 60);
-  if (diffMinutes < 0) return { label: "VENCIDO", color: "bg-red-500" };
-  if (diffMinutes < 30) return { label: "VENCENDO", color: "bg-yellow-500 animate-pulse" };
-  return { label: "NO PRAZO", color: "bg-green-500" };
-};
 
 interface ChamadoDetailDialogProps {
   ticket: any | null;
@@ -426,242 +419,309 @@ export default function ChamadoDetailDialog({
   // andamento, não cancelado".
   const canAct = canEncerrar;
 
+  const statusRow = getStatusRow(selectedTicket);
+  const legacy = statusRow?.legacy_enum;
+  const inProgress = !!selectedTicket && !isInicial(selectedTicket) && !isCancelado(selectedTicket) && !isEncerrado(selectedTicket);
+  const isPaused = legacy === "PAUSADO" || legacy === "AGUARDANDO_USUARIO";
+
+  // Ação principal (botão cheio) conforme o momento do chamado; o resto vai
+  // para "Mais ações" — mesmas regras de permissão de antes.
+  type Act = { key: string; label: string; icon: typeof Play; run: () => void; danger?: boolean };
+  const allActions: Act[] = [];
+  if (canAtender && isInicial(selectedTicket)) allActions.push({ key: "atender", label: "Atender", icon: Play, run: () => { setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); } });
+  if (canAct && inProgress && isPaused) allActions.push({ key: "retomar", label: "Retomar atendimento", icon: Play, run: () => handleAction("retomar") });
+  if (canAct && inProgress) allActions.push({ key: "encerrar", label: "Encerrar chamado", icon: CheckCircle, run: () => setIsClosureDialogOpen(true) });
+  if (canAct && inProgress && legacy === "EM_ATENDIMENTO") {
+    allActions.push({ key: "pausar", label: "Pausar atendimento", icon: Pause, run: () => handleAction("pausar") });
+    allActions.push({ key: "aguardar", label: "Aguardar usuário", icon: History, run: () => handleAction("aguardar_usuario") });
+  }
+  if (canReabrir) allActions.push({ key: "reabrir", label: "Reabrir chamado", icon: RotateCcw, run: () => handleAction("reabrir") });
+  const primary = allActions[0];
+  const secondary = allActions.slice(1);
+
+  const sla = selectedTicket ? getSlaInfo(selectedTicket, statusRow) : null;
+  const slaProgress = (() => {
+    if (!selectedTicket?.sla_deadline || !selectedTicket?.gerado_em) return null;
+    const start = new Date(selectedTicket.gerado_em).getTime();
+    const end = new Date(selectedTicket.sla_deadline).getTime();
+    const ref = selectedTicket.encerrado_em ? new Date(selectedTicket.encerrado_em).getTime() : Date.now();
+    if (end <= start) return null;
+    return Math.min(100, Math.max(0, ((ref - start) / (end - start)) * 100));
+  })();
+  const fmt = (d?: string | null) => (d ? format(new Date(d), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—");
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-2 shrink-0 border-b">
-            <DialogTitle className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="truncate">{selectedTicket?.titulo}</span>
-                <Badge variant="outline" className="font-mono text-[10px] shrink-0">{selectedTicket?.os}</Badge>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                {canAtender && isInicial(selectedTicket) && (
-                  <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => { setPrevisaoValue(""); setIsPrevisaoDialogOpen(true); }}>
-                    <Play size={12} /> Atender
-                  </Button>
-                )}
-                {canCancel && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 gap-1 text-[10px] border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    onClick={() => { setCancelNote(""); setIsCancelDialogOpen(true); }}
-                  >
-                    <X size={12} /> Cancelar
-                  </Button>
-                )}
-                {canAct && !isInicial(selectedTicket) && !isCancelado(selectedTicket) && (
-                  <>
-                    <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px] border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" onClick={() => setIsClosureDialogOpen(true)}>
-                      <CheckCircle size={12} /> Encerrar
+        <DrawerContent className="md:max-w-[880px]">
+          {/* Cabeçalho */}
+          <div className="px-5 md:px-6 pt-4 pb-4 border-b shrink-0 space-y-3">
+            <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground font-medium">
+              <TicketIcon size={14} />
+              <span className="font-mono font-semibold">#{selectedTicket?.os}</span>
+              {selectedTicket?.gerado_em && (
+                <span className="truncate">
+                  · Aberto {timeAgo(selectedTicket.gerado_em)}
+                  {selectedTicket?.usuario?.nome ? ` por ${selectedTicket.usuario.nome} ${selectedTicket.usuario.sobrenome || ""}` : ""}
+                </span>
+              )}
+              <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="ml-auto h-8 w-8 -mr-2" aria-label="Fechar">
+                  <X size={17} />
+                </Button>
+              </DialogClose>
+            </div>
+            <DialogTitle className="text-xl font-bold leading-snug tracking-tight">
+              {selectedTicket?.titulo || "Sem título"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do chamado {selectedTicket?.os}</DialogDescription>
+            <div className="flex flex-wrap items-center gap-2">
+              {primary && (
+                <Button onClick={primary.run}>
+                  <primary.icon size={15} /> {primary.key === "encerrar" ? "Encerrar" : primary.label}
+                </Button>
+              )}
+              {canTransferir && (
+                <Button variant="outline" onClick={() => setIsTransferDialogOpen(true)}>
+                  <ArrowRightLeft size={15} /> Transferir
+                </Button>
+              )}
+              {(secondary.length > 0 || canCancel) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      <MoreHorizontal size={16} /> Mais ações
                     </Button>
-                    {getStatusRow(selectedTicket)?.legacy_enum === "EM_ATENDIMENTO" && (
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    {secondary.map((a) => (
+                      <DropdownMenuItem key={a.key} onClick={a.run} className="gap-2">
+                        <a.icon size={15} /> {a.label}
+                      </DropdownMenuItem>
+                    ))}
+                    {canCancel && (
                       <>
-                        <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("pausar")}>
-                          <Pause size={12} /> Pausar
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("aguardar_usuario")}>
-                          <History size={12} /> Aguardar Usuário
-                        </Button>
+                        {secondary.length > 0 && <DropdownMenuSeparator />}
+                        <DropdownMenuItem
+                          onClick={() => { setCancelNote(""); setIsCancelDialogOpen(true); }}
+                          className="gap-2 text-destructive focus:text-destructive"
+                        >
+                          <X size={15} /> Cancelar chamado
+                        </DropdownMenuItem>
                       </>
                     )}
-                    {["PAUSADO", "AGUARDANDO_USUARIO"].includes(getStatusRow(selectedTicket)?.legacy_enum) && (
-                      <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("retomar")}>
-                        <Play size={12} /> Retomar
-                      </Button>
-                    )}
-                  </>
-                )}
-                {canReabrir && (
-                  <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" onClick={() => handleAction("reabrir")}>
-                    <Plus size={12} /> Reabrir
-                  </Button>
-                )}
-                {canTransferir && (
-                  <Button variant="outline" size="sm" className="h-7 gap-1 text-[10px]" onClick={() => setIsTransferDialogOpen(true)}>
-                    <ArrowRightLeft size={12} /> Transferir
-                  </Button>
-                )}
-                <Badge variant={
-                  isInicial(selectedTicket) ? "default" :
-                  getStatusRow(selectedTicket)?.legacy_enum === "EM_ATENDIMENTO" ? "secondary" : "outline"
-                }>
-                  {getLabel(selectedTicket)}
-                </Badge>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {readOnly && (
+                <span className="text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-md px-2 py-1 dark:bg-purple-950/40 dark:border-purple-900 dark:text-purple-300">
+                  Transferido — somente visualização
+                </span>
+              )}
+              <StatusPill status={statusRow} label={getLabel(selectedTicket)} className="ml-auto" />
+            </div>
+          </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-            {selectedTicket && (
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-slate-100 dark:border-slate-800 mb-2 flex-wrap gap-3">
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col">
-                    <Label className="text-[10px] text-muted-foreground uppercase">Status SLA</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className={`w-2 h-2 rounded-full ${getSLAInfo(selectedTicket).color}`} />
-                      <span className="text-xs font-bold">{getSLAInfo(selectedTicket).label}</span>
-                    </div>
+          {/* Corpo: conversa + propriedades */}
+          <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden md:grid md:grid-cols-[1fr_280px]">
+            <div className="order-2 md:order-1 md:overflow-y-auto custom-scrollbar px-5 md:px-6 py-5 space-y-5">
+              <div className="rounded-xl border bg-muted/40 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <UserAvatar person={selectedTicket?.usuario} size={26} />
+                  <span className="text-sm font-semibold">{selectedTicket?.usuario?.nome} {selectedTicket?.usuario?.sobrenome}</span>
+                  <span className="text-xs text-muted-foreground">descreveu o problema · {fmt(selectedTicket?.gerado_em)}</span>
+                </div>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90">{selectedTicket?.descricao}</p>
+                {selectedTicket?.anexos && selectedTicket.anexos.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {selectedTicket.anexos.map((url: string, idx: number) => (
+                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 border rounded-lg hover:bg-muted transition-colors text-xs font-medium bg-card">
+                        <span className="h-7 w-7 rounded-md bg-accent text-accent-foreground grid place-items-center"><FileText size={14} /></span>
+                        Anexo {idx + 1}
+                      </a>
+                    ))}
                   </div>
-                  {selectedTicket.sla_deadline && (
-                    <div className="flex flex-col border-l pl-4">
-                      <Label className="text-[10px] text-muted-foreground uppercase">Deadline</Label>
-                      <span className="text-xs font-medium mt-1">
-                        {format(new Date(selectedTicket.sla_deadline), "dd/MM HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
+                  <MessageSquare size={14} /> Interações {comments.length > 0 && <span className="normal-case tracking-normal">({comments.length})</span>}
+                </h4>
+                <div className="space-y-3">
+                  {comments.map((comment) => {
+                    const text: string = comment.comentario || "";
+                    const special = text.startsWith("[ENCERRAMENTO]") ? "enc" : text.startsWith("[CANCELAMENTO]") ? "canc" : null;
+                    const body = special ? text.replace(/^\[(ENCERRAMENTO|CANCELAMENTO)\]\s*/, "") : text;
+                    return (
+                      <div key={comment.id} className="flex gap-2.5">
+                        <UserAvatar person={comment.autor} size={28} className="mt-0.5" />
+                        <div
+                          className={cn(
+                            "flex-1 min-w-0 rounded-xl border overflow-hidden",
+                            special === "enc" && "border-emerald-200 dark:border-emerald-900",
+                            special === "canc" && "border-red-200 dark:border-red-900"
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "flex items-center gap-2 px-3 py-1.5 border-b text-[13px] font-semibold bg-muted/50",
+                              special === "enc" && "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300",
+                              special === "canc" && "bg-red-50 border-red-200 text-red-700 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300"
+                            )}
+                          >
+                            {special === "enc" && <CheckCircle size={13} />}
+                            {special === "canc" && <X size={13} />}
+                            {special === "enc" ? "Encerramento · " : special === "canc" ? "Cancelamento · " : ""}
+                            {comment.autor?.nome} {comment.autor?.sobrenome}
+                            <span className="ml-auto text-xs font-medium text-muted-foreground" title={fmt(comment.criado_em)}>{timeAgo(comment.criado_em)}</span>
+                          </div>
+                          <div className="px-3 py-2.5 text-sm whitespace-pre-wrap bg-card">
+                            {body}
+                            {comment.anexos && comment.anexos.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {comment.anexos.map((url: string, idx: number) => (
+                                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block border rounded-lg overflow-hidden hover:opacity-80 transition-opacity">
+                                    <img src={url} alt="Anexo" className="w-20 h-20 object-cover" />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {comments.length === 0 && (
+                    <p className="text-center py-6 text-sm text-muted-foreground">Nenhuma interação registrada ainda.</p>
                   )}
                 </div>
-                <div className="flex gap-4">
-                  <div className="flex flex-col text-right">
-                    <Label className="text-[10px] text-muted-foreground uppercase">Pausado</Label>
-                    <span className="text-xs font-medium mt-1">{Math.round((selectedTicket.tempo_total_pausado || 0) / 60)} min</span>
-                  </div>
-                  <div className="flex flex-col text-right">
-                    <Label className="text-[10px] text-muted-foreground uppercase">Aguardando Usuário</Label>
-                    <span className="text-xs font-medium mt-1">{Math.round((selectedTicket.tempo_total_aguardando_usuario || 0) / 60)} min</span>
-                  </div>
-                </div>
               </div>
-            )}
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Solicitante</Label>
-                <p className="text-sm font-medium">{selectedTicket?.usuario?.nome} {selectedTicket?.usuario?.sobrenome}</p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Aberto em</Label>
-                <p className="text-sm font-medium">
-                  {selectedTicket?.gerado_em && format(new Date(selectedTicket.gerado_em), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                </p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Prioridade</Label>
+            {/* Propriedades */}
+            <aside className="order-1 md:order-2 md:overflow-y-auto custom-scrollbar border-b md:border-b-0 md:border-l bg-muted/30 p-5 space-y-5">
+              {sla && (
+                <div
+                  className={cn(
+                    "rounded-xl border p-3 space-y-2",
+                    sla.state === "bad" && "border-red-200 bg-red-50/70 dark:border-red-900 dark:bg-red-950/30",
+                    sla.state === "warn" && "border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/30",
+                    sla.state === "ok" && "border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/30",
+                    sla.state === "neutral" && "bg-card"
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">SLA</span>
+                    <SlaChip ticket={selectedTicket} status={statusRow} />
+                  </div>
+                  {slaProgress !== null && (
+                    <div className="h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full", sla.state === "bad" ? "bg-red-500" : sla.state === "warn" ? "bg-amber-500" : "bg-emerald-500")}
+                        style={{ width: `${slaProgress}%` }}
+                      />
+                    </div>
+                  )}
+                  {selectedTicket?.sla_deadline && (
+                    <p className="text-xs text-muted-foreground">Prazo: {fmt(selectedTicket.sla_deadline)}</p>
+                  )}
+                </div>
+              )}
+
+              <Prop label="Responsável">
+                {selectedTicket?.tecnico ? (
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <UserAvatar person={selectedTicket.tecnico} size={24} /> {selectedTicket.tecnico.nome} {selectedTicket.tecnico.sobrenome}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="h-6 w-6 rounded-full border border-dashed border-input grid place-items-center"><UserPlus size={11} /></span>
+                    Sem responsável
+                  </span>
+                )}
+              </Prop>
+
+              <Prop label="Prioridade">
                 {canEditarPrioridade ? (
                   <Select value={selectedTicket?.prioridade_id || selectedTicket?.prioridade_obj?.id || ""} onValueChange={handleChangePriority}>
-                    <SelectTrigger className="h-8 mt-1 text-sm"><SelectValue placeholder="Selecione a prioridade" /></SelectTrigger>
+                    <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Selecione a prioridade" /></SelectTrigger>
                     <SelectContent>
                       {priorities.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.cor }} />
-                            {p.nome}
-                          </div>
+                          <PriorityIndicator priority={p} />
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 ) : (
-                  <p className="text-sm font-medium">{selectedTicket?.prioridade_obj?.nome || getPriorityLabel(selectedTicket?.prioridade)}</p>
+                  <PriorityIndicator priority={selectedTicket?.prioridade_obj} legacy={selectedTicket?.prioridade} />
                 )}
-              </div>
-              {selectedTicket?.encerrado_em && (
-                <div>
-                  <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Finalizado em</Label>
-                  <p className="text-sm font-medium text-emerald-600">
-                    {format(new Date(selectedTicket.encerrado_em), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                  </p>
-                </div>
-              )}
-            </div>
+              </Prop>
 
-            <div className="space-y-2">
-              <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Descrição Inicial</Label>
-              <div className="p-3 bg-muted/50 rounded-lg text-sm whitespace-pre-wrap border border-slate-100 dark:border-slate-800">
-                {selectedTicket?.descricao}
-              </div>
-            </div>
+              <Prop label="Solicitante">
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <UserAvatar person={selectedTicket?.usuario} size={24} /> {selectedTicket?.usuario?.nome} {selectedTicket?.usuario?.sobrenome}
+                </span>
+              </Prop>
 
-            {selectedTicket?.anexos && selectedTicket.anexos.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Anexos Iniciais</Label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedTicket.anexos.map((url: string, idx: number) => (
-                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 border rounded-md hover:bg-muted transition-colors text-xs bg-card">
-                      <FileText size={14} className="text-primary" />
-                      <span className="max-w-[100px] truncate">Anexo {idx + 1}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <MessageSquare size={14} /> Interações
-              </h4>
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-[11px] font-bold text-primary">{comment.autor?.nome} {comment.autor?.sobrenome}</span>
-                      <span className="text-[10px] text-muted-foreground">{format(new Date(comment.criado_em), "dd/MM HH:mm", { locale: ptBR })}</span>
-                    </div>
-                    <div className="p-3 bg-card rounded-lg border text-sm shadow-sm">
-                      {comment.comentario}
-                      {comment.anexos && comment.anexos.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {comment.anexos.map((url: string, idx: number) => (
-                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block border rounded-md overflow-hidden hover:opacity-80 transition-opacity">
-                              <img src={url} alt="Anexo" className="w-16 h-16 object-cover" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {comments.length === 0 && (
-                  <p className="text-center py-4 text-xs text-muted-foreground italic">Nenhuma interação registrada ainda.</p>
-                )}
-              </div>
-            </div>
+              <Prop label="Detalhes">
+                <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[13px]">
+                  <dt className="text-muted-foreground">Aberto em</dt><dd className="text-right font-medium tabular-nums">{fmt(selectedTicket?.gerado_em)}</dd>
+                  <dt className="text-muted-foreground">Início</dt><dd className="text-right font-medium tabular-nums">{fmt(selectedTicket?.atendido_em)}</dd>
+                  {selectedTicket?.previsao_conclusao && (<><dt className="text-muted-foreground">Previsão</dt><dd className="text-right font-medium tabular-nums">{fmt(selectedTicket.previsao_conclusao)}</dd></>)}
+                  <dt className="text-muted-foreground">Pausado</dt><dd className="text-right font-medium tabular-nums">{formatDuration((selectedTicket?.tempo_total_pausado || 0) / 60)}</dd>
+                  <dt className="text-muted-foreground">Aguard. usuário</dt><dd className="text-right font-medium tabular-nums">{formatDuration((selectedTicket?.tempo_total_aguardando_usuario || 0) / 60)}</dd>
+                  {selectedTicket?.encerrado_em && (<><dt className="text-muted-foreground">Finalizado</dt><dd className="text-right font-medium tabular-nums text-emerald-600">{fmt(selectedTicket.encerrado_em)}</dd></>)}
+                </dl>
+              </Prop>
+            </aside>
           </div>
 
+          {/* Nova interação */}
           {!readOnly && !isEncerrado(selectedTicket) && (
-            <div className="p-6 pt-2 border-t bg-muted/20 shrink-0">
-              <div className="space-y-3">
-                <div className="flex flex-col gap-2">
-                  <div className="relative">
-                    <textarea
-                      placeholder="Escreva uma nova interação..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none pr-10"
-                    />
-                    <div className="absolute right-2 bottom-2 flex gap-1">
-                      <Label htmlFor="comment-files-shared" className="cursor-pointer p-1.5 hover:bg-muted rounded-full transition-colors text-muted-foreground">
-                        <Paperclip size={18} />
-                        <input id="comment-files-shared" type="file" multiple className="hidden" onChange={handleCommentFileChange} accept="image/*" />
-                      </Label>
-                    </div>
+            <div className="border-t bg-card px-5 md:px-6 py-3 shrink-0">
+              <div className="rounded-xl border focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15 transition-shadow">
+                <textarea
+                  placeholder="Escreva uma nova interação…"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddComment();
+                    }
+                  }}
+                  rows={2}
+                  className="block w-full resize-none bg-transparent px-3 pt-2.5 text-sm placeholder:text-muted-foreground focus:outline-none"
+                />
+                {commentPreviews.length > 0 && (
+                  <div className="flex flex-wrap gap-2 px-3 py-2">
+                    {commentPreviews.map((url, idx) => (
+                      <div key={idx} className="relative w-12 h-12 rounded-lg border overflow-hidden">
+                        <img src={url} alt="Prévia" className="w-full h-full object-cover" />
+                        <button onClick={() => removeCommentFile(idx)} className="absolute top-0.5 right-0.5 bg-slate-900/70 text-white rounded-full p-0.5" aria-label="Remover anexo"><X size={9} /></button>
+                      </div>
+                    ))}
                   </div>
-
-                  {commentPreviews.length > 0 && (
-                    <div className="flex flex-wrap gap-2 py-2">
-                      {commentPreviews.map((url, idx) => (
-                        <div key={idx} className="relative w-12 h-12 rounded border overflow-hidden">
-                          <img src={url} alt="Preview" className="w-full h-full object-cover" />
-                          <button onClick={() => removeCommentFile(idx)} className="absolute top-0.5 right-0.5 bg-destructive text-white rounded-full p-0.5"><X size={8} /></button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex justify-end">
-                    <Button size="sm" onClick={handleAddComment} disabled={isSendingComment || (!newComment.trim() && commentFiles.length === 0)} className="gap-2">
-                      {isSendingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                      Enviar Interação
-                    </Button>
-                  </div>
+                )}
+                <div className="flex items-center gap-1 px-2 pb-2">
+                  <Label htmlFor="comment-files-shared" className="cursor-pointer p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground" title="Anexar imagem">
+                    <Paperclip size={17} />
+                    <input id="comment-files-shared" type="file" multiple className="hidden" onChange={handleCommentFileChange} accept="image/*" />
+                  </Label>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-muted-foreground ml-1">
+                    <span className="kbd">Ctrl</span><span className="kbd">Enter</span> envia
+                  </span>
+                  <Button size="sm" onClick={handleAddComment} disabled={isSendingComment || (!newComment.trim() && commentFiles.length === 0)} className="ml-auto">
+                    {isSendingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                    Enviar
+                  </Button>
                 </div>
               </div>
             </div>
           )}
-        </DialogContent>
+        </DrawerContent>
       </Dialog>
 
       <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
@@ -676,7 +736,7 @@ export default function ChamadoDetailDialog({
                 placeholder="Descreva o que foi feito para resolver este chamado..."
                 value={closureNote}
                 onChange={(e) => setClosureNote(e.target.value)}
-                className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                className="flex min-h-[120px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
               />
             </div>
           </div>
@@ -701,7 +761,7 @@ export default function ChamadoDetailDialog({
                 placeholder="Explique por que este chamado está sendo cancelado..."
                 value={cancelNote}
                 onChange={(e) => setCancelNote(e.target.value)}
-                className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                className="flex min-h-[120px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
               />
             </div>
           </div>
@@ -813,5 +873,14 @@ export default function ChamadoDetailDialog({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function Prop({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+      {children}
+    </div>
   );
 }

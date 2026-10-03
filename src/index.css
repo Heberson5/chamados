@@ -2,110 +2,108 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Design system. Todas as cores em HSL. A cor primária pode ser sobrescrita
+   em tempo de execução pela cor de destaque da empresa (useBranding). */
 
 @layer base {
   :root {
-    /* Linear/Notion-inspired neutral palette */
-    --background: 0 0% 100%;
-    --foreground: 220 13% 13%;
+    --background: 240 33% 97%;
+    --foreground: 231 29% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
+    --card-foreground: 231 29% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    --popover-foreground: 231 29% 10%;
 
-    --primary: 220 13% 13%;
+    --primary: 247 85% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 13% 13%;
+    --secondary: 240 20% 96%;
+    --secondary-foreground: 231 29% 10%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 240 20% 96%;
+    --muted-foreground: 231 11% 47%;
 
-    --accent: 240 80% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 247 100% 97%;
+    --accent-foreground: 247 70% 50%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 358 75% 59%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
-    --warning: 38 92% 50%;
+    --success: 145 80% 35%;
+    --warning: 32 95% 44%;
     --info: 217 91% 60%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 240 80% 60%;
+    --border: 240 19% 92%;
+    --input: 240 15% 87%;
+    --ring: 247 85% 60%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    /* Status colors for tickets */
     --status-open: 217 91% 60%;
     --status-progress: 38 92% 50%;
     --status-waiting: 270 70% 60%;
-    --status-resolved: 142 71% 45%;
-    --status-closed: 220 9% 46%;
+    --status-resolved: 160 84% 39%;
+    --status-closed: 0 84% 60%;
 
-    /* Priority colors */
-    --priority-low: 220 9% 46%;
+    --priority-low: 231 10% 59%;
     --priority-medium: 217 91% 60%;
-    --priority-high: 25 95% 53%;
-    --priority-urgent: 0 72% 51%;
+    --priority-high: 24 93% 53%;
+    --priority-urgent: 358 75% 59%;
 
-    /* Surface elevations */
-    --surface-1: 220 14% 98%;
-    --surface-2: 220 14% 96%;
+    --surface-1: 240 33% 99%;
+    --surface-2: 240 25% 98%;
 
-    /* Shadows */
-    --shadow-xs: 0 1px 2px 0 hsl(220 13% 13% / 0.04);
-    --shadow-sm: 0 1px 3px 0 hsl(220 13% 13% / 0.06), 0 1px 2px -1px hsl(220 13% 13% / 0.04);
-    --shadow-md: 0 4px 6px -1px hsl(220 13% 13% / 0.06), 0 2px 4px -2px hsl(220 13% 13% / 0.04);
-    --shadow-lg: 0 10px 15px -3px hsl(220 13% 13% / 0.08), 0 4px 6px -4px hsl(220 13% 13% / 0.04);
+    --shadow-xs: 0 1px 2px 0 hsl(231 29% 10% / 0.04);
+    --shadow-sm: 0 1px 2px hsl(231 29% 10% / 0.04), 0 1px 1px hsl(231 29% 10% / 0.03);
+    --shadow-md: 0 1px 2px hsl(231 29% 10% / 0.04), 0 4px 16px -4px hsl(231 29% 10% / 0.08);
+    --shadow-lg: 0 24px 48px -12px hsl(231 29% 10% / 0.18), 0 2px 6px hsl(231 29% 10% / 0.06);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 220 13% 26%;
-    --sidebar-primary: 220 13% 13%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 13% 13%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 240 80% 60%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 231 18% 27%;
+    --sidebar-primary: 247 85% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 247 100% 97%;
+    --sidebar-accent-foreground: 247 85% 55%;
+    --sidebar-border: 240 19% 92%;
+    --sidebar-ring: 247 85% 60%;
   }
 
   .dark {
-    --background: 220 13% 9%;
-    --foreground: 220 14% 96%;
-    --card: 220 13% 11%;
-    --card-foreground: 220 14% 96%;
-    --popover: 220 13% 11%;
-    --popover-foreground: 220 14% 96%;
-    --primary: 220 14% 96%;
-    --primary-foreground: 220 13% 13%;
-    --secondary: 220 13% 16%;
-    --secondary-foreground: 220 14% 96%;
-    --muted: 220 13% 16%;
-    --muted-foreground: 220 9% 60%;
-    --accent: 240 80% 65%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
+    --background: 231 24% 6%;
+    --foreground: 233 25% 96%;
+    --card: 233 20% 9%;
+    --card-foreground: 233 25% 96%;
+    --popover: 233 20% 10%;
+    --popover-foreground: 233 25% 96%;
+    --primary: 247 100% 71%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 233 19% 14%;
+    --secondary-foreground: 233 25% 96%;
+    --muted: 233 19% 14%;
+    --muted-foreground: 232 11% 59%;
+    --accent: 248 38% 17%;
+    --accent-foreground: 247 100% 80%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 18%;
-    --input: 220 13% 18%;
-    --ring: 240 80% 65%;
-    --surface-1: 220 13% 11%;
-    --surface-2: 220 13% 14%;
-    --sidebar-background: 220 13% 8%;
-    --sidebar-foreground: 220 14% 90%;
-    --sidebar-primary: 240 80% 65%;
+    --border: 232 19% 17%;
+    --input: 232 17% 22%;
+    --ring: 247 100% 71%;
+    --surface-1: 233 20% 9%;
+    --surface-2: 233 20% 11%;
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 24px 64px -12px rgb(0 0 0 / 0.7);
+    --sidebar-background: 233 20% 8%;
+    --sidebar-foreground: 233 20% 85%;
+    --sidebar-primary: 247 100% 71%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 13% 14%;
-    --sidebar-accent-foreground: 220 14% 96%;
-    --sidebar-border: 220 13% 16%;
-    --sidebar-ring: 240 80% 65%;
+    --sidebar-accent: 248 38% 17%;
+    --sidebar-accent-foreground: 247 100% 82%;
+    --sidebar-border: 232 19% 15%;
+    --sidebar-ring: 247 100% 71%;
   }
 }
 
@@ -116,11 +114,43 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01";
-    font-variation-settings: "opsz" 32;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    letter-spacing: -0.005em;
   }
 
   h1, h2, h3, h4 {
     @apply tracking-tight;
   }
 }
+
+@layer components {
+  /* Pílulas de status / SLA reaproveitadas em várias telas */
+  .pill {
+    @apply inline-flex items-center gap-1.5 h-[22px] px-2 rounded-full text-[11.5px] font-semibold whitespace-nowrap border;
+  }
+  .pill-dot {
+    @apply w-1.5 h-1.5 rounded-full bg-current shrink-0;
+  }
+  .sla-chip {
+    @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] font-semibold whitespace-nowrap;
+  }
+  .sla-ok { @apply text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/50; }
+  .sla-warn { @apply text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/50; }
+  .sla-bad { @apply text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950/50; }
+  .sla-neutral { @apply text-muted-foreground bg-muted; }
+
+  .filter-chip {
+    @apply inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-dashed border-input text-[12.5px] font-medium text-muted-foreground bg-transparent hover:bg-muted transition-colors;
+  }
+  .filter-chip[data-active="true"] {
+    @apply border-solid bg-accent text-accent-foreground border-primary/20 font-semibold;
+  }
+
+  .kbd {
+    @apply inline-flex items-center h-[18px] px-1.5 rounded border border-b-2 bg-card text-[10.5px] font-semibold text-muted-foreground;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 999px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

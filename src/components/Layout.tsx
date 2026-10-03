@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "./Sidebar";
 import MobileBottomNav from "./MobileBottomNav";
 import { Button } from "./ui/button";
-import { Menu, X } from "lucide-react";
+import { Search, Moon, Sun, Plus } from "lucide-react";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 import { useBranding } from "@/hooks/useBranding";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -12,6 +12,18 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { Loader2 } from "lucide-react";
 import AccessGuard from "./AccessGuard";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import { useMenuItems } from "@/hooks/useMenuItems";
+import { useTheme } from "./ThemeProvider";
+import BrandMark from "./BrandMark";
+import NotificationsBell from "./NotificationsBell";
+import CommandPalette, { OPEN_COMMAND_PALETTE } from "./CommandPalette";
+
+const EXTRA_TITLES: Record<string, string> = {
+  "/perfil": "Meu perfil",
+  "/backup": "Backup",
+  "/configuracoes/senhas": "Política de senhas",
+  "/unauthorized": "Acesso restrito",
+};
 
 const PageLoader = () => (
   <div className="flex h-full min-h-[60vh] w-full items-center justify-center">
@@ -71,6 +83,8 @@ export default function Layout() {
     };
   }, [navigate]);
   const { branding } = useBranding();
+  const menuItems = useMenuItems();
+  const { theme, setTheme } = useTheme();
    const { hasPermission, loading: permissionsLoading, isMaster } = usePermissions();
 
   useEffect(() => {
@@ -175,51 +189,78 @@ export default function Layout() {
     );
   }
 
+  const currentItem = menuItems.find((i) => i.path === location.pathname);
+  const pageTitle = currentItem?.label || EXTRA_TITLES[location.pathname] || "";
+  const canOpenTicket = hasPermission("chamados");
+  const openPalette = () => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE));
+  const isDark = theme === "dark" || (theme === "system" && document.documentElement.classList.contains("dark"));
+
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+        <div
+          className="fixed inset-0 bg-slate-950/40 backdrop-blur-[2px] z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-      
+
       <div className={isSidebarOpen ? "block" : "hidden md:block"}>
         <Sidebar onMobileClose={() => setIsSidebarOpen(false)} />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AccessGuard />
+        {/* Barra superior (desktop) */}
+        <header className="hidden md:flex items-center gap-3 h-16 px-6 lg:px-8 border-b bg-card/80 backdrop-blur shrink-0">
+          <h2 className="text-[15px] font-semibold truncate">{pageTitle}</h2>
+          <button
+            type="button"
+            onClick={openPalette}
+            className="ml-auto flex items-center gap-2 h-9 w-full max-w-[360px] px-3 rounded-lg border bg-background text-sm text-muted-foreground hover:border-input transition-colors"
+          >
+            <Search size={15} />
+            <span className="flex-1 text-left truncate">Buscar chamados, páginas…</span>
+            <span className="kbd">Ctrl</span><span className="kbd">K</span>
+          </button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            title={isDark ? "Usar tema claro" : "Usar tema escuro"}
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          <NotificationsBell />
+          {canOpenTicket && (
+            <Button onClick={() => navigate("/chamados?novo=1")}>
+              <Plus className="h-4 w-4" /> Novo chamado
+            </Button>
+          )}
+        </header>
+
         {/* Mobile Header */}
-        <header className="flex items-center justify-between p-4 border-b md:hidden shrink-0 shadow-md shadow-black/10 relative z-10">
+        <header className="flex items-center gap-2 px-4 h-14 border-b md:hidden shrink-0 bg-card relative z-10">
           <button
             type="button"
             onClick={() => navigate("/dashboard")}
             className="flex items-center gap-2 overflow-hidden min-w-0 hover:opacity-80 transition-opacity"
             title="Ir para o Painel"
           >
-            {branding.companyLogo && (
-              <img
-                src={branding.companyLogo}
-                alt="Logo"
-                className="w-7 h-7 object-contain shrink-0"
-              />
-            )}
-            <span className="font-bold text-lg truncate bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <BrandMark logo={branding.companyLogo} size={28} />
+            <span className="font-bold text-[17px] tracking-tight truncate">
               {branding.companyName || "Chamados"}
             </span>
           </button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu size={24} />
-          </Button>
+          <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={openPalette} aria-label="Buscar">
+              <Search size={19} />
+            </Button>
+            <NotificationsBell />
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto min-w-0 pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto min-w-0 pb-20 md:pb-0">
           <Suspense fallback={<PageLoader />}>
             <Outlet />
           </Suspense>
@@ -228,6 +269,7 @@ export default function Layout() {
         <MobileBottomNav onMoreClick={() => setIsSidebarOpen(true)} />
       </div>
 
+      <CommandPalette />
       <ChangePasswordDialog
         open={mustChange}
         onOpenChange={setMustChange}

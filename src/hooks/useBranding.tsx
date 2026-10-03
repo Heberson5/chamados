@@ -7,6 +7,7 @@ export interface BrandingSettings {
   companyFavicon?: string;
   appIcon?: string;
   accentColor?: string;
+  themeVersion?: number;
   sidebarColor?: string;
   menuOrder?: any[];
 }
@@ -94,6 +95,15 @@ function applyAppIcon(appIcon: string | undefined, companyName: string | undefin
   generatedManifestUrl = url;
 }
 
+// Antes do redesign (themeVersion < 2) a tela de Configurações gravava
+// "#3b82f6" como cor padrão mesmo sem ninguém escolher — esse valor antigo
+// não deve sobrescrever a nova cor padrão do tema. Ao salvar Configurações de
+// novo, themeVersion vira 2 e qualquer cor escolhida (inclusive esse azul)
+// passa a valer normalmente.
+function isLegacyDefaultAccent(settings: BrandingSettings) {
+  return !settings.themeVersion && settings.accentColor?.toLowerCase() === "#3b82f6";
+}
+
 function applyBrandingSideEffects(settings: BrandingSettings) {
   document.title = settings.companyName || "Chamados";
   if (settings.companyFavicon) {
@@ -106,11 +116,11 @@ function applyBrandingSideEffects(settings: BrandingSettings) {
     link.href = settings.companyFavicon;
   }
   applyAppIcon(settings.appIcon, settings.companyName);
-  if (settings.accentColor) {
-    const hsl = hexToHsl(settings.accentColor);
-    if (hsl) {
-      document.documentElement.style.setProperty("--primary", hsl);
-    }
+  const root = document.documentElement.style;
+  const hsl = settings.accentColor && !isLegacyDefaultAccent(settings) ? hexToHsl(settings.accentColor) : null;
+  for (const v of ["--primary", "--ring", "--sidebar-primary", "--sidebar-ring"]) {
+    if (hsl) root.setProperty(v, hsl);
+    else root.removeProperty(v);
   }
   // Cacheia pro próximo carregamento: um script inline no index.html lê isso
   // e aplica o favicon/título ANTES do React montar, pra não piscar o ícone

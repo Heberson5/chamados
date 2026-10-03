@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/ThemeProvider";
-import { Sun, Moon, Monitor, Ticket, CheckCircle2, Mail, Lock, KeyRound, ArrowRight, Loader2, MessageSquareText } from "lucide-react";
+import { Sun, Moon, Monitor, CheckCircle2, Mail, Lock, ArrowRight, Loader2, MessageSquareText, Timer } from "lucide-react";
+import { cn } from "@/lib/utils";
+import BrandMark from "@/components/BrandMark";
 import {
   Dialog,
   DialogContent,
@@ -35,29 +37,27 @@ export default function Login() {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const defaultLanding = {
-    bgColor: "#020617",
-    brandTitle: "GESTÃO QUE",
-    brandHighlight: "TRANSFORMA.",
-    subtitle: "A plataforma definitiva para controle de atendimento, inventário e produtividade da sua operação.",
+    bgColor: "#110f24",
+    brandTitle: "Suporte organizado,",
+    brandHighlight: "equipe no controle.",
+    subtitle: "Abra, acompanhe e resolva chamados com prazos de SLA automáticos, Kanban e relatórios — tudo em um só lugar.",
     features: [
-      { id: "1", text: "SLA Inteligente & Automático" },
-      { id: "2", text: "Inventário em Tempo Real" },
-      { id: "3", text: "Workflows Customizáveis" },
-      { id: "4", text: "Analytics Avançado" },
+      { id: "1", text: "SLA automático" },
+      { id: "2", text: "Kanban" },
+      { id: "3", text: "Relatórios" },
+      { id: "4", text: "App no celular" },
     ],
-    formTitle: "Acesso",
-    formSubtitle: "Bem-vindo. Por favor, identifique-se.",
+    formTitle: "Entrar",
+    formSubtitle: "Bem-vindo de volta. Use seu e-mail corporativo.",
     statusText: "Sistema Online",
   };
   const [landing, setLanding] = useState<any>(defaultLanding);
-  // Posição do mouse (-0.5 a 0.5) usada para o efeito de profundidade/tilt 3D do painel de marca
-  const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
   // O painel esquerdo tem fundo sempre escuro (landing.bgColor), independente
   // do tema claro/escuro do app — por isso não pode usar a cor --primary do
   // tema (que fica quase preta no tema claro, ficando invisível ali). Usamos
   // uma cor de destaque fixa e configurável em vez disso.
-  const accentHex = landing.accentColor || "#818cf8";
+  const accentHex = landing.accentColor || "#a99bff";
   const accentRgb = (() => {
     const m = accentHex.replace("#", "").match(/^([\da-f]{6})$/i);
     if (!m) return "129, 140, 248";
@@ -162,292 +162,234 @@ export default function Login() {
     setLoading(false);
   };
 
+  const features: { id?: string; text?: string }[] = (landing.features || []).map((f: any) => (typeof f === "string" ? { text: f } : f));
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20">
-      {/* Left Side: Modern Illustration & Branding */}
+      {/* Lado esquerdo: marca, mensagem e prévia do produto (sempre escuro). */}
       <div
-        className="hidden md:flex flex-1 items-center justify-center p-12 text-white relative overflow-hidden [perspective:1600px]"
+        className="hidden md:flex w-1/2 flex-col justify-between p-10 lg:p-14 text-white relative overflow-hidden"
         style={{
-          backgroundColor: landing.bgColor || "#020617",
+          backgroundColor: landing.bgColor || "#110f24",
           ["--landing-accent" as string]: accentHex,
           ["--landing-accent-rgb" as string]: accentRgb,
         }}
-        onMouseMove={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          setMouse({
-            x: (e.clientX - rect.left) / rect.width - 0.5,
-            y: (e.clientY - rect.top) / rect.height - 0.5,
-          });
-        }}
-        onMouseLeave={() => setMouse({ x: 0, y: 0 })}
       >
-        {/* Depth layer 1: far background orbs, drift slowly, react least to mouse */}
-        <div
-          className="absolute top-0 left-0 w-full h-full transition-transform duration-300 ease-out"
-          style={{ transform: `translate3d(${mouse.x * 14}px, ${mouse.y * 14}px, 0)` }}
-        >
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[rgba(var(--landing-accent-rgb),0.2)] blur-[120px] animate-float-slow" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] animate-float-slow" style={{ animationDelay: "2s" }} />
-          <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] rounded-full bg-indigo-500/10 blur-[80px] animate-float" />
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-[10%] right-[0%] h-[60%] w-[60%] rounded-full bg-[rgba(var(--landing-accent-rgb),0.35)] blur-[140px]" />
+          <div className="absolute -bottom-[20%] -left-[10%] h-[45%] w-[45%] rounded-full bg-sky-500/15 blur-[120px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_70%)]" />
         </div>
 
-        {/* Depth layer 2: perspective floor grid fading into the distance */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-[55%] opacity-40 [transform-style:preserve-3d]"
-          style={{ transform: `rotateX(62deg) translateZ(${-40 - mouse.y * 10}px)`, transformOrigin: "bottom" }}
-        >
-          <div className="w-full h-full bg-[linear-gradient(to_right,#ffffff12_1px,transparent_1px),linear-gradient(to_bottom,#ffffff12_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:linear-gradient(to_top,black,transparent)]" />
+        <div className="relative z-10 flex items-center gap-3">
+          <BrandMark logo={branding.companyLogo} size={40} />
+          <span className="text-lg font-bold tracking-tight">{branding.companyName || "Chamados"}</span>
         </div>
 
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-
-        {/* Main content: tilts subtly toward the cursor, simulating a floating 3D panel */}
-        <div
-          className="relative z-10 max-w-lg w-full transition-transform duration-300 ease-out will-change-transform [transform-style:preserve-3d]"
-          style={{ transform: `rotateY(${mouse.x * 6}deg) rotateX(${-mouse.y * 6}deg)` }}
-        >
-          <div className="flex items-center gap-4 mb-12 animate-in fade-in slide-in-from-left duration-700">
-            <div className="relative" style={{ transform: "translateZ(40px)" }}>
-              {/* Floating card stack behind the logo — pure CSS depth illusion */}
-              <div className="absolute inset-0 rounded-2xl border border-white/10 bg-[rgba(var(--landing-accent-rgb),0.12)] rotate-[-10deg] translate-x-1.5 translate-y-2 animate-float-delayed" />
-              <div className="absolute inset-0 rounded-2xl border border-white/10 bg-white/5 rotate-[8deg] -translate-x-1 translate-y-1 animate-float" />
-              <div className="relative p-3.5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
-                {branding.companyLogo ? (
-                  <img src={branding.companyLogo} alt="Logo" className="w-12 h-12 object-contain" />
-                ) : (
-                  <Ticket size={44} className="text-[var(--landing-accent)]" />
-                )}
-              </div>
-            </div>
-            <div style={{ transform: "translateZ(30px)" }}>
-              <h1 className="text-3xl font-black tracking-tighter uppercase italic">
-                {branding.companyName || "Chamados"}
-              </h1>
-              <div className="h-1 w-12 bg-[var(--landing-accent)] rounded-full mt-1" />
-            </div>
-          </div>
-
-          <h2
-            className="text-6xl font-black leading-[0.9] mb-8 animate-in fade-in slide-in-from-left duration-1000 delay-150"
-            style={{ transform: "translateZ(50px)" }}
-          >
-            {landing.brandTitle} <br />
-            <span className="text-[var(--landing-accent)] italic drop-shadow-[0_0_24px_rgba(var(--landing-accent-rgb),0.45)]">{landing.brandHighlight}</span>
+        <div className="relative z-10 max-w-xl animate-in fade-in slide-in-from-left-4 duration-700">
+          <h2 className="text-4xl lg:text-5xl font-extrabold leading-[1.05] tracking-tight">
+            {landing.brandTitle}
+            <br />
+            <span className="text-[var(--landing-accent)]">{landing.brandHighlight}</span>
           </h2>
+          <p className="mt-5 text-base lg:text-lg text-white/65 leading-relaxed max-w-lg">{landing.subtitle}</p>
 
-          <p
-            className="text-xl text-slate-400 mb-12 leading-relaxed max-w-md animate-in fade-in slide-in-from-left duration-1000 delay-300"
-            style={{ transform: "translateZ(25px)" }}
-          >
-            {landing.subtitle}
-          </p>
-
-          <div className="space-y-3 animate-in fade-in slide-in-from-left duration-1000 delay-500" style={{ transform: "translateZ(20px)" }}>
-            {(landing.features || []).map((feature: any, i: number) => (
-              <div
-                key={feature.id || i}
-                className="flex items-center gap-4 group cursor-default rounded-xl px-3 py-2 -mx-3 transition-all duration-300 hover:bg-white/5 hover:shadow-lg hover:shadow-black/20 hover:translate-x-1"
-              >
-                <div className="h-6 w-6 rounded-full bg-[rgba(var(--landing-accent-rgb),0.1)] border border-[rgba(var(--landing-accent-rgb),0.25)] flex items-center justify-center group-hover:bg-[var(--landing-accent)] group-hover:scale-110 transition-all duration-300 shrink-0">
-                  <CheckCircle2 size={14} className="text-[var(--landing-accent)] group-hover:text-white transition-colors" />
-                </div>
-                <span className="text-slate-300 font-medium group-hover:text-white transition-colors">{feature.text || feature}</span>
+          {/* Prévia ilustrativa de chamados */}
+          <div className="mt-10 hidden lg:block max-w-md rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-sm" aria-hidden="true">
+            <div className="rounded-xl bg-white p-4 text-slate-900 shadow-xl">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-500">#1042</span>
+                <span className="pill" style={{ color: "#c2410c", backgroundColor: "#c2410c14", borderColor: "#c2410c33" }}>
+                  <span className="pill-dot" /> Em atendimento
+                </span>
               </div>
-            ))}
+              <p className="mt-2 text-sm font-semibold">Notebook lento após atualização</p>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="sla-chip sla-ok"><Timer size={12} /> 5h 12min</span>
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-orange-500 text-[11px] font-bold text-white">EL</span>
+              </div>
+            </div>
+            <div className="ml-8 mt-3 rounded-xl bg-slate-100 p-4 text-slate-900 shadow-lg">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-500">#1046</span>
+                <span className="pill" style={{ color: "#15803d", backgroundColor: "#15803d14", borderColor: "#15803d33" }}>
+                  <span className="pill-dot" /> Encerrado
+                </span>
+              </div>
+              <p className="mt-2 text-sm font-semibold">E-mail não sincroniza no celular</p>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="sla-chip sla-ok"><CheckCircle2 size={12} /> Dentro do SLA</span>
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-sky-500 text-[11px] font-bold text-white">CM</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="absolute bottom-12 left-12 text-sm text-slate-500 font-medium flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span>{landing.statusText}</span>
-          <span className="mx-2 opacity-20">|</span>
-          <span>&copy; {new Date().getFullYear()} {landing.copyrightText || branding.companyName || "Chamados"}</span>
+        <div className="relative z-10 space-y-4">
+          {features.length > 0 && (
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-white/75">
+              {features.map((f, i) => (
+                <span key={f.id || i} className="inline-flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-[var(--landing-accent)]" />
+                  {f.text}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-xs text-white/45">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span>{landing.statusText}</span>
+            <span className="opacity-40">·</span>
+            <span>&copy; {new Date().getFullYear()} {landing.copyrightText || branding.companyName || "Chamados"}</span>
+          </div>
         </div>
       </div>
 
-      {/* Right Side: Modern Login Form */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative bg-background/50 backdrop-blur-sm overflow-hidden">
-        {/* Depth layer: soft floating orbs, theme-aware so they stay subtle in both light and dark */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-15%] right-[-10%] w-[45%] h-[45%] rounded-full bg-primary/[0.06] dark:bg-primary/10 blur-[100px] animate-float-slow" />
-          <div className="absolute bottom-[-15%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/[0.05] dark:bg-blue-500/10 blur-[100px] animate-float-slow" style={{ animationDelay: "3s" }} />
-        </div>
-
-        <div className="absolute top-8 right-8 animate-in fade-in duration-1000 z-10">
+      {/* Lado direito: formulário */}
+      <div className="flex-1 flex flex-col min-h-screen md:min-h-0 relative">
+        <div className="flex items-center justify-between p-4 md:p-6 md:justify-end">
+          <div className="flex items-center gap-2.5 md:hidden">
+            <BrandMark logo={branding.companyLogo} size={34} />
+            <span className="font-bold tracking-tight">{branding.companyName || "Chamados"}</span>
+          </div>
           <Button
             variant="outline"
             size="icon"
-            className="rounded-xl h-12 w-12 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all"
+            aria-label="Alternar tema"
+            title={theme === "system" ? "Tema automático" : theme === "dark" ? "Tema escuro" : "Tema claro"}
             onClick={() => {
               if (theme === "system") setTheme("light");
               else if (theme === "light") setTheme("dark");
               else setTheme("system");
             }}
           >
-            {theme === "system" ? <Monitor size={20} /> : theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            {theme === "system" ? <Monitor size={17} /> : theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
           </Button>
         </div>
 
-        {/* Elevated glass card: gives the form the same sense of depth as the branding panel */}
-        <div className="relative z-10 w-full max-w-sm rounded-[2rem] border border-black/5 dark:border-white/10 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl shadow-2xl shadow-slate-900/5 dark:shadow-black/40 p-8 md:p-10 space-y-10 animate-in fade-in zoom-in-95 duration-700 transition-shadow hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]">
-          <div className="md:hidden flex flex-col items-center mb-10">
-            <div className="p-4 bg-primary/10 rounded-3xl mb-4 shadow-inner">
-              {branding.companyLogo ? (
-                <img src={branding.companyLogo} alt="Logo" className="w-12 h-12 object-contain" />
-              ) : (
-                <Ticket size={40} className="text-primary" />
-              )}
+        <div className="flex-1 flex items-center justify-center px-5 pb-10 md:px-12">
+          <div className="w-full max-w-[400px] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="space-y-1.5">
+              <h1 className="text-[28px] font-bold tracking-tight">{landing.formTitle}</h1>
+              <p className="text-sm text-muted-foreground">{landing.formSubtitle}</p>
             </div>
-            <h1 className="text-3xl font-black italic tracking-tighter uppercase text-primary">
-              {branding.companyName || "Chamados"}
-            </h1>
-          </div>
 
-          <div className="space-y-3 text-center md:text-left">
-            <h3 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{landing.formTitle}</h3>
-            <p className="text-slate-500 font-medium">{landing.formSubtitle}</p>
-          </div>
-
-          <InstallAppButton variant="banner" className="w-full justify-center" />
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">E-mail corporativo</Label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="exemplo@empresa.com"
-                  className="h-14 pl-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary rounded-2xl transition-all font-medium"
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  required 
-                />
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm font-semibold">E-mail</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="voce@empresa.com"
+                    className="h-11 pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center ml-1">
-                <Label htmlFor="password" title="Senha" className="text-xs font-bold uppercase tracking-widest text-slate-500">Senha de acesso</Label>
-                
-                <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-                  <DialogTrigger asChild>
-                    <button type="button" className="text-xs font-bold text-primary hover:underline hover:text-primary/80 transition-all uppercase tracking-tighter">
-                      Esqueceu?
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px] rounded-3xl">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl font-black">Recuperar Acesso</DialogTitle>
-                      <DialogDescription className="font-medium text-slate-500">
-                        {forgotChannel === "sms"
-                          ? "Enviaremos uma senha provisória por SMS para o celular cadastrado."
-                          : "Enviaremos uma senha provisória para o seu e-mail cadastrado."}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleForgotPassword} className="space-y-4 py-4">
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setForgotChannel("email")}
-                          className={`h-11 rounded-xl border text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
-                            forgotChannel === "email" ? "bg-primary text-primary-foreground border-primary" : "bg-slate-50 text-slate-500 border-slate-200"
-                          }`}
-                        >
-                          <Mail className="w-4 h-4" /> E-mail
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setForgotChannel("sms")}
-                          className={`h-11 rounded-xl border text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
-                            forgotChannel === "sms" ? "bg-primary text-primary-foreground border-primary" : "bg-slate-50 text-slate-500 border-slate-200"
-                          }`}
-                        >
-                          <MessageSquareText className="w-4 h-4" /> SMS
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="forgot-email" className="text-xs font-bold uppercase text-slate-500">E-mail cadastrado</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                          <Input
-                            id="forgot-email"
-                            type="email"
-                            className="h-14 pl-12 rounded-2xl bg-slate-50 border-slate-200"
-                            placeholder="seu-email@empresa.com"
-                            value={forgotEmail}
-                            onChange={(e) => setForgotEmail(e.target.value)}
-                            required
-                          />
+
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password" className="text-sm font-semibold">Senha</Label>
+                  <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+                    <DialogTrigger asChild>
+                      <button type="button" className="text-xs font-semibold text-primary hover:underline">
+                        Esqueci minha senha
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[420px]">
+                      <DialogHeader>
+                        <DialogTitle>Recuperar acesso</DialogTitle>
+                        <DialogDescription>
+                          {forgotChannel === "sms"
+                            ? "Enviaremos uma senha provisória por SMS para o celular cadastrado."
+                            : "Enviaremos uma senha provisória para o seu e-mail cadastrado."}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleForgotPassword} className="space-y-4 pt-2">
+                        <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+                          {([
+                            { value: "email", label: "E-mail", icon: Mail },
+                            { value: "sms", label: "SMS", icon: MessageSquareText },
+                          ] as const).map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => setForgotChannel(opt.value)}
+                              className={cn(
+                                "h-9 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors",
+                                forgotChannel === opt.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              <opt.icon className="w-4 h-4" /> {opt.label}
+                            </button>
+                          ))}
                         </div>
-                        {forgotChannel === "sms" && (
-                          <p className="text-[11px] text-slate-500 pl-1">
-                            Usamos o e-mail só para localizar sua conta — a senha provisória vai por SMS para o celular cadastrado no seu perfil.
-                          </p>
-                        )}
-                      </div>
-                      <DialogFooter>
-                        <Button 
-                          type="submit" 
-                          className="w-full h-14 text-lg font-bold rounded-2xl" 
-                          disabled={forgotLoading}
-                        >
-                          {forgotLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <>Solicitar Senha <ArrowRight className="ml-2 w-5 h-5" /></>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="forgot-email" className="text-sm font-semibold">E-mail cadastrado</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            <Input
+                              id="forgot-email"
+                              type="email"
+                              className="h-11 pl-10"
+                              placeholder="voce@empresa.com"
+                              value={forgotEmail}
+                              onChange={(e) => setForgotEmail(e.target.value)}
+                              required
+                            />
+                          </div>
+                          {forgotChannel === "sms" && (
+                            <p className="text-xs text-muted-foreground">
+                              Usamos o e-mail só para localizar sua conta — a senha provisória vai por SMS para o celular cadastrado no seu perfil.
+                            </p>
                           )}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                <PasswordInput
-                  id="password"
-                  placeholder="••••••••"
-                  className="h-14 pl-12 pr-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary rounded-2xl transition-all font-medium"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full h-14 text-lg font-black uppercase tracking-widest shadow-2xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all rounded-2xl group" 
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Validando...</span>
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit" className="w-full h-11" disabled={forgotLoading}>
+                            {forgotLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Solicitar senha <ArrowRight className="w-4 h-4" /></>}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-              ) : (
-                <div className="flex items-center justify-center gap-2">
-                  <span>Entrar</span>
-                  <KeyRound className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                  <PasswordInput
+                    id="password"
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="h-11 pl-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
                 </div>
-              )}
-            </Button>
-          </form>
+              </div>
 
-          <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
-            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-start gap-4">
-              <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                <Monitor size={16} className="text-primary" />
-              </div>
-              <div className="text-sm">
-                <p className="font-bold text-slate-900 dark:text-white">Suporte Técnico</p>
-                <p className="text-slate-500 font-medium">Contate a TI caso tenha dificuldades.</p>
-              </div>
-            </div>
+              <Button type="submit" className="w-full h-11 text-[15px]" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Validando...
+                  </>
+                ) : (
+                  <>
+                    Entrar <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <InstallAppButton variant="login" />
           </div>
         </div>
+
+        <p className="pb-6 text-center text-xs text-muted-foreground">Problemas para entrar? Fale com a equipe de TI.</p>
       </div>
     </div>
   );

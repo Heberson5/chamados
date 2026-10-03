@@ -139,7 +139,7 @@ export default function Permissions() {
         { id: "permissoes", label: "Permissões", icon: Key, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Visualizar Roles"] },
         { id: "relatorios", label: "Relatórios", icon: FileText, actions: ["Visualizar", "Exportar PDF", "Exportar Excel", "Ver Desempenho Técnico"] },
         { id: "departamentos", label: "Departamentos", icon: Building2, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
-        { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Layout", "E-mail", "Segurança", "Kanban"] },
+        { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Notificações", "Kanban", "E-mail", "SMS", "Relatórios", "Layout", "Segurança"] },
         { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar", "Limpar Logs"] },
         { id: "ajuda", label: "Ajuda", icon: HelpCircle, actions: ["Visualizar", "Editar Manuais"] },
         { id: "landing_page", label: "Landing Page (Login)", icon: LayoutDashboard, actions: ["Visualizar", "Editar"] },

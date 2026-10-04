@@ -11,6 +11,7 @@ import {
   HelpCircle,
   ClipboardList,
   DatabaseBackup,
+  ShieldCheck,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useBranding } from "@/hooks/useBranding";
@@ -23,6 +24,7 @@ export const defaultMenuItems = [
   { id: '3', icon: Users, label: "Usuários", path: "/usuarios", permission: "usuarios" },
   { id: '9', icon: Building2, label: "Departamentos", path: "/departamentos", permission: "departamentos" },
   { id: '4', icon: Lock, label: "Permissões", path: "/permissions", permission: "permissoes" },
+  { id: '13', icon: ShieldCheck, label: "Privacidade", path: "/privacidade", permission: "privacidade" },
   { id: '5', icon: History, label: "Auditoria", path: "/audit", permission: "audit" },
   { id: '10', icon: HelpCircle, label: "Ajuda", path: "/ajuda", permission: "ajuda" },
   { id: '12', icon: DatabaseBackup, label: "Backup", path: "/backup", permission: "backup" },

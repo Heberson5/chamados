@@ -14,6 +14,369 @@ export type Database = {
   }
   public: {
     Tables: {
+      push_subscriptions: {
+        Row: {
+          auth: string
+          criado_em: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          criado_em?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: {
+          auth?: string
+          criado_em?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      respostas_prontas: {
+        Row: {
+          atalho: string | null
+          ativo: boolean
+          atualizado_em: string
+          conteudo: string
+          criado_em: string
+          criado_por: string | null
+          id: string
+          titulo: string
+        }
+        Insert: {
+          atalho?: string | null
+          ativo?: boolean
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          titulo: string
+        }
+        Update: {
+          atalho?: string | null
+          ativo?: boolean
+          atualizado_em?: string
+          conteudo?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
+      chamado_avaliacoes: {
+        Row: {
+          chamado_id: string
+          comentario: string | null
+          criado_em: string
+          id: string
+          nota: number
+          tecnico_id: string | null
+          usuario_id: string
+        }
+        Insert: {
+          chamado_id: string
+          comentario?: string | null
+          criado_em?: string
+          id?: string
+          nota: number
+          tecnico_id?: string | null
+          usuario_id?: string
+        }
+        Update: {
+          chamado_id?: string
+          comentario?: string | null
+          criado_em?: string
+          id?: string
+          nota?: number
+          tecnico_id?: string | null
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      chamado_favoritos: {
+        Row: {
+          chamado_id: string
+          criado_em: string
+          user_id: string
+        }
+        Insert: {
+          chamado_id: string
+          criado_em?: string
+          user_id?: string
+        }
+        Update: {
+          chamado_id?: string
+          criado_em?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chamado_eventos: {
+        Row: {
+          ator_id: string | null
+          chamado_id: string
+          criado_em: string
+          de: string | null
+          id: number
+          para: string | null
+          tipo: string
+        }
+        Insert: {
+          ator_id?: string | null
+          chamado_id: string
+          criado_em?: string
+          de?: string | null
+          id?: never
+          para?: string | null
+          tipo: string
+        }
+        Update: {
+          ator_id?: string | null
+          chamado_id?: string
+          criado_em?: string
+          de?: string | null
+          id?: never
+          para?: string | null
+          tipo?: string
+        }
+        Relationships: []
+      }
+      chamado_categorias: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          campos: Json
+          cor: string
+          criado_em: string
+          descricao: string | null
+          id: string
+          nome: string
+          ordem: number
+          prioridade_padrao_id: string | null
+          sla_horas: number | null
+          tecnico_padrao_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          campos?: Json
+          cor?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          prioridade_padrao_id?: string | null
+          sla_horas?: number | null
+          tecnico_padrao_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          campos?: Json
+          cor?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          prioridade_padrao_id?: string | null
+          sla_horas?: number | null
+          tecnico_padrao_id?: string | null
+        }
+        Relationships: []
+      }
+      auth_tentativas_login: {
+        Row: {
+          bloqueado_ate: string | null
+          falhas: number
+          ultima_falha: string | null
+          user_id: string
+        }
+        Insert: {
+          bloqueado_ate?: string | null
+          falhas?: number
+          ultima_falha?: string | null
+          user_id: string
+        }
+        Update: {
+          bloqueado_ate?: string | null
+          falhas?: number
+          ultima_falha?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lgpd_aceites: {
+        Row: {
+          aceito_em: string
+          id: string
+          user_agent: string | null
+          user_id: string
+          versao: string
+        }
+        Insert: {
+          aceito_em?: string
+          id?: string
+          user_agent?: string | null
+          user_id: string
+          versao: string
+        }
+        Update: {
+          aceito_em?: string
+          id?: string
+          user_agent?: string | null
+          user_id?: string
+          versao?: string
+        }
+        Relationships: []
+      }
+      lgpd_incidentes: {
+        Row: {
+          atualizado_em: string
+          categorias_dados: string | null
+          comunicado_anpd_em: string | null
+          comunicado_titulares_em: string | null
+          criado_em: string
+          criado_por: string | null
+          descricao: string | null
+          detectado_em: string
+          id: string
+          medidas: string | null
+          severidade: string
+          status: string
+          titulares_afetados: number | null
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          categorias_dados?: string | null
+          comunicado_anpd_em?: string | null
+          comunicado_titulares_em?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string | null
+          detectado_em?: string
+          id?: string
+          medidas?: string | null
+          severidade?: string
+          status?: string
+          titulares_afetados?: number | null
+          titulo: string
+        }
+        Update: {
+          atualizado_em?: string
+          categorias_dados?: string | null
+          comunicado_anpd_em?: string | null
+          comunicado_titulares_em?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string | null
+          detectado_em?: string
+          id?: string
+          medidas?: string | null
+          severidade?: string
+          status?: string
+          titulares_afetados?: number | null
+          titulo?: string
+        }
+        Relationships: []
+      }
+      lgpd_acessos: {
+        Row: {
+          ator_email: string | null
+          ator_id: string | null
+          criado_em: string
+          detalhe: string | null
+          id: number
+          recurso: string
+          titular_id: string | null
+        }
+        Insert: {
+          ator_email?: string | null
+          ator_id?: string | null
+          criado_em?: string
+          detalhe?: string | null
+          id?: never
+          recurso: string
+          titular_id?: string | null
+        }
+        Update: {
+          ator_email?: string | null
+          ator_id?: string | null
+          criado_em?: string
+          detalhe?: string | null
+          id?: never
+          recurso?: string
+          titular_id?: string | null
+        }
+        Relationships: []
+      }
+      lgpd_solicitacoes: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          descricao: string | null
+          id: string
+          prazo: string
+          protocolo: number
+          respondido_em: string | null
+          respondido_por: string | null
+          resposta: string | null
+          status: string
+          tipo: string
+          titular_email: string | null
+          titular_id: string | null
+          titular_nome: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          prazo?: string
+          protocolo?: never
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta?: string | null
+          status?: string
+          tipo: string
+          titular_email?: string | null
+          titular_id?: string | null
+          titular_nome?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          prazo?: string
+          protocolo?: never
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta?: string | null
+          status?: string
+          tipo?: string
+          titular_email?: string | null
+          titular_id?: string | null
+          titular_nome?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string | null
@@ -292,6 +655,11 @@ export type Database = {
       }
       chamados: {
         Row: {
+          sla_escalado_em: string | null
+          categoria_id: string | null
+          campos_extras: Json | null
+          contem_dado_sensivel: boolean
+          anonimizado_em: string | null
           aguardando_usuario_em: string | null
           anexos: string[] | null
           atendido_em: string | null
@@ -327,6 +695,11 @@ export type Database = {
           vinculado_por: string | null
         }
         Insert: {
+          sla_escalado_em?: string | null
+          categoria_id?: string | null
+          campos_extras?: Json | null
+          contem_dado_sensivel?: boolean
+          anonimizado_em?: string | null
           aguardando_usuario_em?: string | null
           anexos?: string[] | null
           atendido_em?: string | null
@@ -362,6 +735,11 @@ export type Database = {
           vinculado_por?: string | null
         }
         Update: {
+          sla_escalado_em?: string | null
+          categoria_id?: string | null
+          campos_extras?: Json | null
+          contem_dado_sensivel?: boolean
+          anonimizado_em?: string | null
           aguardando_usuario_em?: string | null
           anexos?: string[] | null
           atendido_em?: string | null
@@ -1729,6 +2107,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      chamados_rotina_automacoes: {
+        Args: never
+        Returns: Json
+      }
+      desbloquear_login: {
+        Args: { _user: string }
+        Returns: undefined
+      }
+      lgpd_aplicar_retencao: {
+        Args: never
+        Returns: Json
+      }
+      lgpd_anonimizar_usuario: {
+        Args: { _user: string; _apagar_conteudo?: boolean }
+        Returns: Json
+      }
+      lgpd_meus_dados: {
+        Args: never
+        Returns: Json
+      }
+      registrar_auditoria: {
+        Args: { _acao: string; _detalhe?: Json | null }
+        Returns: undefined
+      }
+      lgpd_registrar_acesso: {
+        Args: { _titular: string; _recurso: string; _detalhe?: string | null }
+        Returns: undefined
+      }
+      is_admin_seguro: {
+        Args: never
+        Returns: boolean
+      }
+      mfa_satisfeito: {
+        Args: never
+        Returns: boolean
+      }
       can_access_chamado: { Args: { _chamado_id: string }; Returns: boolean }
       check_is_master: { Args: never; Returns: boolean }
       check_password_history: {

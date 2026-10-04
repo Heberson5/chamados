@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback, type CSSProperties, type Rea
  import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Ticket, CheckCircle2, Users, Loader2, User as UserIcon, Pause, History, Inbox, AlertCircle, Timer, ArrowRight, X } from "lucide-react";
+import { Ticket, CheckCircle2, Users, Loader2, User as UserIcon, Pause, History, Inbox, AlertCircle, Timer, ArrowRight, X, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSlaInfo } from "@/lib/tickets";
 import { PriorityIndicator, UserAvatar } from "@/components/tickets/TicketBits";
@@ -37,6 +37,7 @@ import type { ChartType } from "@/lib/chartSettings";
   const [tickets, setTickets] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [kanbanConfig, setKanbanConfig] = useState<any[]>([]);
+  const [ratings, setRatings] = useState<{ chamado_id: string; nota: number }[]>([]);
   const [filters, setFilters] = useState({
     period: "todos",
     technician: "all",
@@ -84,6 +85,8 @@ import type { ChartType } from "@/lib/chartSettings";
       if (ticketsRes.data) setTickets(ticketsRes.data);
       if (profilesRes.data) setProfiles(profilesRes.data);
       if (statusesRes.data) setKanbanConfig(statusesRes.data);
+      const { data: rt } = await supabase.from("chamado_avaliacoes").select("chamado_id, nota");
+      setRatings(rt ?? []);
 
       const activeUsersCount = profilesRes.data?.length || 0;
       setStats(prev => ({ ...prev, activeUsers: activeUsersCount }));
@@ -442,11 +445,16 @@ import type { ChartType } from "@/lib/chartSettings";
       },
     ];
 
+    const periodIds = new Set(filteredTickets.map((t) => t.id));
+    const periodRatings = ratings.filter((r) => periodIds.has(r.chamado_id));
+    const csat = periodRatings.length ? periodRatings.reduce((a, r) => a + r.nota, 0) / periodRatings.length : null;
+
     const miniStats = [
       { title: "Total no período", value: String(stats.totalTickets), icon: Ticket },
       { title: "Tempo total pausado", value: formatMinutes(stats.totalPausedTime), icon: Pause },
       { title: "Aguardando usuário", value: formatMinutes(stats.totalWaitingTime), icon: History },
       { title: "Usuários online", value: `${onlineUsers.size}/${profiles.length}`, icon: Users },
+      { title: "Satisfação (1–5)", value: csat == null ? "—" : `${csat.toFixed(1)} · ${periodRatings.length} aval.`, icon: Star },
     ];
 
     const PERIODS = [
@@ -615,7 +623,7 @@ import type { ChartType } from "@/lib/chartSettings";
          ))}
        </div>
 
-       <div className="grid grid-cols-2 md:grid-cols-4 rounded-xl border bg-card shadow-xs divide-x divide-y md:divide-y-0 overflow-hidden">
+       <div className="grid grid-cols-2 md:grid-cols-5 rounded-xl border bg-card shadow-xs divide-x divide-y md:divide-y-0 overflow-hidden">
          {miniStats.map((s) => (
            <div key={s.title} className="flex items-center gap-3 px-4 py-3 min-w-0">
              <s.icon size={16} className="text-muted-foreground shrink-0" />

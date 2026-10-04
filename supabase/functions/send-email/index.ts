@@ -36,15 +36,32 @@ function isValidEmail(email: string) {
        headers: { ...corsHeaders, "Content-Type": "application/json" },
      });
    }
-   const userClient = createClient(supabaseUrl, anonKey, {
-     global: { headers: { Authorization: authHeader } },
-   });
-   const { data: { user: caller }, error: authErr } = await userClient.auth.getUser();
-   if (authErr || !caller) {
-     return new Response(JSON.stringify({ error: "Unauthorized" }), {
-       status: 401,
-       headers: { ...corsHeaders, "Content-Type": "application/json" },
+   // Funções internas (relatório agendado) chamam com a service_role key.
+   const isService = authHeader.replace("Bearer ", "") === serviceKey;
+   let callerIsStaff = isService;
+   let callerIsAdmin = isService;
+   if (!isService) {
+     const userClient = createClient(supabaseUrl, anonKey, {
+       global: { headers: { Authorization: authHeader } },
      });
+     const { data: { user: caller }, error: authErr } = await userClient.auth.getUser();
+     if (authErr || !caller) {
+       return new Response(JSON.stringify({ error: "Unauthorized" }), {
+         status: 401,
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+     }
+     const { data: callerProfile } = await supabase
+       .from("profiles")
+       .select("regra, is_master, pode_receber_chamados")
+       .eq("id", caller.id)
+       .maybeSingle();
+     callerIsAdmin = !!callerProfile && (callerProfile.is_master || ["ADMIN", "MASTER"].includes(String(callerProfile.regra)));
+     callerIsStaff = !!callerProfile && (
+       callerProfile.is_master ||
+       ["ADMIN", "MASTER", "TECNICO"].includes(String(callerProfile.regra)) ||
+       callerProfile.pode_receber_chamados === true
+     );
    }
 
   let logId: string | null = null;
@@ -64,6 +81,16 @@ function isValidEmail(email: string) {
     }
     if (!isValidEmail(to)) {
       throw new Error(`Destinatário inválido: ${to}`);
+    }
+    // Segurança: usuário comum só pode disparar e-mail para quem já está
+    // cadastrado no sistema (evita usar o SMTP da empresa para spam/phishing)
+    // e nunca com configuração SMTP própria.
+    if (providedSettings && !callerIsAdmin) {
+      throw new Error("Não autorizado a usar configuração SMTP personalizada.");
+    }
+    if (!callerIsStaff) {
+      const { data: known } = await supabase.from("profiles").select("id").ilike("email", to).limit(1);
+      if (!known || known.length === 0) throw new Error("Destinatário não cadastrado no sistema.");
     }
 
     // Cria log inicial

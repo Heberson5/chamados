@@ -20,7 +20,7 @@ interface SidebarProps {
 const GROUPS: { label: string | null; paths: string[] }[] = [
   { label: null, paths: ["/dashboard", "/chamados", "/acompanhamento"] },
   { label: "Gestão", paths: ["/reports", "/usuarios", "/departamentos"] },
-  { label: "Sistema", paths: ["/permissions", "/audit", "/backup", "/settings", "/ajuda"] },
+  { label: "Sistema", paths: ["/permissions", "/privacidade", "/audit", "/backup", "/settings", "/ajuda"] },
 ];
 
 export default function Sidebar({ onMobileClose }: SidebarProps) {

@@ -27,10 +27,20 @@ desde 2026-10-03 seguem o mesmo piso OR abaixo.) O padrão usado é:
 - **Excluir em Massa** (`chamados:excluir_em_massa`) e **Cadastro
   Retroativo** (`chamados:cadastro_retroativo`): mesma lógica, só que a
   regra fixa é `MASTER` sozinho (não Admin).
-- **Visualizar, Criar, Ver Interações**: permanecem sem gate (sempre
-  liberados) — são ações básicas de autoatendimento do próprio usuário
-  (abrir chamado, ver/comentar o que é seu); nunca as restrinja sem pedido
-  explícito, é alto risco de travar o fluxo principal do app.
+- **Nota Interna** (`chamados:nota_interna`, desde 2026-10-04): regra fixa
+  "equipe técnica" (`userRole !== "USUARIO"`) **E** `hasPermission(...)` —
+  o toggle só restringe. O banco reforça (política RESTRICTIVE em
+  `comentarios_chamado`: nota interna só é lida/gravada por `is_tecnico()`).
+  A migração `20261004110000_recursos_chamados.sql` adiciona a chave ao
+  papel "Técnico".
+- **Visualizar, Criar, Ver Interações, Favoritar, Avaliar Atendimento**:
+  permanecem sem gate (sempre liberados) — são ações básicas de
+  autoatendimento do próprio usuário (abrir chamado, ver/comentar o que é
+  seu, favoritar, avaliar o próprio chamado encerrado); nunca as restrinja
+  sem pedido explícito, é alto risco de travar o fluxo principal do app.
+- **Ações em massa** da barra flutuante (Atribuir, Prioridade) reaproveitam
+  as chaves de Transferir e Editar (mesmo piso OR); Excluir continua com
+  `chamados:excluir_em_massa` (Master).
 
 Migração `20260916120000_sync_chamados_granular_permissions.sql` faz o
 array de permissões de "Técnico" e "Usuário" bater com o piso de código
@@ -67,3 +77,30 @@ Desenvolvimento nesta sessão acontece na branch
 produção (não há pipeline de PR/review neste repositório). Validar sempre
 com `npx tsc --noEmit -p tsconfig.app.json` e `npm run build` antes de dar
 push na `main`.
+
+## LGPD e segurança (desde 2026-10-04)
+
+Ver `docs/LGPD.md` para o inventário completo. Pontos que afetam qualquer
+alteração futura:
+
+- **Anexos de chamados** ficam no bucket PRIVADO `chamados_anexos`; o banco
+  guarda só o caminho (`<user_id>/<arquivo>` ou `comments/<user_id>/...`).
+  Sempre envie com `uploadAttachment()` e exiba com `<AttachmentItem>` /
+  `signedAttachmentUrl()` (`src/lib/attachments.ts`) — nunca `getPublicUrl`
+  nesse bucket. `ticket-attachments` continua público só para fotos de
+  perfil e imagens da Ajuda.
+- **Dado pessoal novo** (coluna com nome, contato, documento, texto livre do
+  usuário): inclua o campo em `public.lgpd_redigir()` (auditoria sem dado em
+  claro), em `lgpd_meus_dados()` (exportação do titular) e, se aplicável, em
+  `lgpd_anonimizar_usuario()` e `lgpd_aplicar_retencao()`.
+- **Acesso a dado pessoal de terceiros** (abrir anexo, cadastro, contato
+  completo, chamado sensível): registre com `logPersonalDataAccess()`.
+- **profiles**: o gatilho `protect_profile_privileges` impede que usuário
+  comum altere papel/acesso do próprio perfil; só Admin/Master (e só Master
+  concede Master). Não remova.
+- Tela **Privacidade (LGPD)** (`/privacidade`, menu `privacidade`) é só para
+  Admin/Master; as tabelas `lgpd_*` exigem `is_admin_seguro()` (Admin com a
+  2ª etapa cumprida quando tiver 2FA).
+- **Novas tabelas** devem entrar na lista `TABLES` de
+  `supabase/functions/backup-export/index.ts`.
+

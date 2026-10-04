@@ -5,14 +5,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function generateTempPassword(length = 10) {
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+// Senha provisória com gerador criptográfico (Math.random não é seguro).
+function generateTempPassword(length = 12) {
+  const charset = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*";
+  const bytes = crypto.getRandomValues(new Uint32Array(length));
   let retVal = "";
-  for (let i = 0, n = charset.length; i < length; ++i) {
-    retVal += charset.charAt(Math.floor(Math.random() * n));
-  }
+  for (let i = 0; i < length; ++i) retVal += charset.charAt(bytes[i] % charset.length);
   return retVal;
 }
+
+// Limites de pedidos (por e-mail e por IP) na última hora.
+const MAX_POR_EMAIL = 3;
+const MAX_POR_IP = 10;
 
 const MOBIZON_ENDPOINT = "https://api.mobizon.com.br/service/message/sendsmsmessage";
 
@@ -47,6 +51,32 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const genericOk = () =>
+      new Response(JSON.stringify({ success: true, message: "Se o e-mail estiver cadastrado, uma senha provisória foi enviada." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    // 0. Limite de tentativas: evita que alguém fique trocando a senha de
+    //    outra pessoa em loop (bloqueando o acesso dela) ou enumere e-mails.
+    const ip = (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim() || null;
+    const umaHoraAtras = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const [{ count: porEmail }, { count: porIp }] = await Promise.all([
+      admin.from("password_reset_tentativas").select("id", { count: "exact", head: true })
+        .ilike("email", String(email).trim()).gte("criado_em", umaHoraAtras),
+      ip
+        ? admin.from("password_reset_tentativas").select("id", { count: "exact", head: true })
+            .eq("ip", ip).gte("criado_em", umaHoraAtras)
+        : Promise.resolve({ count: 0 }),
+    ]);
+    await admin.from("password_reset_tentativas").insert({ email: String(email).trim().toLowerCase(), ip });
+    if ((porEmail ?? 0) >= MAX_POR_EMAIL || (porIp ?? 0) >= MAX_POR_IP) {
+      // Mesma resposta de sucesso: não revela que o limite foi atingido.
+      return genericOk();
+    }
+    // Limpeza oportunista do histórico (mantém só 2 dias).
+    admin.from("password_reset_tentativas").delete()
+      .lt("criado_em", new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()).then(() => undefined);
 
     // 1. Check if user exists in profiles
     const { data: profile, error: profError } = await admin

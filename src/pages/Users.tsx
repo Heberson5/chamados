@@ -6,7 +6,7 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { useToast } from "@/hooks/use-toast";
-  import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones, Building2, LogOut, Circle } from "lucide-react";
+  import { Loader2, Shield, User as UserIcon, MoreHorizontal, Plus, Trash2, Power, PowerOff, Pencil, Camera, Headphones, Building2, LogOut, Circle, Unlock, UserX } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { Input } from "@/components/ui/input";
@@ -18,6 +18,9 @@ import { usePermissions } from "@/hooks/usePermissions";
  import { getPasswordPolicy, validatePassword, describePolicy, type PasswordPolicy } from "@/lib/passwordPolicy";
  import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
  import { Check, X } from "lucide-react";
+ import { logPersonalDataAccess } from "@/lib/attachments";
+ import AnonymizeUserDialog from "@/components/privacy/AnonymizeUserDialog";
+ import MaskedContact from "@/components/privacy/MaskedContact";
  import AccessScheduleEditor from "@/components/AccessScheduleEditor";
  import { useOnlineUsers } from "@/hooks/useOnlineUsers";
  import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
@@ -37,6 +40,7 @@ import { usePermissions } from "@/hooks/usePermissions";
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
    const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
    const [reassignToId, setReassignToId] = useState("");
+   const [anonymizeTarget, setAnonymizeTarget] = useState<{ id: string; nome?: string | null; sobrenome?: string | null } | null>(null);
     const [newUser, setNewUser] = useState({ 
       nome: "", 
       sobrenome: "", 
@@ -338,7 +342,7 @@ import { usePermissions } from "@/hooks/usePermissions";
      return "Usuário";
    };
  
-     const { hasPermission, loading: permsLoading } = usePermissions();
+     const { hasPermission, loading: permsLoading, isAdmin } = usePermissions();
 
      useEffect(() => {
        if (!permsLoading && !hasPermission("usuarios")) {
@@ -432,7 +436,11 @@ import { usePermissions } from "@/hooks/usePermissions";
                        </div>
                    </div>
                  </TableCell>}
-                 {isColVisible("email") && <TableCell>{user.email}</TableCell>}
+                 {isColVisible("email") && (
+                   <TableCell>
+                     {isAdmin || user.id === currentUserId ? user.email : <MaskedContact value={user.email} ownerId={user.id} />}
+                   </TableCell>
+                 )}
                  {isColVisible("permissao") && <TableCell>
                    <Badge variant="outline" className={
                      user.is_master || user.regra === 'MASTER' ? 'border-purple-500 text-purple-500 bg-purple-50' :
@@ -481,6 +489,7 @@ import { usePermissions } from "@/hooks/usePermissions";
                              // deixar `pointer-events: none` preso no <body> (a animação de
                              // fechamento do menu corre junto com a abertura do dialog).
                              // Adiar pro próximo tick evita a corrida entre os dois overlays.
+                             logPersonalDataAccess(user.id, "perfil", "Edição em Usuários");
                              setTimeout(() => {
                                setEditUser(user);
                                setEditPassword("");
@@ -529,6 +538,24 @@ import { usePermissions } from "@/hooks/usePermissions";
                            >
                              <LogOut size={14} /> Desconectar agora
                            </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="gap-2"
+                            onClick={async () => {
+                              const { error } = await supabase.rpc("desbloquear_login", { _user: user.id });
+                              toast(error
+                                ? { variant: "destructive", title: "Erro", description: error.message }
+                                : { title: "Login desbloqueado", description: `${user.nome} pode tentar entrar de novo.` });
+                            }}
+                          >
+                            <Unlock size={14} /> Desbloquear login
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={(user.is_master || user.regra === 'MASTER') || user.id === currentUserId}
+                            onClick={() => setTimeout(() => setAnonymizeTarget(user), 0)}
+                            className="gap-2"
+                          >
+                            <UserX size={14} /> Anonimizar (LGPD)
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={(user.is_master || user.regra === 'MASTER') || user.id === currentUserId}
                             onClick={() => handleDeleteRequest(user)}
@@ -967,6 +994,15 @@ import { usePermissions } from "@/hooks/usePermissions";
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <AnonymizeUserDialog
+          user={anonymizeTarget}
+          onOpenChange={(o) => !o && setAnonymizeTarget(null)}
+          onDone={() => {
+            setAnonymizeTarget(null);
+            fetchUsers();
+          }}
+        />
       </div>
     );
   }

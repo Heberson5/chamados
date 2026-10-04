@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/ThemeProvider";
-import { Sun, Moon, Monitor, CheckCircle2, Mail, Lock, ArrowRight, Loader2, MessageSquareText, Timer } from "lucide-react";
+import { Sun, Moon, Monitor, CheckCircle2, Mail, Lock, ArrowRight, Loader2, MessageSquareText, Timer, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import BrandMark from "@/components/BrandMark";
 import {
@@ -36,6 +36,10 @@ export default function Login() {
   const [forgotChannel, setForgotChannel] = useState<"email" | "sms">("email");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [privacy, setPrivacy] = useState<{ texto?: string; versao?: string; atualizado_em?: string; encarregado_nome?: string; encarregado_email?: string } | null>(null);
   const defaultLanding = {
     bgColor: "#110f24",
     brandTitle: "Suporte organizado,",
@@ -75,6 +79,12 @@ export default function Login() {
       if (data?.value) {
         setLanding({ ...defaultLanding, ...(data.value as any) });
       }
+      const { data: notice } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "privacy_notice")
+        .maybeSingle();
+      if (notice?.value) setPrivacy(notice.value as typeof privacy);
       // Apply favicon from branding even before auth
       const { data: brand } = await supabase
         .from("system_settings")
@@ -128,38 +138,79 @@ export default function Login() {
     })();
   }, []);
 
+  // Depois da senha (e, se cadastrada, da verificação em duas etapas).
+  const finishLogin = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const sched = await loadEffectiveSchedule(user.id);
+      const status = evaluateSchedule(sched);
+      if (status.hasSchedule && !status.allowed) {
+        await supabase.auth.signOut();
+        setMfaFactorId(null);
+        toast({
+          variant: "destructive",
+          title: "Fora do horário permitido",
+          description: "Seu acesso está restrito ao horário definido pelo administrador.",
+        });
+        return;
+      }
+    }
+    navigate("/dashboard");
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro no login",
-        description: error.message === "Invalid login credentials" 
-          ? "E-mail ou senha incorretos." 
-          : error.message,
-      });
-    } else {
-      // Verify access schedule
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const sched = await loadEffectiveSchedule(user.id);
-        const status = evaluateSchedule(sched);
-        if (status.hasSchedule && !status.allowed) {
-          await supabase.auth.signOut();
-          toast({
-            variant: "destructive",
-            title: "Fora do horário permitido",
-            description: "Seu acesso está restrito ao horário definido pelo administrador.",
-          });
-          setLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro no login",
+          description: error.message === "Invalid login credentials"
+            ? "E-mail ou senha incorretos."
+            : error.message,
+        });
+        return;
+      }
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+        const { data: factors } = await supabase.auth.mfa.listFactors();
+        const totp = factors?.totp?.find((f) => f.status === "verified");
+        if (totp) {
+          setMfaFactorId(totp.id);
+          setMfaCode("");
           return;
         }
       }
-      navigate("/dashboard");
+      await finishLogin();
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaFactorId) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: mfaFactorId, code: mfaCode.trim() });
+      if (error) {
+        toast({ variant: "destructive", title: "Código inválido", description: "Confira o código de 6 dígitos no aplicativo autenticador." });
+        setMfaCode("");
+        return;
+      }
+      await finishLogin();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelMfa = async () => {
+    await supabase.auth.signOut();
+    setMfaFactorId(null);
+    setMfaCode("");
+    setPassword("");
   };
 
   const features: { id?: string; text?: string }[] = (landing.features || []).map((f: any) => (typeof f === "string" ? { text: f } : f));
@@ -269,127 +320,187 @@ export default function Login() {
 
         <div className="flex-1 flex items-center justify-center px-5 pb-10 md:px-12">
           <div className="w-full max-w-[400px] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="space-y-1.5">
-              <h1 className="text-[28px] font-bold tracking-tight">{landing.formTitle}</h1>
-              <p className="text-sm text-muted-foreground">{landing.formSubtitle}</p>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm font-semibold">E-mail</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="voce@empresa.com"
-                    className="h-11 pl-10"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+            {mfaFactorId ? (
+              <form onSubmit={handleMfa} className="space-y-5">
+                <div className="space-y-1.5">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-primary mb-3">
+                    <ShieldCheck size={22} />
+                  </span>
+                  <h1 className="text-[28px] font-bold tracking-tight">Verificação em duas etapas</h1>
+                  <p className="text-sm text-muted-foreground">Digite o código de 6 dígitos do seu aplicativo autenticador.</p>
                 </div>
+                <Input
+                  autoFocus
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="000000"
+                  aria-label="Código de verificação"
+                  className="h-12 text-center text-xl font-mono tracking-[0.5em]"
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                />
+                <Button type="submit" className="w-full h-11 text-[15px]" disabled={loading || mfaCode.length !== 6}>
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Confirmar <ArrowRight className="w-4 h-4" /></>}
+                </Button>
+                <Button type="button" variant="ghost" className="w-full" onClick={cancelMfa} disabled={loading}>
+                  Voltar e usar outra conta
+                </Button>
+              </form>
+            ) : (
+              <>
+              <div className="space-y-1.5">
+                <h1 className="text-[28px] font-bold tracking-tight">{landing.formTitle}</h1>
+                <p className="text-sm text-muted-foreground">{landing.formSubtitle}</p>
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="password" className="text-sm font-semibold">Senha</Label>
-                  <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-                    <DialogTrigger asChild>
-                      <button type="button" className="text-xs font-semibold text-primary hover:underline">
-                        Esqueci minha senha
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[420px]">
-                      <DialogHeader>
-                        <DialogTitle>Recuperar acesso</DialogTitle>
-                        <DialogDescription>
-                          {forgotChannel === "sms"
-                            ? "Enviaremos uma senha provisória por SMS para o celular cadastrado."
-                            : "Enviaremos uma senha provisória para o seu e-mail cadastrado."}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleForgotPassword} className="space-y-4 pt-2">
-                        <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
-                          {([
-                            { value: "email", label: "E-mail", icon: Mail },
-                            { value: "sms", label: "SMS", icon: MessageSquareText },
-                          ] as const).map((opt) => (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={() => setForgotChannel(opt.value)}
-                              className={cn(
-                                "h-9 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors",
-                                forgotChannel === opt.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                              )}
-                            >
-                              <opt.icon className="w-4 h-4" /> {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="forgot-email" className="text-sm font-semibold">E-mail cadastrado</Label>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input
-                              id="forgot-email"
-                              type="email"
-                              className="h-11 pl-10"
-                              placeholder="voce@empresa.com"
-                              value={forgotEmail}
-                              onChange={(e) => setForgotEmail(e.target.value)}
-                              required
-                            />
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-sm font-semibold">E-mail</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="voce@empresa.com"
+                      className="h-11 pl-10"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="password" className="text-sm font-semibold">Senha</Label>
+                    <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+                      <DialogTrigger asChild>
+                        <button type="button" className="text-xs font-semibold text-primary hover:underline">
+                          Esqueci minha senha
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[420px]">
+                        <DialogHeader>
+                          <DialogTitle>Recuperar acesso</DialogTitle>
+                          <DialogDescription>
+                            {forgotChannel === "sms"
+                              ? "Enviaremos uma senha provisória por SMS para o celular cadastrado."
+                              : "Enviaremos uma senha provisória para o seu e-mail cadastrado."}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleForgotPassword} className="space-y-4 pt-2">
+                          <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+                            {([
+                              { value: "email", label: "E-mail", icon: Mail },
+                              { value: "sms", label: "SMS", icon: MessageSquareText },
+                            ] as const).map((opt) => (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => setForgotChannel(opt.value)}
+                                className={cn(
+                                  "h-9 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors",
+                                  forgotChannel === opt.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                <opt.icon className="w-4 h-4" /> {opt.label}
+                              </button>
+                            ))}
                           </div>
-                          {forgotChannel === "sms" && (
-                            <p className="text-xs text-muted-foreground">
-                              Usamos o e-mail só para localizar sua conta — a senha provisória vai por SMS para o celular cadastrado no seu perfil.
-                            </p>
-                          )}
-                        </div>
-                        <DialogFooter>
-                          <Button type="submit" className="w-full h-11" disabled={forgotLoading}>
-                            {forgotLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Solicitar senha <ArrowRight className="w-4 h-4" /></>}
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="forgot-email" className="text-sm font-semibold">E-mail cadastrado</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                              <Input
+                                id="forgot-email"
+                                type="email"
+                                className="h-11 pl-10"
+                                placeholder="voce@empresa.com"
+                                value={forgotEmail}
+                                onChange={(e) => setForgotEmail(e.target.value)}
+                                required
+                              />
+                            </div>
+                            {forgotChannel === "sms" && (
+                              <p className="text-xs text-muted-foreground">
+                                Usamos o e-mail só para localizar sua conta — a senha provisória vai por SMS para o celular cadastrado no seu perfil.
+                              </p>
+                            )}
+                          </div>
+                          <DialogFooter>
+                            <Button type="submit" className="w-full h-11" disabled={forgotLoading}>
+                              {forgotLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Solicitar senha <ArrowRight className="w-4 h-4" /></>}
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                    <PasswordInput
+                      id="password"
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      className="h-11 pl-10"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
-                  <PasswordInput
-                    id="password"
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    className="h-11 pl-10"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
 
-              <Button type="submit" className="w-full h-11 text-[15px]" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Validando...
-                  </>
-                ) : (
-                  <>
-                    Entrar <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </Button>
-            </form>
+                <Button type="submit" className="w-full h-11 text-[15px]" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Validando...
+                    </>
+                  ) : (
+                    <>
+                      Entrar <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+              </>
+            )}
 
             <InstallAppButton variant="login" />
           </div>
         </div>
 
-        <p className="pb-6 text-center text-xs text-muted-foreground">Problemas para entrar? Fale com a equipe de TI.</p>
+        <p className="pb-6 text-center text-xs text-muted-foreground">
+          Problemas para entrar? Fale com a equipe de TI.
+          {privacy?.texto && (
+            <>
+              {" · "}
+              <button type="button" className="font-medium underline-offset-2 hover:underline hover:text-foreground" onClick={() => setPrivacyOpen(true)}>
+                Aviso de privacidade
+              </button>
+            </>
+          )}
+        </p>
+        <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
+          <DialogContent className="sm:max-w-[560px]">
+            <DialogHeader>
+              <DialogTitle>Aviso de privacidade</DialogTitle>
+              <DialogDescription>
+                Versão {privacy?.versao}
+                {privacy?.atualizado_em ? ` · atualizado em ${new Date(privacy.atualizado_em + "T12:00:00").toLocaleDateString("pt-BR")}` : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[55vh] overflow-y-auto custom-scrollbar whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+              {privacy?.texto}
+            </div>
+            {(privacy?.encarregado_nome || privacy?.encarregado_email) && (
+              <p className="text-xs text-muted-foreground border-t pt-3">
+                Encarregado de dados (DPO): {privacy?.encarregado_nome} {privacy?.encarregado_email && `· ${privacy.encarregado_email}`}
+              </p>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

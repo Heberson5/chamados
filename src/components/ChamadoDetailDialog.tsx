@@ -27,13 +27,19 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { logPersonalDataAccess, uploadAttachment } from "@/lib/attachments";
+import { AttachmentItem } from "@/components/tickets/Attachment";
+import { CannedResponsesButton, CategoryFieldsView, EventLine, FavoriteButton, RatingCard } from "@/components/tickets/TicketExtras";
+import { useTicketEvents, type TicketEvent } from "@/hooks/useTicketEvents";
+import { parseCategoryFields } from "@/lib/tickets";
+import type { Tables } from "@/integrations/supabase/types";
 import { StatusPill, PriorityIndicator, SlaChip, UserAvatar } from "@/components/tickets/TicketBits";
 import { getSlaInfo, formatDuration, timeAgo } from "@/lib/tickets";
 import { useChamadoStatuses } from "@/hooks/useChamadoStatuses";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
   Play, CheckCircle, Pause, History, ArrowRightLeft, RotateCcw, MoreHorizontal, UserPlus,
-  MessageSquare, FileText, Paperclip, X, Send, Loader2, AlertTriangle, Ticket as TicketIcon,
+  MessageSquare, FileText, Paperclip, X, Send, Loader2, AlertTriangle, Ticket as TicketIcon, Lock,
 } from "lucide-react";
 
 interface ChamadoDetailDialogProps {
@@ -66,8 +72,18 @@ export default function ChamadoDetailDialog({
   const { hasPermission } = usePermissions();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
 
+  useEffect(() => {
+    if (open && ticket?.contem_dado_sensivel && ticket.usuario_id && ticket.usuario_id !== currentUserId) {
+      logPersonalDataAccess(ticket.usuario_id, "chamado_sensivel", ticket.os ? `#${ticket.os}` : undefined);
+    }
+  }, [open, ticket?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [isInternalNote, setIsInternalNote] = useState(false);
+  const [cannedOpen, setCannedOpen] = useState(false);
+  const [categories, setCategories] = useState<Tables<"chamado_categorias">[]>([]);
+  const events = useTicketEvents(ticket?.id, open);
   const [isSendingComment, setIsSendingComment] = useState(false);
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [commentPreviews, setCommentPreviews] = useState<string[]>([]);
@@ -96,10 +112,20 @@ export default function ChamadoDetailDialog({
   }, []);
 
   useEffect(() => {
+    if (!open) return;
+    supabase
+      .from("chamado_categorias")
+      .select("*")
+      .order("ordem")
+      .then(({ data }) => setCategories(data ?? []));
+  }, [open]);
+
+  useEffect(() => {
     if (open && ticket) {
       setSelectedTicket(ticket);
       fetchComments(ticket.id);
       setNewComment("");
+      setIsInternalNote(false);
       setCommentFiles([]);
       setCommentPreviews([]);
     }
@@ -229,6 +255,19 @@ export default function ChamadoDetailDialog({
     }
   };
 
+  const handleChangeCategory = async (categoriaId: string) => {
+    if (!selectedTicket) return;
+    const value = categoriaId === "none" ? null : categoriaId;
+    const { error } = await supabase.from("chamados").update({ categoria_id: value }).eq("id", selectedTicket.id);
+    if (error) {
+      toast({ variant: "destructive", title: "Erro ao alterar categoria", description: error.message });
+      return;
+    }
+    setSelectedTicket((prev: typeof selectedTicket) => (prev ? { ...prev, categoria_id: value } : prev));
+    toast({ title: "Categoria atualizada", description: "O prazo de SLA foi recalculado se a categoria tiver SLA próprio." });
+    onUpdate();
+  };
+
   const handleChangePriority = async (priorityId: string) => {
     if (!selectedTicket) return;
     try {
@@ -268,13 +307,7 @@ export default function ChamadoDetailDialog({
 
       const uploadedUrls: string[] = [];
       for (const file of commentFiles) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `comments/${user.id}/${fileName}`;
-        const { error: uploadError } = await supabase.storage.from("chamados_anexos").upload(filePath, file);
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from("chamados_anexos").getPublicUrl(filePath);
-        uploadedUrls.push(publicUrl);
+        uploadedUrls.push(await uploadAttachment(file, `comments/${user.id}`));
       }
 
       const { error: commentError } = await supabase.from("comentarios_chamado").insert({
@@ -282,11 +315,14 @@ export default function ChamadoDetailDialog({
         autor_id: user.id,
         comentario: newComment,
         anexos: uploadedUrls.length > 0 ? uploadedUrls : null,
+        visibilidade_interna: canNotaInterna && isInternalNote,
       });
       if (commentError) throw commentError;
 
+      const internal = canNotaInterna && isInternalNote;
       const recipientId = user.id === selectedTicket.usuario_id ? selectedTicket.tecnico_id : selectedTicket.usuario_id;
-      if (recipientId) {
+      // Nota interna não avisa o solicitante.
+      if (recipientId && !(internal && recipientId === selectedTicket.usuario_id)) {
         const { data: recipientProfile } = await supabase
           .from("profiles")
           .select("email, nome, sobrenome")
@@ -313,10 +349,13 @@ export default function ChamadoDetailDialog({
       }
 
       setNewComment("");
+      setIsInternalNote(false);
       setCommentFiles([]);
       setCommentPreviews([]);
       fetchComments(selectedTicket.id);
-      toast({ title: "Interação adicionada", description: "Sua mensagem foi enviada com sucesso." });
+      toast(internal
+        ? { title: "Nota interna adicionada", description: "Visível apenas para a equipe técnica." }
+        : { title: "Interação adicionada", description: "Sua mensagem foi enviada com sucesso." });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro ao adicionar comentário", description: error.message });
     } finally {
@@ -404,6 +443,39 @@ export default function ChamadoDetailDialog({
   // um toggle a mais nunca tira o que já funcionava, só pode ampliar (ex:
   // liberar "Transferir" também para um Usuário, se o admin quiser).
   const isTecnicoOuAcima = userRole !== "USUARIO";
+  // Nota interna: regra fixa "equipe técnica" (o banco também só deixa a
+  // equipe ler/gravar) E o toggle de Permissões — o toggle só restringe.
+  const canNotaInterna = isTecnicoOuAcima && hasPermission("chamados:nota_interna");
+
+  // Linha do tempo: comentários + eventos (mudanças de status, responsável…)
+  type FeedItem = { kind: "comment"; at: string; comment: (typeof comments)[number] } | { kind: "event"; at: string; event: TicketEvent };
+  const feed: FeedItem[] = [
+    ...comments.map((c) => ({ kind: "comment" as const, at: c.criado_em as string, comment: c })),
+    ...events.filter((e) => e.tipo !== "criado").map((e) => ({ kind: "event" as const, at: e.criado_em, event: e })),
+  ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+
+  // LGPD: marcação de dado sensível — quem participa do chamado (ou Admin)
+  // pode marcar/desmarcar; abrir chamado sensível de outra pessoa fica
+  // registrado.
+  const canToggleSensivel =
+    !readOnly &&
+    !!selectedTicket &&
+    (selectedTicket.usuario_id === currentUserId ||
+      selectedTicket.tecnico_id === currentUserId ||
+      userRole === "ADMIN" ||
+      userRole === "MASTER");
+  const toggleSensivel = async (value: boolean) => {
+    if (!selectedTicket) return;
+    setSelectedTicket({ ...selectedTicket, contem_dado_sensivel: value });
+    const { error } = await supabase.from("chamados").update({ contem_dado_sensivel: value }).eq("id", selectedTicket.id);
+    if (error) {
+      setSelectedTicket({ ...selectedTicket, contem_dado_sensivel: !value });
+      toast({ variant: "destructive", title: "Não foi possível alterar", description: error.message });
+      return;
+    }
+    toast({ title: value ? "Chamado marcado como sensível" : "Marcação de dado sensível removida" });
+    onUpdate();
+  };
   const notClosed = !readOnly && !isEncerrado(selectedTicket);
   const canAtender = notClosed && (isTecnicoOuAcima || hasPermission("chamados:assumir_chamado"));
   const canEditarPrioridade = notClosed && (isTecnicoOuAcima || hasPermission("chamados:editar"));
@@ -465,14 +537,20 @@ export default function ChamadoDetailDialog({
                   {selectedTicket?.usuario?.nome ? ` por ${selectedTicket.usuario.nome} ${selectedTicket.usuario.sobrenome || ""}` : ""}
                 </span>
               )}
+              {selectedTicket?.id && <FavoriteButton ticketId={selectedTicket.id} userId={currentUserId} className="ml-auto" />}
               <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="ml-auto h-8 w-8 -mr-2" aria-label="Fechar">
+                <Button variant="ghost" size="icon" className={cn("h-8 w-8 -mr-2", !selectedTicket?.id && "ml-auto")} aria-label="Fechar">
                   <X size={17} />
                 </Button>
               </DialogClose>
             </div>
             <DialogTitle className="text-xl font-bold leading-snug tracking-tight">
               {selectedTicket?.titulo || "Sem título"}
+              {selectedTicket?.contem_dado_sensivel && (
+                <span className="ml-2 align-middle inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+                  <Lock size={11} /> Dado sensível
+                </span>
+              )}
             </DialogTitle>
             <DialogDescription className="sr-only">Detalhes do chamado {selectedTicket?.os}</DialogDescription>
             <div className="flex flex-wrap items-center gap-2">
@@ -535,10 +613,7 @@ export default function ChamadoDetailDialog({
                 {selectedTicket?.anexos && selectedTicket.anexos.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {selectedTicket.anexos.map((url: string, idx: number) => (
-                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 border rounded-lg hover:bg-muted transition-colors text-xs font-medium bg-card">
-                        <span className="h-7 w-7 rounded-md bg-accent text-accent-foreground grid place-items-center"><FileText size={14} /></span>
-                        Anexo {idx + 1}
-                      </a>
+                      <AttachmentItem key={idx} stored={url} index={idx} ownerId={selectedTicket.usuario_id} />
                     ))}
                   </div>
                 )}
@@ -549,7 +624,19 @@ export default function ChamadoDetailDialog({
                   <MessageSquare size={14} /> Interações {comments.length > 0 && <span className="normal-case tracking-normal">({comments.length})</span>}
                 </h4>
                 <div className="space-y-3">
-                  {comments.map((comment) => {
+                  {feed.map((item) => {
+                    if (item.kind === "event") {
+                      const ev = item.event;
+                      return (
+                        <EventLine
+                          key={`ev-${ev.id}`}
+                          event={ev}
+                          actorName={ev.ator ? `${ev.ator.nome ?? ""} ${ev.ator.sobrenome ?? ""}`.trim() : undefined}
+                        />
+                      );
+                    }
+                    const comment = item.comment;
+                    const internal = !!comment.visibilidade_interna;
                     const text: string = comment.comentario || "";
                     const special = text.startsWith("[ENCERRAMENTO]") ? "enc" : text.startsWith("[CANCELAMENTO]") ? "canc" : null;
                     const body = special ? text.replace(/^\[(ENCERRAMENTO|CANCELAMENTO)\]\s*/, "") : text;
@@ -559,6 +646,7 @@ export default function ChamadoDetailDialog({
                         <div
                           className={cn(
                             "flex-1 min-w-0 rounded-xl border overflow-hidden",
+                            internal && "border-amber-300 dark:border-amber-900",
                             special === "enc" && "border-emerald-200 dark:border-emerald-900",
                             special === "canc" && "border-red-200 dark:border-red-900"
                           )}
@@ -566,24 +654,25 @@ export default function ChamadoDetailDialog({
                           <div
                             className={cn(
                               "flex items-center gap-2 px-3 py-1.5 border-b text-[13px] font-semibold bg-muted/50",
+                              internal && "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300",
                               special === "enc" && "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300",
                               special === "canc" && "bg-red-50 border-red-200 text-red-700 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300"
                             )}
                           >
                             {special === "enc" && <CheckCircle size={13} />}
                             {special === "canc" && <X size={13} />}
+                            {internal && <Lock size={12} />}
+                            {internal ? "Nota interna · " : ""}
                             {special === "enc" ? "Encerramento · " : special === "canc" ? "Cancelamento · " : ""}
                             {comment.autor?.nome} {comment.autor?.sobrenome}
                             <span className="ml-auto text-xs font-medium text-muted-foreground" title={fmt(comment.criado_em)}>{timeAgo(comment.criado_em)}</span>
                           </div>
-                          <div className="px-3 py-2.5 text-sm whitespace-pre-wrap bg-card">
+                          <div className={cn("px-3 py-2.5 text-sm whitespace-pre-wrap", internal ? "bg-amber-50/40 dark:bg-amber-950/10" : "bg-card")}>
                             {body}
                             {comment.anexos && comment.anexos.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-2">
                                 {comment.anexos.map((url: string, idx: number) => (
-                                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block border rounded-lg overflow-hidden hover:opacity-80 transition-opacity">
-                                    <img src={url} alt="Anexo" className="w-20 h-20 object-cover" />
-                                  </a>
+                                  <AttachmentItem key={idx} stored={url} index={idx} ownerId={comment.autor_id} variant="thumb" />
                                 ))}
                               </div>
                             )}
@@ -594,6 +683,13 @@ export default function ChamadoDetailDialog({
                   })}
                   {comments.length === 0 && (
                     <p className="text-center py-6 text-sm text-muted-foreground">Nenhuma interação registrada ainda.</p>
+                  )}
+                  {selectedTicket && isEncerrado(selectedTicket) && !isCancelado(selectedTicket) && (
+                    <RatingCard
+                      ticketId={selectedTicket.id}
+                      canRate={selectedTicket.usuario_id === currentUserId}
+                      tecnicoId={selectedTicket.tecnico_id ?? null}
+                    />
                   )}
                 </div>
               </div>
@@ -642,6 +738,34 @@ export default function ChamadoDetailDialog({
                 )}
               </Prop>
 
+              {(categories.length > 0 || selectedTicket?.categoria_id) && (
+                <Prop label="Categoria">
+                  {canEditarPrioridade ? (
+                    <Select value={selectedTicket?.categoria_id || "none"} onValueChange={handleChangeCategory}>
+                      <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Sem categoria" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem categoria</SelectItem>
+                        {categories.filter((c) => c.ativo || c.id === selectedTicket?.categoria_id).map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.cor }} />{c.nome}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span className="text-sm font-medium">{categories.find((c) => c.id === selectedTicket?.categoria_id)?.nome ?? "Sem categoria"}</span>
+                  )}
+                  {selectedTicket?.campos_extras && (
+                    <div className="mt-2">
+                      <CategoryFieldsView
+                        fields={parseCategoryFields(categories.find((c) => c.id === selectedTicket?.categoria_id)?.campos)}
+                        values={selectedTicket.campos_extras as Record<string, unknown>}
+                      />
+                    </div>
+                  )}
+                </Prop>
+              )}
+
               <Prop label="Prioridade">
                 {canEditarPrioridade ? (
                   <Select value={selectedTicket?.prioridade_id || selectedTicket?.prioridade_obj?.id || ""} onValueChange={handleChangePriority}>
@@ -665,6 +789,22 @@ export default function ChamadoDetailDialog({
                 </span>
               </Prop>
 
+              <Prop label="Privacidade">
+                <label className={cn("flex items-start gap-2 text-[13px]", canToggleSensivel ? "cursor-pointer" : "opacity-70")}>
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-[hsl(var(--primary))]"
+                    checked={!!selectedTicket?.contem_dado_sensivel}
+                    disabled={!canToggleSensivel}
+                    onChange={(e) => toggleSensivel(e.target.checked)}
+                  />
+                  <span>
+                    <span className="font-medium">Contém dado sensível</span>
+                    <span className="block text-xs text-muted-foreground">Visível só a solicitante, responsável e administradores.</span>
+                  </span>
+                </label>
+              </Prop>
+
               <Prop label="Detalhes">
                 <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[13px]">
                   <dt className="text-muted-foreground">Aberto em</dt><dd className="text-right font-medium tabular-nums">{fmt(selectedTicket?.gerado_em)}</dd>
@@ -683,9 +823,12 @@ export default function ChamadoDetailDialog({
             <div className="border-t bg-card px-5 md:px-6 py-3 shrink-0">
               <div className="rounded-xl border focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15 transition-shadow">
                 <textarea
-                  placeholder="Escreva uma nova interação…"
+                  placeholder={isInternalNote ? "Nota interna (só a equipe técnica vê)…" : isTecnicoOuAcima ? "Escreva uma nova interação… (digite / para respostas prontas)" : "Escreva uma nova interação…"}
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={(e) => {
+                    setNewComment(e.target.value);
+                    if (isTecnicoOuAcima && e.target.value === "/") setCannedOpen(true);
+                  }}
                   onKeyDown={(e) => {
                     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                       e.preventDefault();
@@ -710,6 +853,31 @@ export default function ChamadoDetailDialog({
                     <Paperclip size={17} />
                     <input id="comment-files-shared" type="file" multiple className="hidden" onChange={handleCommentFileChange} accept="image/*" />
                   </Label>
+                  {isTecnicoOuAcima && (
+                    <CannedResponsesButton
+                      open={cannedOpen}
+                      onOpenChange={setCannedOpen}
+                      currentText={newComment.startsWith("/") ? "" : newComment}
+                      filter={newComment.startsWith("/") ? newComment.slice(1) : ""}
+                      onPick={(text) => setNewComment((prev) => (prev.startsWith("/") || !prev.trim() ? text : `${prev}\n${text}`))}
+                    />
+                  )}
+                  {canNotaInterna && (
+                    <button
+                      type="button"
+                      onClick={() => setIsInternalNote((v) => !v)}
+                      className={cn(
+                        "ml-1 inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-semibold transition-colors",
+                        isInternalNote
+                          ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+                          : "text-muted-foreground hover:bg-muted"
+                      )}
+                      aria-pressed={isInternalNote}
+                      title="Nota interna: visível só para a equipe técnica"
+                    >
+                      <Lock size={12} /> Nota interna
+                    </button>
+                  )}
                   <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-muted-foreground ml-1">
                     <span className="kbd">Ctrl</span><span className="kbd">Enter</span> envia
                   </span>

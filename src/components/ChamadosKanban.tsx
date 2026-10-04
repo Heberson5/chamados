@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, CheckCircle, Loader2, Pause, History, RotateCcw, MessageSquare, Paperclip, UserPlus } from "lucide-react";
+import { Play, CheckCircle, Loader2, Pause, History, RotateCcw, MessageSquare, Paperclip, UserPlus, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PriorityIndicator, SlaChip, UserAvatar } from "@/components/tickets/TicketBits";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -139,7 +139,10 @@ import { usePermissions } from "@/hooks/usePermissions";
          )}
          <PriorityIndicator priority={ticket.prioridade_obj} legacy={ticket.prioridade} className="ml-auto" />
        </div>
-       <p className="text-[13.5px] font-semibold leading-snug line-clamp-2 mb-2.5">{ticket.titulo || "Sem título"}</p>
+       <p className="text-[13.5px] font-semibold leading-snug line-clamp-2 mb-2.5">
+         {ticket.contem_dado_sensivel && <Lock size={12} className="inline mr-1 -mt-0.5 text-amber-600" aria-label="Dado sensível" />}
+         {ticket.titulo || "Sem título"}
+       </p>
        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
          <SlaChip ticket={ticket} status={statusRow} />
          {comments > 0 && (

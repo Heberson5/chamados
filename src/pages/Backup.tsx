@@ -15,6 +15,7 @@ import { ptBR } from "date-fns/locale";
 import { useSortableTable, useColumnVisibility } from "@/hooks/useSortableTable";
 import { SortableTableHead } from "@/components/SortableTableHead";
 import { ColumnVisibilityMenu, type ColumnDef } from "@/components/ColumnVisibilityMenu";
+import { decryptBackup, encryptBackup, isEncryptedBackup } from "@/lib/backupCrypto";
 
 export default function Backup() {
   const { isMaster, loading } = usePermissions();
@@ -22,6 +23,9 @@ export default function Backup() {
   const [logs, setLogs] = useState<any[]>([]);
   const [busy, setBusy] = useState<"" | "export" | "import">("");
   const [file, setFile] = useState<File | null>(null);
+  const [exportPassword, setExportPassword] = useState("");
+  const [exportPassword2, setExportPassword2] = useState("");
+  const [importPassword, setImportPassword] = useState("");
 
   const fetchLogs = useCallback(async () => {
     const { data } = await supabase.from("backup_logs")
@@ -73,13 +77,18 @@ export default function Backup() {
         },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
+      // LGPD: o arquivo sai do navegador já criptografado com a senha informada.
+      const encrypted = await encryptBackup(await res.text(), exportPassword);
+      const blob = new Blob([encrypted], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `backup-${new Date().toISOString().slice(0, 19)}.json`;
+      a.download = `backup-${new Date().toISOString().slice(0, 19)}.protegido.json`;
       a.click();
       URL.revokeObjectURL(a.href);
-      toast({ title: "Backup gerado", description: "Download iniciado." });
+      supabase.rpc("registrar_auditoria", { _acao: "BACKUP_EXPORTADO", _detalhe: { criptografado: true } }).then(() => undefined, () => undefined);
+      setExportPassword("");
+      setExportPassword2("");
+      toast({ title: "Backup gerado", description: "Arquivo protegido por senha. Guarde a senha em local seguro: sem ela não é possível restaurar." });
       fetchLogs();
     } catch (e: any) {
       toast({ variant: "destructive", title: "Erro", description: e.message });
@@ -95,8 +104,13 @@ export default function Backup() {
     }
     setBusy("import");
     try {
-      const text = await file.text();
-      const payload = JSON.parse(text);
+      let text = await file.text();
+      let payload = JSON.parse(text);
+      if (isEncryptedBackup(payload)) {
+        if (!importPassword) throw new Error("Este backup é protegido. Informe a senha do arquivo.");
+        text = await decryptBackup(payload, importPassword);
+        payload = JSON.parse(text);
+      }
       const { data: { session } } = await supabase.auth.getSession();
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/backup-import`;
       const res = await fetch(url, {
@@ -137,9 +151,26 @@ export default function Backup() {
             <p className="text-sm text-muted-foreground">
               Gera um arquivo <code>.json</code> com todas as tabelas do sistema. Pode ser importado em qualquer instância compatível.
             </p>
-            <Button onClick={handleExport} disabled={busy !== ""} className="gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="bk-pass">Senha do arquivo</Label>
+                <Input id="bk-pass" type="password" autoComplete="new-password" value={exportPassword} onChange={(e) => setExportPassword(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="bk-pass2">Repita a senha</Label>
+                <Input id="bk-pass2" type="password" autoComplete="new-password" value={exportPassword2} onChange={(e) => setExportPassword2(e.target.value)} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O backup contém dados pessoais e sai criptografado (AES-256). Mínimo de 10 caracteres. Sem a senha não é possível restaurar.
+            </p>
+            <Button
+              onClick={handleExport}
+              disabled={busy !== "" || exportPassword.length < 10 || exportPassword !== exportPassword2}
+              className="gap-2"
+            >
               {busy === "export" ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
-              Exportar tudo (.json)
+              Exportar tudo (protegido)
             </Button>
           </CardContent>
         </Card>
@@ -151,6 +182,8 @@ export default function Backup() {
           <CardContent className="space-y-3">
             <Label>Arquivo .json</Label>
             <Input type="file" accept="application/json,.json" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            <Label htmlFor="bk-import-pass">Senha do arquivo (se for protegido)</Label>
+            <Input id="bk-import-pass" type="password" autoComplete="off" value={importPassword} onChange={(e) => setImportPassword(e.target.value)} />
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => handleImport(true)} disabled={busy !== "" || !file}>
                 {busy === "import" ? <Loader2 className="animate-spin" size={16} /> : null}

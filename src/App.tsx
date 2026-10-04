@@ -21,6 +21,7 @@ const NotAuthorized = lazy(() => import("./pages/NotAuthorized"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Acompanhamento = lazy(() => import("./pages/Acompanhamento"));
 const Backup = lazy(() => import("./pages/Backup"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +55,7 @@ const App = () => {
                   <Route path="/departamentos" element={<Departments />} />
                 <Route path="/perfil" element={<Profile />} />
               <Route path="/backup" element={<Backup />} />
+              <Route path="/privacidade" element={<Privacy />} />
               <Route path="/configuracoes/senhas" element={<PasswordPolicyPage />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/unauthorized" element={<NotAuthorized />} />

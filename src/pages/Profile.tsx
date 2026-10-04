@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User as UserIcon, Mail, Phone, Hash, MapPin, KeyRound, Camera } from "lucide-react";
+import { Loader2, User as UserIcon, Mail, Phone, Hash, MapPin, KeyRound, Camera, Smartphone } from "lucide-react";
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
  import { Badge } from "@/components/ui/badge";
  import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import MfaSettings from "@/components/security/MfaSettings";
+import MyDataCard from "@/components/privacy/MyDataCard";
+import PushSettings from "@/components/security/PushSettings";
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
@@ -104,6 +107,11 @@ export default function Profile() {
      return "Usuário";
    };
 
+  useEffect(() => {
+    if (loading || !window.location.hash) return;
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -113,10 +121,10 @@ export default function Profile() {
   }
 
   return (
-    <div className="p-4 md:p-8 w-full space-y-8 animate-fade-in">
+    <div className="p-4 md:p-8 w-full max-w-[1400px] mx-auto space-y-6 md:space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Meu Perfil</h1>
-        <p className="text-muted-foreground">Gerencie suas informações pessoais e de contato.</p>
+        <h1 className="text-2xl md:text-[26px] font-bold tracking-tight">Meu perfil</h1>
+        <p className="text-sm text-muted-foreground mt-1">Seus dados, segurança da conta e privacidade.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-[1fr_2fr]">
@@ -265,6 +273,28 @@ export default function Profile() {
             </form>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-2 items-start">
+        <Card id="seguranca">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-5 w-5 text-primary" />
+              <CardTitle>Verificação em duas etapas</CardTitle>
+            </div>
+            <CardDescription>Código no celular além da senha, a cada login.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <MfaSettings />
+            {profile?.id && (
+              <div className="border-t pt-5">
+                <PushSettings userId={profile.id} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {profile?.id && <MyDataCard profile={profile} />}
       </div>
 
       <ChangePasswordDialog open={pwdOpen} onOpenChange={setPwdOpen} />

@@ -2,11 +2,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
- import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles, MessageSquareText, Send, SlidersHorizontal, Columns3, MessageSquare, FileBarChart, LogIn } from "lucide-react";
+ import { Bell, Moon, Sun, Monitor, Shield, Globe, LayoutGrid, FileText, Save, Loader2, Mail, Plus, Trash2, Image as ImageIcon, Type, Menu, Palette, Upload, ChevronUp, ChevronDown, Sparkles, MessageSquareText, Send, SlidersHorizontal, Columns3, MessageSquare, FileBarChart, LogIn, FolderOpen, Workflow } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
  import { useState, useEffect, type ElementType, type ReactNode } from "react";
  import { useNavigate } from "react-router-dom";
+import CategoriesSettings from "@/components/settings/CategoriesSettings";
+import AutomationsSettings from "@/components/settings/AutomationsSettings";
+import CannedResponsesSettings from "@/components/settings/CannedResponsesSettings";
  import { usePermissions } from "@/hooks/usePermissions";
  import { supabase } from "@/integrations/supabase/client";
  import { Button } from "@/components/ui/button";
@@ -332,6 +335,10 @@ import { cn } from "@/lib/utils";
             <SettingsNavItem value="kanban" icon={Columns3}>Kanban</SettingsNavItem>
             {isAdmin && (
               <>
+                <SettingsNavGroup label="Atendimento" />
+                <SettingsNavItem value="categorias" icon={FolderOpen}>Categorias</SettingsNavItem>
+                <SettingsNavItem value="automacoes" icon={Workflow}>Automações</SettingsNavItem>
+                <SettingsNavItem value="respostas" icon={MessageSquareText}>Respostas prontas</SettingsNavItem>
                 <SettingsNavGroup label="Comunicação" />
                 <SettingsNavItem value="email" icon={Mail}>E-mail & Alertas</SettingsNavItem>
                 <SettingsNavItem value="sms" icon={MessageSquare}>SMS</SettingsNavItem>
@@ -380,12 +387,17 @@ import { cn } from "@/lib/utils";
                </div>
              </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <div className="space-y-0.5">
-                    <Label>Autenticação de Dois Fatores</Label>
-                    <p className="text-sm text-muted-foreground">Adicione uma camada extra de segurança.</p>
+                    <Label>Verificação em duas etapas</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Cada pessoa ativa a sua em Meu perfil (código no celular).
+                      {isAdmin && " A exigência para administradores é definida em Privacidade (LGPD)."}
+                    </p>
                   </div>
-                  <Switch />
+                  <Button variant="outline" onClick={() => navigate("/perfil#seguranca")}>
+                    Configurar
+                  </Button>
                 </div>
 
                 {isAdmin && (
@@ -399,7 +411,7 @@ import { cn } from "@/lib/utils";
                       </div>
                       <Button
                         variant="outline"
-                        onClick={() => (window.location.href = "/configuracoes/senhas")}
+                        onClick={() => navigate("/configuracoes/senhas")}
                       >
                         Configurar
                       </Button>
@@ -1476,6 +1488,19 @@ import { cn } from "@/lib/utils";
              </Card>
            </TabsContent>
          )}
+          {isAdmin && (
+            <>
+              <TabsContent value="categorias" className="space-y-6 mt-0">
+                <CategoriesSettings />
+              </TabsContent>
+              <TabsContent value="automacoes" className="space-y-6 mt-0">
+                <AutomationsSettings />
+              </TabsContent>
+              <TabsContent value="respostas" className="space-y-6 mt-0">
+                <CannedResponsesSettings />
+              </TabsContent>
+            </>
+          )}
           </div>
        </Tabs>
      </div>

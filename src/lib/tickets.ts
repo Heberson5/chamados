@@ -62,3 +62,13 @@ export function timeAgo(date: string | Date | null | undefined, now = Date.now()
   if (days < 30) return `há ${days} dias`;
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: days > 300 ? "2-digit" : undefined });
 }
+
+/* Campos próprios de uma categoria de serviço (chamado_categorias.campos). */
+export type CategoryField = { id: string; label: string; tipo: "texto" | "numero" | "data" | "lista"; obrigatorio?: boolean; opcoes?: string[] };
+
+export function parseCategoryFields(raw: unknown): CategoryField[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((f): f is CategoryField => !!f && typeof f === "object" && typeof (f as CategoryField).label === "string")
+    .map((f) => ({ ...f, id: f.id || f.label }));
+}

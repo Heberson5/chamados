@@ -17,9 +17,11 @@ import { useTheme } from "./ThemeProvider";
 import BrandMark from "./BrandMark";
 import NotificationsBell from "./NotificationsBell";
 import CommandPalette, { OPEN_COMMAND_PALETTE } from "./CommandPalette";
+import SecurityGate from "./security/SecurityGate";
 
 const EXTRA_TITLES: Record<string, string> = {
   "/perfil": "Meu perfil",
+  "/privacidade": "Privacidade (LGPD)",
   "/backup": "Backup",
   "/configuracoes/senhas": "Política de senhas",
   "/unauthorized": "Acesso restrito",
@@ -112,7 +114,8 @@ export default function Layout() {
         '/permissions': 'permissoes',
         '/audit': 'audit',
         '/settings': 'configuracoes',
-        '/backup': 'backup'
+        '/backup': 'backup',
+        '/privacidade': 'privacidade'
       };
 
       const requiredPermission = pageToPermission[path];
@@ -270,6 +273,7 @@ export default function Layout() {
       </div>
 
       <CommandPalette />
+      {!mustChange && <SecurityGate />}
       <ChangePasswordDialog
         open={mustChange}
         onOpenChange={setMustChange}

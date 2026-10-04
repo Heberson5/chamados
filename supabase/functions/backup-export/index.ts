@@ -8,7 +8,12 @@ const TABLES = [
   "audit_logs","email_logs","backup_logs","password_history","expedientes",
   "itens_inventario","estoque_setor","movimentacoes_estoque","baixas","itens_baixa",
   "solicitacoes_compra","itens_solicitacao_compra","reembolsos","ordens_de_servico",
-  "help_menu_manuals","system_manuals","system_settings","organization_email_settings"
+  "help_menu_manuals","system_manuals","system_settings","organization_email_settings",
+  // LGPD
+  "lgpd_solicitacoes","lgpd_incidentes","lgpd_aceites","lgpd_acessos",
+  // Recursos de chamados
+  "chamado_categorias","chamado_eventos","chamado_favoritos","chamado_avaliacoes",
+  "respostas_prontas"
 ];
 
 Deno.serve(async (req) => {
@@ -34,6 +39,19 @@ Deno.serve(async (req) => {
   const isMaster = profile?.is_master || String(profile?.regra || "").toUpperCase() === "MASTER";
   if (!isMaster) {
     return new Response(JSON.stringify({ error: "forbidden" }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // Quem tem verificação em duas etapas precisa estar com a sessão
+  // verificada (aal2) para exportar dados pessoais em massa.
+  let aal = "aal1";
+  try {
+    aal = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).aal || "aal1";
+  } catch { /* token malformado já falhou em getUser */ }
+  const { data: factors } = await admin.auth.admin.mfa.listFactors({ userId: user.id });
+  if ((factors?.factors ?? []).some((f: { status: string }) => f.status === "verified") && aal !== "aal2") {
+    return new Response(JSON.stringify({ error: "mfa_required" }), {
       status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

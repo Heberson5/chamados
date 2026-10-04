@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
- import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2, Loader2, Save, LayoutDashboard, Ticket, Box, DollarSign, Users, Key, FileText, Settings, History, Search, HelpCircle, Building2, DatabaseBackup } from "lucide-react";
+ import { Shield, User, Hammer, Crown, Plus, Pencil, Trash2, PowerOff, CheckCircle2, Loader2, Save, LayoutDashboard, Ticket, Box, DollarSign, Users, Key, FileText, Settings, History, Search, HelpCircle, Building2, DatabaseBackup, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -133,13 +133,14 @@ export default function Permissions() {
  
      const availableMenus = [
         { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["Visualizar", "Exportar", "Ver Chamados por Usuário", "Ver Conformidade SLA"] },
-        { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Cancelar", "Reabrir", "Excluir em Massa", "Cadastro Retroativo", "Ver Interações", "Assumir Chamado", "Transferir"] },
+        { id: "chamados", label: "Chamados", icon: Ticket, actions: ["Visualizar", "Criar", "Editar", "Encerrar", "Cancelar", "Reabrir", "Excluir em Massa", "Cadastro Retroativo", "Ver Interações", "Assumir Chamado", "Transferir", "Nota Interna", "Favoritar", "Avaliar Atendimento"] },
         { id: "acompanhamento", label: "Acompanhamento", icon: FileText, actions: ["Visualizar", "Exportar Excel", "Exportar PDF"] },
         { id: "usuarios", label: "Usuários", icon: Users, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Alterar Senha", "Gerenciar Roles"] },
         { id: "permissoes", label: "Permissões", icon: Key, actions: ["Visualizar", "Criar", "Editar", "Excluir", "Visualizar Roles"] },
         { id: "relatorios", label: "Relatórios", icon: FileText, actions: ["Visualizar", "Exportar PDF", "Exportar Excel", "Ver Desempenho Técnico"] },
         { id: "departamentos", label: "Departamentos", icon: Building2, actions: ["Visualizar", "Criar", "Editar", "Excluir"] },
-        { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Notificações", "Kanban", "E-mail", "SMS", "Relatórios", "Layout", "Segurança"] },
+        { id: "configuracoes", label: "Configurações", icon: Settings, actions: ["Visualizar", "Geral", "Notificações", "Kanban", "Categorias", "Automações", "Respostas Prontas", "E-mail", "SMS", "Relatórios", "Layout", "Segurança"] },
+        { id: "privacidade", label: "Privacidade (LGPD)", icon: ShieldCheck, actions: ["Visualizar", "Responder Solicitações", "Registrar Incidentes", "Ver Registros de Acesso", "Configurar Retenção", "Editar Aviso de Privacidade", "Anonimizar Usuário"] },
         { id: "audit", label: "Auditoria", icon: History, actions: ["Visualizar", "Exportar", "Limpar Logs"] },
         { id: "ajuda", label: "Ajuda", icon: HelpCircle, actions: ["Visualizar", "Editar Manuais"] },
         { id: "landing_page", label: "Landing Page (Login)", icon: LayoutDashboard, actions: ["Visualizar", "Editar"] },

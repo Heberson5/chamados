@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
+import { uploadAttachment } from "@/lib/attachments";
+import { AttachmentItem } from "@/components/tickets/Attachment";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, Play, CheckCircle, Pause, RotateCcw, Trash2, MessageSquare, Paperclip, UserPlus, Inbox, Clock, Send, History, ChevronDown, Ticket as TicketIcon } from "lucide-react";
+import { Search, ArrowRight, AlertTriangle, Loader2, X, LayoutGrid, List, Play, CheckCircle, Pause, RotateCcw, Trash2, MessageSquare, Paperclip, UserPlus, Inbox, Clock, Send, History, ChevronDown, Lock, Signal, Sparkles, Ticket as TicketIcon } from "lucide-react";
 import ChamadosKanban from "@/components/ChamadosKanban";
 import ChamadoDetailDialog from "@/components/ChamadoDetailDialog";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,10 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import { StatusPill, PriorityIndicator, SlaChip, UserAvatar } from "@/components/tickets/TicketBits";
 import { getSlaInfo, formatDuration, timeAgo } from "@/lib/tickets";
+import { CategoryFieldsForm } from "@/components/tickets/TicketExtras";
+import { parseCategoryFields } from "@/lib/tickets";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { Tables } from "@/integrations/supabase/types";
 
 export default function Chamados() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -51,13 +57,22 @@ export default function Chamados() {
       descricao: string;
       prioridade_id: string;
       tecnico_id: string;
+      sensivel: boolean;
+      categoria_id: string;
     }>({
       titulo: "",
       descricao: "",
       prioridade_id: "",
-       tecnico_id: "none"
+       tecnico_id: "none",
+      sensivel: false,
+      categoria_id: "none"
     });
     const [agents, setAgents] = useState<any[]>([]);
+    const [categories, setCategories] = useState<Tables<"chamado_categorias">[]>([]);
+    const [camposExtras, setCamposExtras] = useState<Record<string, string>>({});
+    const [autoAssign, setAutoAssign] = useState(false);
+    const [favIds, setFavIds] = useState<Set<string>>(new Set());
+    const [bulkBusy, setBulkBusy] = useState(false);
     const [priorities, setPriorities] = useState<any[]>([]);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [selectedTicket, setSelectedTicket] = useState<any>(null);
@@ -200,6 +215,15 @@ export default function Chamados() {
         }
       });
  
+      supabase.from("chamado_categorias").select("*").eq("ativo", true).order("ordem").then(({ data }) => setCategories(data ?? []));
+      supabase.from("system_settings").select("value").eq("key", "automacoes").maybeSingle().then(({ data }) => {
+        setAutoAssign(!!(data?.value as { auto_atribuir?: boolean } | null)?.auto_atribuir);
+      });
+      const loadFavs = () =>
+        supabase.from("chamado_favoritos").select("chamado_id").then(({ data }) => setFavIds(new Set((data ?? []).map((f) => f.chamado_id))));
+      loadFavs();
+      window.addEventListener("chamados:favoritos-alterados", loadFavs);
+
       // Fetch priorities
       supabase.from("chamados_prioridades").select("*").order("ordem").then(({ data }) => {
         if (data) {
@@ -227,6 +251,7 @@ export default function Chamados() {
  
      return () => {
        supabase.removeChannel(channel);
+       window.removeEventListener("chamados:favoritos-alterados", loadFavs);
      };
    }, [fetchTickets]);
 
@@ -299,23 +324,10 @@ export default function Chamados() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error("Usuário não autenticado. Por favor, faça login novamente.");
 
-      const uploadedUrls = [];
+      // Bucket privado: grava só o caminho; a exibição usa link temporário.
+      const uploadedUrls: string[] = [];
       for (const file of files) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("chamados_anexos")
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from("chamados_anexos")
-          .getPublicUrl(filePath);
-          
-        uploadedUrls.push(publicUrl);
+        uploadedUrls.push(await uploadAttachment(file, user.id));
       }
 
          // status/status_id não precisam ser resolvidos aqui: o gatilho
@@ -328,8 +340,15 @@ export default function Chamados() {
            usuario_id: user.id,
            department_id: userProfile?.department_id,
            anexos: uploadedUrls.length > 0 ? uploadedUrls : null,
+           contem_dado_sensivel: newTicket.sensivel,
+           categoria_id: newTicket.categoria_id !== "none" ? newTicket.categoria_id : null,
+           campos_extras: Object.keys(camposExtras).length > 0 ? camposExtras : null,
          };
-         if (newTicket.tecnico_id && newTicket.tecnico_id !== "none") {
+         const missing = selectedCategoryFields.filter((f) => f.obrigatorio && !String(camposExtras[f.id] ?? "").trim());
+         if (missing.length > 0) {
+           throw new Error(`Preencha: ${missing.map((f) => f.label).join(", ")}.`);
+         }
+         if (newTicket.tecnico_id && newTicket.tecnico_id !== "none" && newTicket.tecnico_id !== "auto") {
            insertData.tecnico_id = newTicket.tecnico_id;
          }
 
@@ -386,8 +405,11 @@ export default function Chamados() {
         titulo: "",
         descricao: "",
         prioridade_id: priorities[0]?.id || "",
-        tecnico_id: "none"
+        tecnico_id: "none",
+        sensivel: false,
+        categoria_id: "none"
       });
+      setCamposExtras({});
       setFiles([]);
       setPreviews([]);
       setRetroativo({
@@ -412,6 +434,33 @@ export default function Chamados() {
   const canAtender = isTecnicoOuAcima || hasPermission("chamados:assumir_chamado");
   const canEncerrar = isTecnicoOuAcima || hasPermission("chamados:encerrar");
   const canReabrir = isTecnicoOuAcima || hasPermission("chamados:reabrir");
+  // Ações em massa reaproveitam as mesmas permissões das ações individuais.
+  const canBulkAssign = isTecnicoOuAcima || hasPermission("chamados:transferir");
+  const canBulkPriority = isTecnicoOuAcima || hasPermission("chamados:editar");
+  const canSelect = canBulkDelete || canBulkAssign || canBulkPriority;
+
+  const bulkUpdate = async (patch: { tecnico_id?: string; prioridade_id?: string }, label: string) => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const ids = Array.from(selectedIds);
+    const { data, error } = await supabase.from("chamados").update(patch).in("id", ids).select("id");
+    setBulkBusy(false);
+    if (error) {
+      toast({ variant: "destructive", title: "Erro na ação em massa", description: error.message });
+      return;
+    }
+    const done = data?.length ?? 0;
+    toast({
+      title: `${label}: ${done} de ${ids.length} chamado(s)`,
+      description: done < ids.length ? "Alguns chamados não puderam ser alterados (sem permissão sobre eles)." : undefined,
+    });
+    setSelectedIds(new Set());
+    fetchTickets();
+  };
+
+  const selectedCategory = categories.find((c) => c.id === newTicket.categoria_id) ?? null;
+  const selectedCategoryFields = parseCategoryFields(selectedCategory?.campos);
+  const canAutoResponsible = autoAssign || !!selectedCategory?.tecnico_padrao_id;
 
   const isOpenTicket = (t: TicketRow) => {
     const st = getStatusRow(t);
@@ -437,6 +486,7 @@ export default function Chamados() {
     { key: "todos", label: "Todos", match: () => true },
     { key: "meus", label: "Abertos por mim", match: (t) => t.usuario_id === currentUserId },
     { key: "designados", label: "Atribuídos a mim", match: (t) => t.tecnico_id === currentUserId },
+    { key: "favoritos", label: "Favoritos", match: (t) => favIds.has(t.id) },
     { key: "sem_responsavel", label: "Sem responsável", match: (t) => !t.tecnico_id && isOpenTicket(t) },
     {
       key: "sla_risco",
@@ -601,9 +651,9 @@ export default function Chamados() {
             <X size={14} /> Limpar filtros
           </Button>
         )}
-        {canBulkDelete && viewMode === "kanban" && (
+        {canSelect && viewMode === "kanban" && (
           <span className="text-xs text-muted-foreground ml-auto hidden lg:inline">
-            Marque os cards para excluir vários de uma vez.
+            Marque os cards para agir em vários de uma vez.
           </span>
         )}
       </div>
@@ -617,7 +667,7 @@ export default function Chamados() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                {canBulkDelete && (
+                {canSelect && (
                   <TableHead className="w-10 px-3">
                     <input
                       type="checkbox"
@@ -655,7 +705,7 @@ export default function Chamados() {
                     className="group cursor-pointer data-[state=selected]:bg-accent/40"
                     onClick={() => openTicket(ticket)}
                   >
-                    {canBulkDelete && (
+                    {canSelect && (
                       <TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
@@ -668,7 +718,10 @@ export default function Chamados() {
                     )}
                     {isColVisible("chamado") && (
                       <TableCell className="min-w-[240px]">
-                        <span className="block font-semibold leading-snug">{ticket.titulo || "Sem título"}</span>
+                        <span className="block font-semibold leading-snug">
+                          {ticket.contem_dado_sensivel && <Lock size={12} className="inline mr-1 -mt-0.5 text-amber-600" aria-label="Dado sensível" />}
+                          {ticket.titulo || "Sem título"}
+                        </span>
                         <span className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                           <span className="font-mono">#{ticket.os}</span>
                           {ticket.chamado_pai && (
@@ -724,9 +777,7 @@ export default function Chamados() {
                         {ticket.anexos?.length > 0 ? (
                           <div className="flex gap-1.5">
                             {ticket.anexos.map((url: string, idx: number) => (
-                              <a key={idx} href={url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary hover:underline text-xs font-medium">
-                                Anexo {idx + 1}
-                              </a>
+                              <AttachmentItem key={idx} stored={url} index={idx} ownerId={ticket.usuario_id} variant="link" />
                             ))}
                           </div>
                         ) : (
@@ -781,7 +832,7 @@ export default function Chamados() {
           <ChamadosKanban
             tickets={filteredTickets}
             onUpdate={fetchTickets}
-            isMaster={canBulkDelete}
+            isMaster={canSelect}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelectOne}
           />
@@ -789,7 +840,7 @@ export default function Chamados() {
       )}
 
       {/* Barra de ações em massa */}
-      {canBulkDelete && selectedIds.size > 0 && (
+      {canSelect && selectedIds.size > 0 && (
         <div className="fixed z-40 bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 md:translate-x-[calc(-50%+128px)] flex items-center gap-1.5 rounded-2xl bg-slate-900 text-white pl-4 pr-2 py-2 shadow-floating animate-in fade-in slide-in-from-bottom-4">
           <span className="text-sm font-semibold whitespace-nowrap mr-2">
             {selectedIds.size} {selectedIds.size === 1 ? "selecionado" : "selecionados"}
@@ -800,9 +851,43 @@ export default function Chamados() {
             </Button>
           )}
           <span className="w-px h-5 bg-white/15 mx-1" />
-          <Button size="sm" className="bg-red-500/15 text-red-300 border border-red-500/30 hover:bg-red-500/25 shadow-none" onClick={() => setIsDeleteDialogOpen(true)}>
-            <Trash2 size={14} /> Excluir
-          </Button>
+          {canBulkAssign && agents.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="text-slate-100 hover:bg-white/10 hover:text-white" disabled={bulkBusy}>
+                  <UserPlus size={14} /> Atribuir
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="max-h-72 overflow-y-auto">
+                {agents.map((a) => (
+                  <DropdownMenuItem key={a.id} className="gap-2" onClick={() => bulkUpdate({ tecnico_id: a.id }, `Atribuídos a ${a.nome}`)}>
+                    <UserAvatar person={a} size={20} /> {a.nome} {a.sobrenome}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {canBulkPriority && priorities.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="text-slate-100 hover:bg-white/10 hover:text-white" disabled={bulkBusy}>
+                  <Signal size={14} /> Prioridade
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start">
+                {priorities.map((p) => (
+                  <DropdownMenuItem key={p.id} onClick={() => bulkUpdate({ prioridade_id: p.id }, `Prioridade ${p.nome}`)}>
+                    <PriorityIndicator priority={p} />
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {canBulkDelete && (
+            <Button size="sm" className="bg-red-500/15 text-red-300 border border-red-500/30 hover:bg-red-500/25 shadow-none" onClick={() => setIsDeleteDialogOpen(true)}>
+              <Trash2 size={14} /> Excluir
+            </Button>
+          )}
           <button type="button" onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10" aria-label="Limpar seleção">
             <X size={16} />
           </button>
@@ -853,6 +938,38 @@ export default function Chamados() {
                 placeholder="O que aconteceu? Desde quando? Já tentou alguma coisa?"
               />
             </div>
+            {categories.length > 0 && (
+              <div className="space-y-1.5">
+                <Label>Categoria</Label>
+                <Select
+                  value={newTicket.categoria_id}
+                  onValueChange={(v) => {
+                    const cat = categories.find((c) => c.id === v);
+                    setCamposExtras({});
+                    setNewTicket({
+                      ...newTicket,
+                      categoria_id: v,
+                      prioridade_id: cat?.prioridade_padrao_id || newTicket.prioridade_id,
+                      tecnico_id: cat?.tecnico_padrao_id ? "auto" : newTicket.tecnico_id === "auto" && !autoAssign ? "none" : newTicket.tecnico_id,
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo de problema" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Outros / não sei</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.cor }} />{c.nome}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedCategory?.descricao && <p className="text-xs text-muted-foreground">{selectedCategory.descricao}</p>}
+                <CategoryFieldsForm fields={selectedCategoryFields} values={camposExtras} onChange={setCamposExtras} />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -875,9 +992,10 @@ export default function Chamados() {
                   );
                 })}
               </div>
-              {selectedPriority?.sla_horas != null && (
+              {(selectedCategory?.sla_horas ?? selectedPriority?.sla_horas) != null && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-0.5">
-                  <Clock size={13} /> Prazo de atendimento (SLA): {formatDuration(selectedPriority.sla_horas * 60)}
+                  <Clock size={13} /> Prazo de atendimento (SLA): {formatDuration((selectedCategory?.sla_horas ?? selectedPriority?.sla_horas ?? 0) * 60)}
+                  {selectedCategory?.sla_horas != null && " (definido pela categoria)"}
                 </p>
               )}
             </div>
@@ -892,6 +1010,11 @@ export default function Chamados() {
                     <SelectValue placeholder="Selecione quem vai atender" />
                   </SelectTrigger>
                   <SelectContent>
+                    {canAutoResponsible && (
+                      <SelectItem value="auto">
+                        <span className="inline-flex items-center gap-2"><Sparkles size={14} /> Automático ({selectedCategory?.tecnico_padrao_id ? "responsável da categoria" : "distribuição por carga"})</span>
+                      </SelectItem>
+                    )}
                     {agents.map(agent => (
                       <SelectItem key={agent.id} value={agent.id}>
                         <span className="inline-flex items-center gap-2">
@@ -908,6 +1031,20 @@ export default function Chamados() {
                 </div>
               )}
             </div>
+            <label className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-[hsl(var(--primary))]"
+                checked={newTicket.sensivel}
+                onChange={(e) => setNewTicket({ ...newTicket, sensivel: e.target.checked })}
+              />
+              <span className="text-sm">
+                <span className="font-semibold inline-flex items-center gap-1.5"><Lock size={13} /> Contém dado sensível</span>
+                <span className="block text-xs text-muted-foreground">
+                  Atestado, dado de saúde, documento pessoal etc. Só você, o responsável e administradores verão este chamado.
+                </span>
+              </span>
+            </label>
             <div className="space-y-1.5">
               <Label>Anexos</Label>
               <label
@@ -1002,7 +1139,7 @@ export default function Chamados() {
               <Button
                 type="submit"
                 form="novo-chamado-form"
-                disabled={isLoading || agents.length === 0 || !newTicket.tecnico_id || newTicket.tecnico_id === "none"}
+                disabled={isLoading || (agents.length === 0 && !canAutoResponsible) || !newTicket.tecnico_id || newTicket.tecnico_id === "none" || (newTicket.tecnico_id === "auto" && !canAutoResponsible)}
               >
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send size={15} />}
                 Abrir chamado

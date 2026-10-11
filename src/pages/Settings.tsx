@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { useState, useEffect, type ElementType, type ReactNode } from "react";
  import { useNavigate } from "react-router-dom";
 import CategoriesSettings from "@/components/settings/CategoriesSettings";
+import EmailTemplatePreview from "@/components/settings/EmailTemplatePreview";
 import AutomationsSettings from "@/components/settings/AutomationsSettings";
 import CannedResponsesSettings from "@/components/settings/CannedResponsesSettings";
  import { usePermissions } from "@/hooks/usePermissions";
@@ -574,7 +575,7 @@ import { cn } from "@/lib/utils";
                         </Button>
                       </div>
                       <div className="text-xs text-muted-foreground mb-4">
-                        Tags disponíveis: <code className="bg-muted px-1 rounded">{"{os}"}</code>, <code className="bg-muted px-1 rounded">{"{user}"}</code>, <code className="bg-muted px-1 rounded">{"{titulo}"}</code>, <code className="bg-muted px-1 rounded">{"{status}"}</code>, <code className="bg-muted px-1 rounded">{"{descricao}"}</code>
+                        Tags disponíveis: <code className="bg-muted px-1 rounded">{"{os}"}</code>, <code className="bg-muted px-1 rounded">{"{user}"}</code>, <code className="bg-muted px-1 rounded">{"{titulo}"}</code>, <code className="bg-muted px-1 rounded">{"{status}"}</code>, <code className="bg-muted px-1 rounded">{"{descricao}"}</code>, <code className="bg-muted px-1 rounded">{"{comentario}"}</code>, <code className="bg-muted px-1 rounded">{"{motivo}"}</code>
                       </div>
                       
                        <div className="space-y-6">
@@ -594,11 +595,12 @@ import { cn } from "@/lib/utils";
                          <div className="space-y-4">
                            <Label className="text-sm font-semibold">Modelos de E-mail</Label>
                            {emailTemplates.map((template, idx) => (
-                             <div key={template.id} className="p-4 border rounded-md space-y-4 relative bg-card/50">
-                               <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => setEmailTemplates(emailTemplates.filter((_, i) => i !== idx))}>
+                             <div key={template.id} className="p-4 border rounded-xl relative bg-card/50 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                               <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => setEmailTemplates(emailTemplates.filter((_, i) => i !== idx))} title="Remover modelo">
                                  <Trash2 size={14} />
                                </Button>
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                               <div className="space-y-4 min-w-0 pr-8 xl:pr-0">
+                               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-4">
                                  <div className="space-y-2">
                                    <Label>Nome do Modelo</Label>
                                    <Input 
@@ -629,6 +631,7 @@ import { cn } from "@/lib/utils";
                                        <SelectItem value="status_change">Mudança de Status</SelectItem>
                                        <SelectItem value="new_interaction">Novo Comentário/Interação</SelectItem>
                                        <SelectItem value="ticket_closed">Chamado Encerrado</SelectItem>
+                                       <SelectItem value="ticket_transferred">Chamado Transferido</SelectItem>
                                      </SelectContent>
                                    </Select>
                                  </div>
@@ -647,7 +650,7 @@ import { cn } from "@/lib/utils";
                                <div className="space-y-2">
                                  <Label>Corpo do Texto</Label>
                                  <textarea 
-                                   className="flex min-h-[100px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                                   className="flex min-h-[180px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
                                    value={template.body} 
                                    onChange={e => {
                                      const nt = [...emailTemplates];
@@ -655,6 +658,10 @@ import { cn } from "@/lib/utils";
                                      setEmailTemplates(nt);
                                    }}
                                  />
+                               </div>
+                               </div>
+                               <div className="xl:pt-8">
+                                 <EmailTemplatePreview template={template} layout={emailLayout} />
                                </div>
                              </div>
                            ))}

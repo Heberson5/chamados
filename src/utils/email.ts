@@ -8,6 +8,47 @@
    trigger?: string;
  }
  
+ /** Tags que os modelos podem usar e um exemplo de valor para a pré-visualização. */
+ export const EMAIL_TEMPLATE_TAGS: Record<string, string> = {
+   os: "1042",
+   user: "Ana Souza",
+   titulo: "Impressora do financeiro não imprime",
+   status: "Em Atendimento",
+   descricao: "A impressora mostra erro de papel atolado desde hoje cedo.",
+   comentario: "Já troquei o toner, pode testar novamente?",
+   motivo: "Transferido para a equipe de infraestrutura.",
+ };
+
+ const escapeHtml = (v: string) =>
+   v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+
+ /**
+  * Monta assunto e HTML finais de um modelo (o mesmo código serve o envio
+  * real e a pré-visualização em Configurações). Os valores das tags vêm de
+  * dados digitados por usuários, então são escapados no HTML.
+  */
+ export function renderEmailTemplate(
+   template: Pick<EmailTemplate, "subject" | "body">,
+   layout: string | null | undefined,
+   variables: Record<string, string>
+ ): { subject: string; html: string } {
+   let body = template.body || "";
+   let subject = template.subject || "";
+   Object.entries(variables).forEach(([key, value]) => {
+     const regex = new RegExp(`{${key}}`, "g");
+     body = body.replace(regex, escapeHtml(value || ""));
+     subject = subject.replace(regex, value || "");
+   });
+   const htmlBody = body.replace(/\n/g, "<br>");
+   if (!layout || !layout.trim()) return { subject, html: htmlBody };
+   let html = layout;
+   Object.entries(variables).forEach(([key, value]) => {
+     html = html.replace(new RegExp(`{${key}}`, "g"), escapeHtml(value || ""));
+   });
+   html = html.replace(/{corpo}|{{corpo}}|{body}|{{body}}/gi, htmlBody);
+   return { subject, html };
+ }
+
  export const sendEmail = async (to: string, subject: string, html: string) => {
    try {
      const { data, error } = await supabase.functions.invoke("send-email", {
@@ -46,32 +87,7 @@
  
      if (!template) return { success: false, error: "Template not found" };
  
-     let body = template.body;
-     let subject = template.subject;
- 
-     Object.entries(variables).forEach(([key, value]) => {
-       const regex = new RegExp(`{${key}}`, 'g');
-       body = body.replace(regex, value || "");
-       subject = subject.replace(regex, value || "");
-     });
- 
-     // Convert newlines to <br> for HTML
-     const htmlBody = body.replace(/\n/g, '<br>');
- 
-     let finalHtml = htmlBody;
-     const layout = layoutData?.value as string;
- 
-     if (layout && layout.trim()) {
-       // Replace standard tags in layout too
-       finalHtml = layout;
-       Object.entries(variables).forEach(([key, value]) => {
-         const regex = new RegExp(`{${key}}`, 'g');
-         finalHtml = finalHtml.replace(regex, value || "");
-       });
-       // Replace the body placeholder
-       finalHtml = finalHtml.replace(/{corpo}|{{corpo}}|{body}|{{body}}/gi, htmlBody);
-     }
- 
+     const { subject, html: finalHtml } = renderEmailTemplate(template, layoutData?.value as string, variables);
      return await sendEmail(to, subject, finalHtml);
    } catch (error) {
      console.error("Error sending templated email:", error);

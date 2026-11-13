@@ -200,6 +200,7 @@ Deno.serve(async (req) => {
             <p>Se você não solicitou esta alteração, entre em contato com o administrador imediatamente.</p>
             <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
             <p style="font-size: 12px; color: #94a3b8; text-align: center;">Esta é uma mensagem automática, por favor não responda.</p>
+            <p style="font-size: 11px; color: #b4bac1; text-align: center;">Desenvolvido por Sauberlich System</p>
           </div>
         `;
 

@@ -110,6 +110,7 @@ Deno.serve(async (req) => {
       ${ranking.map((r) => `<tr><td style="padding:8px 12px;border-bottom:1px solid #eee">${esc(r.nome)}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-weight:600">${r.n}</td></tr>`).join("")}
     </table>` : ""}
     <p style="margin-top:18px;font-size:12px;color:#8b8fa3">Para alterar ou desativar este envio: Configurações › Automações.</p>
+    <p style="margin-top:12px;font-size:11px;color:#b4bac1;text-align:center">Desenvolvido por Sauberlich System</p>
   </div>
 </div>`;
 

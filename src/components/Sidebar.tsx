@@ -1,3 +1,4 @@
+import { SAUBERLICH_CREDIT } from "@/lib/marca";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
@@ -124,6 +125,10 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
         >
           {collapsed ? <PanelLeftOpen size={16} /> : <><PanelLeftClose size={16} /> Recolher</>}
         </button>
+        {/* Marca de quem desenvolveu o sistema — em todas as páginas; com o menu recolhido, só "SS". */}
+        <p className="text-center text-[10px] leading-tight text-muted-foreground" title={SAUBERLICH_CREDIT} data-testid="sauberlich-credit">
+          {collapsed ? "SS" : SAUBERLICH_CREDIT}
+        </p>
       </div>
     </aside>
   );

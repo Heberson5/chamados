@@ -1,3 +1,4 @@
+import { sauberlichCopyright } from "@/lib/marca";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -471,7 +472,7 @@ export default function Login() {
           </div>
         </div>
 
-        <p className="pb-6 text-center text-xs text-muted-foreground">
+        <p className="pb-2 text-center text-xs text-muted-foreground">
           Problemas para entrar? Fale com a equipe de TI.
           {privacy?.texto && (
             <>
@@ -481,6 +482,9 @@ export default function Login() {
               </button>
             </>
           )}
+        </p>
+        <p className="pb-6 text-center text-[11px] text-muted-foreground" data-testid="sauberlich-copyright">
+          {sauberlichCopyright()}
         </p>
         <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
           <DialogContent className="sm:max-w-[560px]">

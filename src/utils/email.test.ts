@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SAUBERLICH_EMAIL_FOOTER } from "@/lib/marca";
 import { renderEmailTemplate } from "./email";
 
 describe("renderEmailTemplate", () => {
@@ -9,7 +10,8 @@ describe("renderEmailTemplate", () => {
       { os: "10", user: "Ana", status: "Aberto" }
     );
     expect(r.subject).toBe("Chamado #10");
-    expect(r.html).toBe("<div class='x'>Olá Ana<br>Status: Aberto</div>");
+    // ...e termina com a marca de quem desenvolveu o sistema.
+    expect(r.html).toBe("<div class='x'>Olá Ana<br>Status: Aberto</div>" + SAUBERLICH_EMAIL_FOOTER);
   });
 
   it("escapa HTML vindo dos dados do chamado", () => {

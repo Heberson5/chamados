@@ -1,3 +1,4 @@
+import { SAUBERLICH_CREDIT } from "@/lib/marca";
    import { useEffect, useState, useMemo } from "react";
  import { useNavigate } from "react-router-dom";
  import { supabase } from "@/integrations/supabase/client";
@@ -375,6 +376,7 @@
          doc.text(layout.footerText || "Relatório gerado pelo sistema", 15, footerY - 5);
          doc.text(`Impresso em: ${printDate}`, 15, footerY);
          doc.text(`Página ${i} de ${pageCount}`, pageWidth - 40, footerY);
+         doc.text(SAUBERLICH_CREDIT, pageWidth / 2, footerY, { align: "center" });
        }
 
        doc.save("Relatorio_Chamados.pdf");

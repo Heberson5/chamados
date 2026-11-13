@@ -1,4 +1,5 @@
  import { supabase } from "@/integrations/supabase/client";
+ import { SAUBERLICH_EMAIL_FOOTER } from "@/lib/marca";
  
  export interface EmailTemplate {
    id: string;
@@ -40,12 +41,14 @@
      subject = subject.replace(regex, value || "");
    });
    const htmlBody = body.replace(/\n/g, "<br>");
-   if (!layout || !layout.trim()) return { subject, html: htmlBody };
+   // A marca de quem desenvolveu o sistema vai no fim de todo e-mail, com ou sem layout.
+   if (!layout || !layout.trim()) return { subject, html: htmlBody + SAUBERLICH_EMAIL_FOOTER };
    let html = layout;
    Object.entries(variables).forEach(([key, value]) => {
      html = html.replace(new RegExp(`{${key}}`, "g"), escapeHtml(value || ""));
    });
    html = html.replace(/{corpo}|{{corpo}}|{body}|{{body}}/gi, htmlBody);
+   html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${SAUBERLICH_EMAIL_FOOTER}</body>`) : html + SAUBERLICH_EMAIL_FOOTER;
    return { subject, html };
  }
 
